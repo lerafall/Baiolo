@@ -38,7 +38,13 @@ export default function AdminModerationPage() {
 
   const queue = useMemo(() => {
     return items.filter((p) =>
-      ["submitted", "checking", "in_review", "needs_changes"].includes(p.status),
+      [
+        "submitted",
+        "checking",
+        "in_review",
+        "needs_changes",
+        "published",
+      ].includes(p.status),
     );
   }, [items]);
 
@@ -372,7 +378,9 @@ export default function AdminModerationPage() {
                   disabled={busy}
                   onClick={() => moderate(selected, "approve")}
                 >
-                  Approve
+                  {selected.status === "published"
+                    ? "Refresh in-browser play"
+                    : "Approve"}
                 </Button>
                 <Button
                   variant="secondary"
