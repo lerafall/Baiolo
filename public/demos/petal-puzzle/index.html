@@ -4,29 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Petal Puzzle · Baiolo demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Caveat:wght@600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="fall" id="fall" aria-hidden="true"></div>
     <main class="shell">
-      <header class="top">
-        <p class="eyebrow">Baiolo demo</p>
-        <h1>Petal Puzzle</h1>
-        <p class="lede">Slide soft petals into place.</p>
+      <header class="hud">
+        <div class="level-card">
+          <p>Level <strong id="level">1</strong></p>
+          <div class="dots" id="dots" aria-hidden="true"></div>
+        </div>
+        <div class="hud-right">
+          <div class="leaves">🌿 <strong id="leaves">125</strong></div>
+        </div>
       </header>
 
-      <section class="card">
-        <div class="meta">
-          <span>Moves <strong id="moves">0</strong></span>
-          <span id="status" class="status">Tap a petal next to the open space.</span>
-        </div>
+      <aside class="tools">
+        <button type="button" id="undoBtn" class="tool undo" title="Undo">↩<span>Undo</span></button>
+        <button type="button" id="restartBtn" class="tool restart" title="Restart">↻<span>Restart</span></button>
+        <button type="button" id="hintBtn" class="tool hint" title="Hint">💡<span>Hint</span><i id="hintCount">3</i></button>
+      </aside>
 
-        <div id="board" class="board" role="grid" aria-label="Petal slide puzzle"></div>
-
-        <div class="actions">
-          <button type="button" id="shuffleBtn" class="btn primary">Shuffle</button>
-          <button type="button" id="resetBtn" class="btn ghost">Reset</button>
-        </div>
+      <section class="stage">
+        <div class="wheel" id="wheel" aria-label="Flower petal wheel"></div>
+        <p class="breath">Take a deep breath ♡</p>
       </section>
+
+      <div class="tray" aria-label="Next petal">
+        <button type="button" id="trayPetal" class="petal tray-petal" aria-label="Place petal into empty slot"></button>
+      </div>
     </main>
     <script src="script.js"></script>
   </body>

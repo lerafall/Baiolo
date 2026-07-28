@@ -1,127 +1,162 @@
 (() => {
-  const boardEl = document.getElementById("board");
-  const movesEl = document.getElementById("moves");
-  const statusEl = document.getElementById("status");
-  const shuffleBtn = document.getElementById("shuffleBtn");
-  const resetBtn = document.getElementById("resetBtn");
+  const wheel = document.getElementById("wheel");
+  const trayPetal = document.getElementById("trayPetal");
+  const levelEl = document.getElementById("level");
+  const leavesEl = document.getElementById("leaves");
+  const dotsEl = document.getElementById("dots");
+  const hintCount = document.getElementById("hintCount");
+  const fall = document.getElementById("fall");
 
-  const PETALS = [
-    { id: 1, emoji: "🌸", color: "linear-gradient(145deg,#fb7185,#f9a8d4)" },
-    { id: 2, emoji: "🌺", color: "linear-gradient(145deg,#e879f9,#c4b5fd)" },
-    { id: 3, emoji: "🌼", color: "linear-gradient(145deg,#fbbf24,#fde68a)" },
-    { id: 4, emoji: "💮", color: "linear-gradient(145deg,#f472b6,#fda4af)" },
-    { id: 5, emoji: "🌷", color: "linear-gradient(145deg,#a78bfa,#ddd6fe)" },
-    { id: 6, emoji: "🌿", color: "linear-gradient(145deg,#34d399,#99f6e4)" },
-    { id: 7, emoji: "🪷", color: "linear-gradient(145deg,#fb7185,#fda4af)" },
-    { id: 8, emoji: "🌱", color: "linear-gradient(145deg,#2dd4bf,#a7f3d0)" },
-    null,
-  ];
+  const COLORS = ["pink", "purple", "mint"];
+  const SIZE = 8;
 
-  let tiles = [...PETALS];
-  let moves = 0;
-  let won = false;
+  let level = 1;
+  let leaves = 125;
+  let hints = 3;
+  let slots = [];
+  let empty = 0;
+  let tray = "purple";
+  let history = [];
 
-  function indexOfEmpty() {
-    return tiles.findIndex((t) => t === null);
+  function targetFor(i) {
+    // Soft repeating pattern around the flower.
+    return COLORS[i % COLORS.length];
   }
 
-  function neighbors(i) {
-    const r = Math.floor(i / 3);
-    const c = i % 3;
-    const list = [];
-    if (r > 0) list.push(i - 3);
-    if (r < 2) list.push(i + 3);
-    if (c > 0) list.push(i - 1);
-    if (c < 2) list.push(i + 1);
-    return list;
-  }
-
-  function isSolved() {
-    for (let i = 0; i < 8; i += 1) {
-      if (!tiles[i] || tiles[i].id !== i + 1) return false;
+  function paintDots() {
+    dotsEl.innerHTML = "";
+    for (let i = 0; i < 3; i += 1) {
+      const d = document.createElement("span");
+      if (i < ((level - 1) % 3) + 1) d.classList.add("on");
+      dotsEl.appendChild(d);
     }
-    return tiles[8] === null;
-  }
-
-  function inversionCount(arr) {
-    const nums = arr.filter(Boolean).map((t) => t.id);
-    let inv = 0;
-    for (let i = 0; i < nums.length; i += 1) {
-      for (let j = i + 1; j < nums.length; j += 1) {
-        if (nums[i] > nums[j]) inv += 1;
-      }
-    }
-    return inv;
-  }
-
-  /** Only even permutations are solvable for 3x3. */
-  function isSolvable(arr) {
-    return inversionCount(arr) % 2 === 0;
   }
 
   function paint() {
-    boardEl.innerHTML = "";
-    tiles.forEach((tile, index) => {
+    wheel.innerHTML = "";
+    slots.forEach((color, i) => {
+      const wrap = document.createElement("div");
+      wrap.className = "slot";
+      const angle = (i / SIZE) * 360;
+      wrap.style.transform = `rotate(${angle}deg) translateY(-96px) rotate(${-angle}deg)`;
+
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "tile" + (tile ? "" : " empty");
-      btn.setAttribute("role", "gridcell");
-      if (tile) {
-        btn.textContent = tile.emoji;
-        btn.style.background = tile.color;
-        btn.setAttribute("aria-label", `Petal ${tile.id}`);
-        if (won) btn.classList.add("win");
-      } else {
-        btn.setAttribute("aria-label", "Open space");
-      }
-      btn.addEventListener("click", () => tryMove(index));
-      boardEl.appendChild(btn);
+      btn.className = `petal ${color || "empty"}`;
+      btn.setAttribute(
+        "aria-label",
+        color ? `${color} petal` : "Empty petal slot",
+      );
+      btn.addEventListener("click", () => onSlot(i));
+      wrap.appendChild(btn);
+      wheel.appendChild(wrap);
     });
-    movesEl.textContent = String(moves);
+
+    trayPetal.className = `petal tray-petal ${tray}`;
+    trayPetal.onclick = () => onSlot(empty);
+    levelEl.textContent = String(level);
+    leavesEl.textContent = String(leaves);
+    hintCount.textContent = String(hints);
+    paintDots();
   }
 
-  function tryMove(index) {
-    if (won) return;
-    const empty = indexOfEmpty();
-    if (!neighbors(empty).includes(index)) return;
-    [tiles[empty], tiles[index]] = [tiles[index], tiles[empty]];
-    moves += 1;
-    paint();
-    if (isSolved()) {
-      won = true;
-      paint();
-      statusEl.textContent = "Bloomed! Soft and solved — shuffle for another round.";
-    } else {
-      statusEl.textContent = "Keep going — petals like slow moves.";
+  function isComplete() {
+    return slots.every((c, i) => c === targetFor(i));
+  }
+
+  function snapshot() {
+    history.push({
+      slots: [...slots],
+      empty,
+      tray,
+      leaves,
+    });
+    if (history.length > 20) history.shift();
+  }
+
+  function onSlot(i) {
+    if (i !== empty) return;
+    if (tray !== targetFor(i)) {
+      trayPetal.classList.add("glow");
+      setTimeout(() => trayPetal.classList.remove("glow"), 350);
+      return;
     }
-  }
-
-  function reset() {
-    tiles = [...PETALS];
-    moves = 0;
-    won = false;
-    statusEl.textContent = "Fresh flower. Shuffle to begin.";
+    snapshot();
+    slots[i] = tray;
+    // Pull a wrong/missing petal out into the tray for the next empty.
+    const wrong = [];
+    for (let s = 0; s < SIZE; s += 1) {
+      if (slots[s] && slots[s] !== targetFor(s)) wrong.push(s);
+    }
+    if (wrong.length === 0 && isComplete()) {
+      empty = -1;
+      tray = COLORS[level % COLORS.length];
+      paint();
+      leaves += 15;
+      level += 1;
+      setTimeout(newLevel, 450);
+      return;
+    }
+    const nextEmpty =
+      wrong[Math.floor(Math.random() * wrong.length)] ??
+      Math.floor(Math.random() * SIZE);
+    tray = slots[nextEmpty];
+    slots[nextEmpty] = null;
+    empty = nextEmpty;
+    leaves += 2;
     paint();
   }
 
-  function shuffle() {
-    let next;
-    do {
-      next = [...PETALS];
-      for (let i = next.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [next[i], next[j]] = [next[j], next[i]];
-      }
-    } while (!isSolvable(next) || next.every((t, i) => t === PETALS[i]));
-    tiles = next;
-    moves = 0;
-    won = false;
-    statusEl.textContent = "Shuffled. Slide petals into the open space.";
+  function newLevel() {
+    const filled = Array.from({ length: SIZE }, (_, i) => targetFor(i));
+    empty = Math.floor(Math.random() * SIZE);
+    tray = filled[empty];
+    filled[empty] = null;
+    // Swap two others to create a soft puzzle.
+    const a = (empty + 2) % SIZE;
+    const b = (empty + 5) % SIZE;
+    [filled[a], filled[b]] = [filled[b], filled[a]];
+    slots = filled;
+    history = [];
     paint();
   }
 
-  shuffleBtn.addEventListener("click", shuffle);
-  resetBtn.addEventListener("click", reset);
+  document.getElementById("undoBtn").addEventListener("click", () => {
+    const prev = history.pop();
+    if (!prev) return;
+    slots = prev.slots;
+    empty = prev.empty;
+    tray = prev.tray;
+    leaves = prev.leaves;
+    paint();
+  });
 
-  reset();
+  document.getElementById("restartBtn").addEventListener("click", () => {
+    newLevel();
+  });
+
+  document.getElementById("hintBtn").addEventListener("click", () => {
+    if (hints <= 0 || empty < 0) return;
+    hints -= 1;
+    hintCount.textContent = String(hints);
+    const btn = wheel.querySelectorAll(".petal")[empty];
+    btn?.classList.add("glow");
+    trayPetal.classList.add("glow");
+    setTimeout(() => {
+      btn?.classList.remove("glow");
+      trayPetal.classList.remove("glow");
+    }, 900);
+  });
+
+  for (let i = 0; i < 12; i += 1) {
+    const f = document.createElement("span");
+    f.className = "flake";
+    f.textContent = "🌸";
+    f.style.left = `${Math.random() * 100}%`;
+    f.style.animationDuration = `${7 + Math.random() * 8}s`;
+    f.style.animationDelay = `${Math.random() * 6}s`;
+    fall.appendChild(f);
+  }
+
+  newLevel();
 })();

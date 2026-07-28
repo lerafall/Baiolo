@@ -1,105 +1,123 @@
 (() => {
-  const stage = document.getElementById("stage");
-  const overlay = document.getElementById("overlay");
-  const overlayTitle = document.getElementById("overlayTitle");
-  const overlayBody = document.getElementById("overlayBody");
-  const startBtn = document.getElementById("startBtn");
+  const game = document.getElementById("game");
+  const tokensEl = document.getElementById("tokens");
+  const bucket = document.getElementById("bucket");
   const scoreEl = document.getElementById("score");
   const timeEl = document.getElementById("time");
+  const overlay = document.getElementById("overlay");
+  const startBtn = document.getElementById("startBtn");
 
   const ROUND = 30;
   let score = 0;
   let left = ROUND;
   let playing = false;
-  let spawnTimer = 0;
-  let tickTimer = 0;
+  let bucketX = 0.5;
+  let spawnId = 0;
+  let tickId = 0;
+  let raf = 0;
+  const tokens = [];
 
-  function clearStars() {
-    stage.querySelectorAll(".star").forEach((n) => n.remove());
+  function setBucket(ratio) {
+    const pad = 0.14;
+    bucketX = Math.min(1 - pad, Math.max(pad, ratio));
+    bucket.style.left = `${bucketX * 100}%`;
   }
 
-  function setOverlay(title, body, buttonLabel) {
-    overlayTitle.textContent = title;
-    overlayBody.textContent = body;
-    startBtn.textContent = buttonLabel;
-    overlay.classList.remove("hidden");
+  function pointerToRatio(clientX) {
+    const rect = game.getBoundingClientRect();
+    return (clientX - rect.left) / rect.width;
   }
 
-  function spawnStar() {
+  function onMove(clientX) {
     if (!playing) return;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "star";
-    btn.setAttribute("aria-label", "Catch star");
+    setBucket(pointerToRatio(clientX));
+  }
 
-    const roll = Math.random();
-    let points = 1;
-    let glyph = "★";
-    if (roll > 0.82) {
-      btn.classList.add("gold");
-      points = 3;
-      glyph = "✦";
-    } else if (roll > 0.55) {
-      btn.classList.add("teal");
-      points = 2;
-      glyph = "✧";
+  game.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".start")) return;
+    game.setPointerCapture?.(e.pointerId);
+    onMove(e.clientX);
+  });
+  game.addEventListener("pointermove", (e) => onMove(e.clientX));
+
+  function spawn() {
+    if (!playing) return;
+    const el = document.createElement("div");
+    const gold = Math.random() > 0.45;
+    el.className = `token ${gold ? "gold" : "teal"}`;
+    el.innerHTML = "<span>★</span>";
+    const x = 0.1 + Math.random() * 0.8;
+    const speed = 0.18 + Math.random() * 0.22;
+    const points = gold ? 2 : 1;
+    tokensEl.appendChild(el);
+    tokens.push({ el, x, y: -0.08, speed, points, alive: true });
+  }
+
+  function catchCheck(t) {
+    const nearX = Math.abs(t.x - bucketX) < 0.11;
+    const nearY = t.y > 0.72 && t.y < 0.86;
+    return nearX && nearY;
+  }
+
+  function loop() {
+    if (!playing) return;
+    const h = game.clientHeight;
+    for (const t of tokens) {
+      if (!t.alive) continue;
+      t.y += t.speed * 0.016;
+      t.el.style.left = `${t.x * 100}%`;
+      t.el.style.top = `${t.y * h}px`;
+      t.el.style.transform = "translate(-50%, -50%)";
+      if (catchCheck(t)) {
+        t.alive = false;
+        score += t.points;
+        scoreEl.textContent = String(score);
+        t.el.remove();
+      } else if (t.y > 1.05) {
+        t.alive = false;
+        t.el.remove();
+      }
     }
-    btn.textContent = glyph;
-
-    const size = btn.classList.contains("gold") ? 56 : 48;
-    const maxX = Math.max(8, stage.clientWidth - size - 8);
-    btn.style.left = `${8 + Math.random() * maxX}px`;
-    btn.style.top = "-8px";
-    const duration = 2.2 + Math.random() * 2.4;
-    btn.style.animationDuration = `${duration}s, 0.9s`;
-
-    btn.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      if (!playing || btn.classList.contains("pop")) return;
-      score += points;
-      scoreEl.textContent = String(score);
-      btn.classList.add("pop");
-      setTimeout(() => btn.remove(), 220);
-    });
-
-    btn.addEventListener("animationend", (e) => {
-      if (e.animationName === "fall" && btn.isConnected) btn.remove();
-    });
-
-    stage.appendChild(btn);
+    raf = requestAnimationFrame(loop);
   }
 
   function endRound() {
     playing = false;
-    clearInterval(spawnTimer);
-    clearInterval(tickTimer);
-    clearStars();
-    const line =
-      score >= 40
-        ? "Star prodigy! People will love this loop."
-        : score >= 20
-          ? "Nice catches — try again for a higher score."
-          : "Warm-up done. Another round?";
-    setOverlay(`Score: ${score}`, line, "Play again");
+    clearInterval(spawnId);
+    clearInterval(tickId);
+    cancelAnimationFrame(raf);
+    tokens.forEach((t) => t.el.remove());
+    tokens.length = 0;
+    overlay.querySelector(".title").textContent = `Score: ${score}`;
+    overlay.querySelector(".body").textContent =
+      score >= 25 ? "Star catcher pro!" : "Nice run — try again.";
+    startBtn.textContent = "Play again";
+    overlay.classList.remove("hidden");
   }
 
-  function startRound() {
+  function start() {
     score = 0;
     left = ROUND;
     scoreEl.textContent = "0";
     timeEl.textContent = String(ROUND);
     overlay.classList.add("hidden");
-    clearStars();
+    tokens.forEach((t) => t.el.remove());
+    tokens.length = 0;
     playing = true;
-
-    spawnTimer = window.setInterval(spawnStar, 480);
-    spawnStar();
-    tickTimer = window.setInterval(() => {
+    setBucket(0.5);
+    spawn();
+    spawnId = setInterval(spawn, 520);
+    tickId = setInterval(() => {
       left -= 1;
       timeEl.textContent = String(left);
       if (left <= 0) endRound();
     }, 1000);
+    raf = requestAnimationFrame(loop);
   }
 
-  startBtn.addEventListener("click", startRound);
+  startBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    start();
+  });
+  setBucket(0.5);
 })();

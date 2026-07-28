@@ -4,41 +4,74 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Tiny Timer · Baiolo demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@500;700&family=Nunito:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="bubbles" id="bubbles" aria-hidden="true"></div>
     <main class="shell">
-      <header class="top">
-        <p class="eyebrow">Baiolo demo</p>
-        <h1>Tiny Timer</h1>
-        <p class="lede">Focus bubbles for short tasks.</p>
+      <header class="topbar">
+        <div class="brand">
+          <span class="logo" aria-hidden="true">🌱</span>
+          <span class="brand-name">Tiny Timer</span>
+        </div>
+        <nav class="tabs" aria-label="Sections">
+          <button type="button" class="tab active" data-tab="timer">⏱ Timer</button>
+          <button type="button" class="tab" data-tab="stats">📊 Stats</button>
+          <button type="button" class="tab" data-tab="settings">⚙ Settings</button>
+        </nav>
+        <div class="badge">🌱 Good focus ✦</div>
       </header>
 
-      <section class="card" aria-label="Timer">
+      <section id="panel-timer" class="panel">
+        <p class="kicker">🌱 Focus on what matters</p>
         <div class="ring-wrap">
           <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
-            <circle class="ring-track" cx="60" cy="60" r="52" />
-            <circle id="ringProgress" class="ring-progress" cx="60" cy="60" r="52" />
+            <circle class="track" cx="60" cy="60" r="50" />
+            <circle id="progress" class="progress" cx="60" cy="60" r="50" />
+            <circle id="knob" class="knob" cx="60" cy="10" r="4.5" />
           </svg>
-          <p id="display" class="time" aria-live="polite">5:00</p>
+          <div class="ring-copy">
+            <p class="label">FOCUS</p>
+            <p id="display" class="time">12:00</p>
+            <p class="end-sound">🔔 End sound</p>
+          </div>
         </div>
-
-        <div class="presets" role="group" aria-label="Duration">
-          <button type="button" class="chip active" data-seconds="60">1m</button>
-          <button type="button" class="chip" data-seconds="300">5m</button>
-          <button type="button" class="chip" data-seconds="600">10m</button>
-          <button type="button" class="chip" data-seconds="1500">25m</button>
+        <button type="button" id="startBtn" class="start">▶ Start Focus</button>
+        <div class="presets">
+          <button type="button" class="preset" data-seconds="300">🌱 Short Break<br /><strong>5:00</strong></button>
+          <button type="button" class="preset active" data-seconds="720">✨ Focus<br /><strong>12:00</strong></button>
+          <button type="button" class="preset" data-seconds="900">☕ Long Break<br /><strong>15:00</strong></button>
         </div>
-
-        <div class="actions">
-          <button type="button" id="startBtn" class="btn primary">Start</button>
-          <button type="button" id="resetBtn" class="btn ghost">Reset</button>
-        </div>
-
-        <p id="status" class="status">Pick a length, then start when you’re ready.</p>
       </section>
 
-      <div id="bubbles" class="bubbles" aria-hidden="true"></div>
+      <section id="panel-stats" class="panel hidden">
+        <p class="kicker">Your calm streak</p>
+        <div class="stat-card">
+          <p>Sessions today</p>
+          <strong id="statSessions">0</strong>
+        </div>
+        <div class="stat-card">
+          <p>Focus minutes</p>
+          <strong id="statMinutes">0</strong>
+        </div>
+      </section>
+
+      <section id="panel-settings" class="panel hidden">
+        <p class="kicker">Settings</p>
+        <label class="setting">
+          <span>Soft end chime</span>
+          <input id="chimeToggle" type="checkbox" checked />
+        </label>
+        <p class="hint">Custom lengths: use the presets for now.</p>
+      </section>
+
+      <footer class="quote">🌱 <em>Little by little, a little becomes a lot.</em></footer>
     </main>
     <script src="script.js"></script>
   </body>

@@ -7,29 +7,34 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <header class="top">
-        <div>
-          <p class="eyebrow">Baiolo demo</p>
-          <h1>Star Catch</h1>
-        </div>
-        <div class="stats" aria-live="polite">
-          <span>Score <strong id="score">0</strong></span>
-          <span>Time <strong id="time">30</strong></span>
-        </div>
-      </header>
+    <main class="frame" id="game">
+      <div class="sky" aria-hidden="true"></div>
+      <div class="hills" aria-hidden="true"></div>
+      <div class="trees" aria-hidden="true"></div>
+      <div class="ground" aria-hidden="true"></div>
 
-      <section id="stage" class="stage" aria-label="Game area">
-        <div id="overlay" class="overlay">
-          <p class="overlay-title" id="overlayTitle">Catch the falling stars</p>
-          <p class="overlay-body" id="overlayBody">
-            Tap or click stars before they vanish. 30 seconds. Go!
-          </p>
-          <button type="button" id="startBtn" class="btn">Play</button>
-        </div>
-      </section>
+      <div class="hud">
+        <div class="pill">Score <strong id="score">0</strong></div>
+        <div class="pill">Time <strong id="time">30</strong></div>
+      </div>
 
-      <p class="hint">Tip: gold stars are worth more. Missed stars cost a blink.</p>
+      <div id="tokens" class="tokens" aria-hidden="true"></div>
+
+      <button type="button" id="bucket" class="bucket" aria-label="Move catcher">
+        <span class="wing left"></span>
+        <span class="wing right"></span>
+        <span class="pot">
+          <span class="star">★</span>
+          <span class="star small">★</span>
+          <span class="star small">★</span>
+        </span>
+      </button>
+
+      <div id="overlay" class="overlay">
+        <p class="title">Star Catch</p>
+        <p class="body">Drag the bucket. Catch gold & teal stars.</p>
+        <button type="button" id="startBtn" class="start">Play</button>
+      </div>
     </main>
     <script src="script.js"></script>
   </body>
