@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Petal Puzzle · Baiolo demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <p class="eyebrow">Baiolo demo</p>
+        <h1>Petal Puzzle</h1>
+        <p class="lede">Slide soft petals into place.</p>
+      </header>
+
+      <section class="card">
+        <div class="meta">
+          <span>Moves <strong id="moves">0</strong></span>
+          <span id="status" class="status">Tap a petal next to the open space.</span>
+        </div>
+
+        <div id="board" class="board" role="grid" aria-label="Petal slide puzzle"></div>
+
+        <div class="actions">
+          <button type="button" id="shuffleBtn" class="btn primary">Shuffle</button>
+          <button type="button" id="resetBtn" class="btn ghost">Reset</button>
+        </div>
+      </section>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
