@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Story Portal · Baiolo demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Nunito:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="hall">
+      <header class="top">
+        <div class="player">
+          <span class="avatar" aria-hidden="true">✦</span>
+          <div>
+            <p class="name">Adventurer</p>
+            <p class="xp">Lv 24 · <span id="storiesDone">0</span>/3 tales</p>
+          </div>
+        </div>
+        <div class="brand">
+          <h1>Story Portal</h1>
+          <p class="prompt">CHOOSE YOUR STORY</p>
+        </div>
+        <div class="currencies">
+          <span class="chip gem">◆ <strong id="gems">2450</strong></span>
+          <span class="chip gold">● <strong id="gold">18760</strong></span>
+        </div>
+      </header>
+
+      <section id="doorsView" class="doors-view">
+        <div class="doors" id="doors"></div>
+        <p class="hint">Pick a glowing door. Each path is a short branching tale.</p>
+      </section>
+
+      <section id="storyView" class="story-view hidden">
+        <button type="button" id="backBtn" class="back">← Hall</button>
+        <article class="story-card">
+          <p class="chapter" id="chapterLabel"></p>
+          <h2 id="storyTitle"></h2>
+          <p class="passage" id="passage"></p>
+          <div class="choices" id="choices"></div>
+        </article>
+      </section>
+
+      <nav class="dock" aria-label="Quick links">
+        <span>📜 Quests</span>
+        <span>📖 Journal</span>
+        <span>★ Collection</span>
+        <span>⚙ Settings</span>
+      </nav>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
