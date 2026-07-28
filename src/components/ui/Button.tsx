@@ -19,6 +19,8 @@ type ButtonAsLink = CommonProps & {
   href: string;
   type?: never;
   disabled?: boolean;
+  target?: React.HTMLAttributeAnchorTarget;
+  rel?: string;
 };
 
 const variants: Record<ButtonVariant, string> = {

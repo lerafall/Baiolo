@@ -56,12 +56,18 @@ export default function PlayPage({
         {embeddable ? (
           <>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Button href={url} size="m" variant="secondary">
+              <Button
+                href={url}
+                size="m"
+                variant="secondary"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Open fullscreen
               </Button>
               <p className="text-sm text-ink-muted">
-                Tip: many games need a first tap on <span className="font-bold">Play</span>,
-                then drag on the character.
+                Tip: tap <span className="font-bold">Play</span>, then drag
+                anywhere near the blue wisp (pull back like a slingshot).
               </p>
             </div>
             <div className="mt-4 overflow-hidden rounded-xl border-2 border-border bg-surface shadow-[var(--shadow-2)]">

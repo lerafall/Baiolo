@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { contentTypeFor } from "@/lib/content-type";
+import { patchPlayCss, patchPlayScript } from "@/lib/patch-play-package";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -7,39 +8,9 @@ export const runtime = "nodejs";
 
 type Params = { projectId: string; path: string[] };
 
-/** Make slingshot / drag games work inside Baiolo iframes. */
-function patchScriptForIframe(source: string) {
-  let out = source;
-  // Prefer canvas listeners + pointer capture over window (parent page steals move/up).
-  out = out.replace(
-    /window\.addEventListener\(\s*(['"])pointermove\1/g,
-    "canvas.addEventListener($1pointermove$1",
-  );
-  out = out.replace(
-    /window\.addEventListener\(\s*(['"])pointerup\1/g,
-    "canvas.addEventListener($1pointerup$1",
-  );
-  out = out.replace(
-    /window\.addEventListener\(\s*(['"])pointercancel\1/g,
-    "canvas.addEventListener($1pointercancel$1",
-  );
-
-  if (
-    out.includes("pointerdown") &&
-    !out.includes("setPointerCapture") &&
-    out.includes("canvas.addEventListener")
-  ) {
-    out = out.replace(
-      /canvas\.addEventListener\(\s*(['"])pointerdown\1\s*,\s*\(e\)\s*=>\s*\{/g,
-      `canvas.addEventListener($1pointerdown$1, (e) => {\n    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}\n`,
-    );
-  }
-  return out;
-}
-
 /**
  * Proxy extracted ZIP files so browsers get correct Content-Type.
- * Supabase Storage often serves .html as octet-stream (source dump in iframe).
+ * Also patches common canvas/CSS drag bugs for iframe + mouse + touch.
  */
 export async function GET(
   _request: Request,
@@ -57,7 +28,6 @@ export async function GET(
     return NextResponse.json({ error: "Missing play path." }, { status: 400 });
   }
 
-  // Prevent path traversal
   if (parts.some((p) => p === ".." || p.includes("\\"))) {
     return NextResponse.json({ error: "Bad path." }, { status: 400 });
   }
@@ -80,17 +50,20 @@ export async function GET(
     );
   }
 
-  let body: BodyInit = new Uint8Array(await data.arrayBuffer());
+  const raw = new Uint8Array(await data.arrayBuffer());
+  let body: BodyInit = raw;
+
   if (/\.m?js$/i.test(relative)) {
-    const text = new TextDecoder().decode(body as Uint8Array);
-    body = patchScriptForIframe(text);
+    body = patchPlayScript(new TextDecoder().decode(raw));
+  } else if (/\.css$/i.test(relative)) {
+    body = patchPlayCss(new TextDecoder().decode(raw));
   }
 
   return new NextResponse(body, {
     status: 200,
     headers: {
       "Content-Type": contentTypeFor(relative),
-      "Cache-Control": "public, max-age=60",
+      "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
     },
   });
