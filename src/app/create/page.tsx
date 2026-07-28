@@ -92,6 +92,7 @@ function CreateWizard() {
   const { session, ready: sessionReady } = useSession();
   const fileRef = useRef<HTMLInputElement>(null);
   const zipFileRef = useRef<File | null>(null);
+  const hydratedOnce = useRef(false);
 
   const [draft, setDraft] = useState<CreateDraft>(emptyDraft);
   const [error, setError] = useState("");
@@ -102,7 +103,8 @@ function CreateWizard() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!submissionsReady) return;
+    if (!submissionsReady || hydratedOnce.current) return;
+    hydratedOnce.current = true;
 
     if (editId) {
       const sub = items.find((s) => s.id === editId);
@@ -139,14 +141,21 @@ function CreateWizard() {
     setHydrated(true);
   }, [editId, items, submissionsReady]);
 
+  // Persist draft locally + mirror to My Projects (debounced — avoids render loops).
   useEffect(() => {
     if (!hydrated) return;
-    writeDraft(draft);
-    setSavedFlash(true);
-    const t = setTimeout(() => setSavedFlash(false), 1200);
 
-    // Mirror unfinished work into My Projects as a draft
-    if (draft.title.trim() || draft.sourceLabel.trim() || draft.uploadType) {
+    writeDraft(draft);
+
+    const flashTimer = window.setTimeout(() => {
+      setSavedFlash(true);
+      window.setTimeout(() => setSavedFlash(false), 900);
+    }, 400);
+
+    const upsertTimer = window.setTimeout(() => {
+      if (!(draft.title.trim() || draft.sourceLabel.trim() || draft.uploadType)) {
+        return;
+      }
       upsert({
         id: draft.id,
         uploadType: draft.uploadType,
@@ -164,9 +173,12 @@ function CreateWizard() {
         plays: 0,
         reactions: 0,
       });
-    }
+    }, 500);
 
-    return () => clearTimeout(t);
+    return () => {
+      window.clearTimeout(flashTimer);
+      window.clearTimeout(upsertTimer);
+    };
   }, [draft, hydrated, upsert]);
 
   const progress = useMemo(
@@ -208,14 +220,16 @@ function CreateWizard() {
   function applyFile(file: File) {
     zipFileRef.current = file;
     const result = buildPackageFromFile(file);
-    patch({
+    setDraft((d) => ({
+      ...d,
       sourceLabel: result.sourceLabel,
       packageReady: result.packageReady,
       fileSizeLabel: result.fileSizeLabel,
       hints: result.hints,
-      title: draft.title || result.suggestedTitle,
-    });
+      title: d.title || result.suggestedTitle,
+    }));
     setError("");
+    if (fileRef.current) fileRef.current.value = "";
   }
 
   function runPackagingHelper() {
@@ -524,25 +538,47 @@ function CreateWizard() {
                 }}
                 className={cn(
                   "mt-4 flex min-h-36 flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors",
-                  dragOver
-                    ? "border-brand bg-lilac/40"
-                    : "border-border bg-canvas",
+                  draft.packageReady && draft.sourceLabel
+                    ? "border-brand bg-lilac/30"
+                    : dragOver
+                      ? "border-brand bg-lilac/40"
+                      : "border-border bg-canvas",
                 )}
               >
-                <p className="font-bold text-ink">Drop a ZIP here</p>
-                <p className="mt-1 text-sm text-ink-muted">or choose a file</p>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="mt-4"
-                  onClick={() => fileRef.current?.click()}
-                >
-                  Choose ZIP
-                </Button>
+                {draft.packageReady && draft.sourceLabel ? (
+                  <>
+                    <p className="font-bold text-ink">Package ready</p>
+                    <p className="mt-1 text-sm text-ink-muted">
+                      {draft.sourceLabel}
+                      {draft.fileSizeLabel ? ` · ${draft.fileSizeLabel}` : ""}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="mt-4"
+                      onClick={() => fileRef.current?.click()}
+                    >
+                      Choose another ZIP
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-bold text-ink">Drop a ZIP here</p>
+                    <p className="mt-1 text-sm text-ink-muted">or choose a file</p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="mt-4"
+                      onClick={() => fileRef.current?.click()}
+                    >
+                      Choose ZIP
+                    </Button>
+                  </>
+                )}
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".zip,application/zip"
+                  accept=".zip,application/zip,application/x-zip-compressed"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
