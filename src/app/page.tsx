@@ -1,65 +1,153 @@
-import Image from "next/image";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { Button } from "@/components/ui/Button";
+import { HomeLiveStrip } from "@/components/home/HomeLiveStrip";
+import { projects } from "@/lib/data/projects";
 
-export default function Home() {
+export default function LandingPage() {
+  const samples = projects.slice(0, 3);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <>
+      <SiteHeader />
+      <main>
+        <section className="relative overflow-hidden">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_#e0cfff_0%,_transparent_55%),radial-gradient(ellipse_at_bottom_left,_#b8fff3_0%,_transparent_50%)]"
+          />
+          <div className="relative mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-2 md:items-center md:gap-12 md:px-8 md:py-20">
+            <div>
+              <p className="text-4xl font-extrabold tracking-tight text-brand-strong md:text-5xl">
+                Baiolo
+              </p>
+              <h1 className="mt-4 max-w-xl text-3xl font-extrabold leading-tight text-ink md:text-4xl">
+                Share little ideas. Let people play. See what they love.
+              </h1>
+              <p className="mt-4 max-w-lg text-lg text-ink-muted">
+                Baiolo is a playful place to share prototypes, test ideas, and
+                find what people love.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button href="/explore" size="l">
+                  Start exploring
+                </Button>
+                <Button href="/create" variant="secondary" size="l">
+                  Add your project
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative min-h-[320px] rounded-xl bg-lilac/40 p-6 shadow-[var(--shadow-2)] md:min-h-[420px]">
+              <div className="animate-floaty absolute right-8 top-8 size-14 rounded-full bg-sun shadow-[var(--shadow-1)]" />
+              <div className="absolute right-24 top-16 size-4 rounded-full bg-accent-coral" />
+              <div className="mt-8 space-y-4">
+                {samples.map((p, i) => (
+                  <div
+                    key={p.id}
+                    className="animate-rise rounded-lg border border-border bg-surface p-3 shadow-[var(--shadow-1)]"
+                    style={{
+                      transform: `translateX(${i * 12}px) rotate(${(i - 1) * 2}deg)`,
+                      animationDelay: `${i * 80}ms`,
+                    }}
+                  >
+                    <div
+                      className="mb-2 h-16 rounded-md"
+                      style={{ background: p.thumbnail }}
+                    />
+                    <p className="font-extrabold text-ink">{p.title}</p>
+                    <p className="text-sm text-ink-muted">{p.tagline}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+                <Button href="/explore" size="m">
+                  Tap to play
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-surface/70 py-16">
+          <div className="mx-auto max-w-6xl px-5 md:px-8">
+            <h2 className="text-3xl font-extrabold text-ink">How it works</h2>
+            <p className="mt-2 text-lg text-ink-muted">
+              Three simple steps. No heavy dashboards.
+            </p>
+            <ol className="mt-10 grid gap-6 md:grid-cols-3">
+              {[
+                {
+                  n: "1",
+                  title: "Share a tiny idea",
+                  body: "Upload a ZIP, paste a link, or start from a friendly template.",
+                },
+                {
+                  n: "2",
+                  title: "People play and react",
+                  body: "Soft signals — plays and quick feelings — not heavy metrics.",
+                },
+                {
+                  n: "3",
+                  title: "Decide what to build next",
+                  body: "See what people love, then keep going or try something new.",
+                },
+              ].map((step) => (
+                <li
+                  key={step.n}
+                  className="rounded-xl bg-canvas p-6 shadow-[var(--shadow-1)]"
+                >
+                  <span className="inline-flex size-10 items-center justify-center rounded-full bg-brand text-lg font-extrabold text-on-brand">
+                    {step.n}
+                  </span>
+                  <h3 className="mt-4 text-xl font-extrabold">{step.title}</h3>
+                  <p className="mt-2 text-ink-muted">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <HomeLiveStrip />
+
+        <section className="bg-lilac/35 py-16">
+          <div className="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-2 md:px-8">
+            <div className="rounded-xl bg-surface p-8 shadow-[var(--shadow-1)]">
+              <h2 className="text-2xl font-extrabold">For creators</h2>
+              <p className="mt-3 text-ink-muted">
+                Publish in minutes. See plays and reactions. Decide if the idea
+                deserves another weekend.
+              </p>
+              <Button href="/create" className="mt-6">
+                Add your project
+              </Button>
+            </div>
+            <div className="rounded-xl bg-surface p-8 shadow-[var(--shadow-1)]">
+              <h2 className="text-2xl font-extrabold">For explorers</h2>
+              <p className="mt-3 text-ink-muted">
+                Browse colorful cards, tap Play, leave a quick reaction. No
+                long forms.
+              </p>
+              <Button href="/explore" className="mt-6">
+                Start exploring
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-border py-12">
+          <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-5 md:flex-row md:items-center md:px-8">
+            <div>
+              <p className="text-2xl font-extrabold text-brand-strong">Ready?</p>
+              <p className="mt-1 text-ink-muted">
+                A playful home for mini games, MVPs, and experiments.
+              </p>
+            </div>
+            <Button href="/auth?next=%2Fexplore" variant="secondary">
+              Join Baiolo
+            </Button>
+          </div>
+        </section>
       </main>
-    </div>
+    </>
   );
 }

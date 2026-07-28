@@ -1,0 +1,54 @@
+{
+  "runId": "baiolo-ds-2026-07-28",
+  "phase": "phase3-4-in-progress",
+  "fileKey": "vOcNHgWoViFwrkUUeHnahx",
+  "fileUrl": "https://www.figma.com/design/vOcNHgWoViFwrkUUeHnahx",
+  "entities": {
+    "collections": {
+      "Baiolo/Primitives": "VariableCollectionId:2:2",
+      "Baiolo/Semantic": "VariableCollectionId:2:43"
+    },
+    "pages": {
+      "00 — Cover & Moodboard": "0:1",
+      "01 — Foundations": "2:97",
+      "02 — Components": "2:98",
+      "03 — Screens Desktop": "2:99",
+      "04 — Screens Mobile": "2:100",
+      "05 — Prototype": "2:101",
+      "06 — Handoff": "2:102"
+    },
+    "components": {
+      "Button": "6:50",
+      "FilterPill": "7:6",
+      "ReactionChip": "7:19",
+      "ProjectCard": "7:20",
+      "BottomNav": "7:86"
+    },
+    "screens": {
+      "Landing / Desktop": "8:2",
+      "Explore / Desktop": "9:48",
+      "Project / Desktop": "10:131",
+      "Landing / Mobile": "27:3",
+      "Explore / Mobile": "27:275",
+      "Project / Mobile": "27:364",
+      "Landing / Tablet": "28:151",
+      "Explore / Tablet": "28:416",
+      "Project / Tablet": "29:272"
+    },
+    "foundationsDocs": "5:2",
+    "cover": "5:122"
+  },
+  "completedSteps": ["phase0", "phase1", "phase2", "component-button", "component-filter-pill", "component-reaction-chip", "component-project-card", "component-bottom-nav", "screen-landing-desktop", "screen-explore-desktop"],
+  "pending": [
+    "optional-tablet-upload-dashboard",
+    "figma-approval-then-nextjs-build"
+  ],
+  "latestScreens": [
+    "Upload wizard 1–6 + Success",
+    "Dashboard / Desktop + Mobile",
+    "Onboarding Role/Avatar/Interests + Mobile",
+    "Profile Desktop + Mobile",
+    "Auth / Magic link"
+  ],
+  "font": "Nunito"
+}

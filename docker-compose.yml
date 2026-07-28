@@ -1,0 +1,37 @@
+# Baiolo on Hostinger VPS + Traefik (same pattern as MarkOS / MyPen).
+# Traefik already owns :80/:443 — this stack does not publish host ports.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_BAIOLO_ADMIN_CODE: ${NEXT_PUBLIC_BAIOLO_ADMIN_CODE:-}
+    image: baiolo-web:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    networks:
+      - traefik
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-traefik-net}
+
+      # HTTPS + Let's Encrypt (HTTP→HTTPS is handled by Traefik entrypoint)
+      traefik.http.routers.baiolo-secure.rule: Host(`${BAIOLO_DOMAIN:-baiolo.com}`) || Host(`www.${BAIOLO_DOMAIN:-baiolo.com}`)
+      traefik.http.routers.baiolo-secure.entrypoints: ${TRAEFIK_ENTRYPOINT_HTTPS:-websecure}
+      traefik.http.routers.baiolo-secure.tls: "true"
+      traefik.http.routers.baiolo-secure.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      traefik.http.services.baiolo.loadbalancer.server.port: "3000"
+
+networks:
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik-net}

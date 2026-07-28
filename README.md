@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Baiolo
 
-## Getting Started
+Playful platform to share MVPs, mini-games, and prototypes — try, react, decide what to build next.
 
-First, run the development server:
+## Stack
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS v4
+- Design tokens from Figma (`Baiolo/Semantic`)
+- Mock data (Supabase later)
+
+## Develop
 
 ```bash
+cp .env.example .env.local   # optional — works in mock mode without it
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without Supabase env vars the app uses a local mock store + AI/admin pipeline.  
+Admin demo code: `baiolo-admin` at `/admin`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Routes
 
-## Learn More
+| Path | Screen |
+|------|--------|
+| `/` | Landing |
+| `/explore` | Explore feed |
+| `/project/[id]` | Project + Play + reactions |
+| `/create` | Add project wizard (ZIP / link / template, draft auto-save) |
+| `/create/submitted` | Sent for checking |
+| `/projects` | Creator dashboard + submission statuses |
+| `/favorites` | Saved projects |
+| `/this-week` | Soft weekly ranking |
+| `/safety` | Stay safe guide |
+| `/admin` | Moderation queue + user reports (demo) |
+| `/auth` | Magic link (demo) |
+| `/onboarding` | Role → avatar → interests |
+| `/profile` | Basic profile |
 
-To learn more about Next.js, take a look at the following resources:
+Spec v2 notes: nothing goes public without AI precheck + admin approve. See `docs/03-spec-v2-delta.md`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Design
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Figma: https://www.figma.com/design/vOcNHgWoViFwrkUUeHnahx

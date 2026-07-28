@@ -1,26 +1,173 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-canvas: #fff8ef;
+  --bg-surface: #ffffff;
+  --bg-muted: #ffe6c2;
+  --bg-lilac: #e0cfff;
+  --bg-mint: #b8fff3;
+  --bg-sun: #ffe14d;
+  --brand-primary: #8b5cf6;
+  --brand-primary-strong: #6d28d9;
+  --brand-secondary: #2dd4bf;
+  --brand-secondary-strong: #0f766e;
+  --accent-sun: #fbbf24;
+  --accent-coral: #ff6b4a;
+  --text-primary: #1e1b4b;
+  --text-muted: #5b53a0;
+  --text-on-brand: #ffffff;
+  --text-placeholder: #7c75a8;
+  --border-subtle: #ddd6fe;
+  --border-strong: #c4a1ff;
+  --state-success: #22c55e;
+  --state-warning: #f59e0b;
+  --state-danger: #ef4444;
+  --focus-ring: #a78bfa;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+  --space-4xl: 64px;
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  --shadow-1: 0 6px 28px -6px rgba(42, 31, 89, 0.12);
+  --shadow-2: 0 10px 40px -8px rgba(42, 31, 89, 0.14);
+  --shadow-3: 0 14px 56px -10px rgba(42, 31, 89, 0.16);
+  --shadow-hover: 0 12px 48px -8px rgba(42, 31, 89, 0.18);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-muted: var(--bg-muted);
+  --color-lilac: var(--bg-lilac);
+  --color-mint: var(--bg-mint);
+  --color-sun: var(--bg-sun);
+  --color-brand: var(--brand-primary);
+  --color-brand-strong: var(--brand-primary-strong);
+  --color-secondary: var(--brand-secondary);
+  --color-secondary-strong: var(--brand-secondary-strong);
+  --color-accent-sun: var(--accent-sun);
+  --color-accent-coral: var(--accent-coral);
+  --color-ink: var(--text-primary);
+  --color-ink-muted: var(--text-muted);
+  --color-on-brand: var(--text-on-brand);
+  --color-placeholder: var(--text-placeholder);
+  --color-border: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-success: var(--state-success);
+  --color-warning: var(--state-warning);
+  --color-danger: var(--state-danger);
+  --color-focus: var(--focus-ring);
+  --font-sans: var(--font-nunito);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-pill: var(--radius-pill);
+  --shadow-soft: var(--shadow-1);
+  --shadow-lift: var(--shadow-2);
+  --shadow-float: var(--shadow-3);
+  --shadow-hover: var(--shadow-hover);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-nunito), "Nunito", system-ui, sans-serif;
+}
+
+a {
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes spark {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.45s ease-out both;
+}
+
+.animate-rise-delay-1 {
+  animation: rise 0.5s ease-out 0.06s both;
+}
+
+.animate-rise-delay-2 {
+  animation: rise 0.5s ease-out 0.12s both;
+}
+
+.animate-floaty {
+  animation: floaty 4s ease-in-out infinite;
+}
+
+.animate-spark {
+  animation: spark 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .animate-floaty {
+    animation: none;
+  }
 }

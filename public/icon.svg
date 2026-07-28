@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Baiolo">
+  <rect width="128" height="128" rx="32" fill="#8B5CF6"/>
+  <circle cx="92" cy="36" r="14" fill="#FBBF24"/>
+  <path d="M28 88c16-28 36-40 72-44" stroke="#B8FFF3" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <circle cx="40" cy="52" r="10" fill="#FF6B4A"/>
+</svg>
