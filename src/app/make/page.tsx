@@ -134,6 +134,8 @@ export default function MakeGuidePage() {
   index.html     ← must be here (root)
   style.css
   script.js
+  thumb.png      ← card screenshot (4:3)
+  cover.png      ← wide screenshot (16:9)
   assets/        ← optional images/sounds
   README.md`}</pre>
           <div className="mt-4 rounded-xl bg-mint/40 p-5">

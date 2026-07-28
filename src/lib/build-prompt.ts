@@ -18,8 +18,17 @@ Constraints (must follow):
     - title + 1-sentence description
     - how to zip for Baiolo
     - suggested Baiolo category/tags
-11. Include a real screenshot image of the running UI for the Baiolo card thumbnail
-    (or describe exact frame so I can capture one).
+11. ALSO prepare card graphics (required):
+    - Generate actual image files that look like real screenshots of THIS app’s UI
+      (not abstract gradients, not logos-only, not generic stock art).
+    - Files to include in the package:
+        thumb.png  → 4:3 (or ~1200×900), main Explore card image
+        cover.png  → 16:9 (or ~1600×900), project page cover
+    - The graphics MUST match the finished game/tool visuals (same colors, layout, key UI).
+    - Show the app mid-play or on the main screen so people can decide to try it.
+    - If you cannot export PNG files in this chat, generate them with your image tool
+      and tell me the exact filenames + a one-line description of each frame.
+    - Do not ship color gradients as a substitute for screenshots.
 
 Baiolo packaging rules:
 - Final deliverable = a folder ready to ZIP like this:
@@ -27,7 +36,9 @@ Baiolo packaging rules:
     index.html
     style.css (or styles.css)
     script.js
-    assets/ (optional)
+    thumb.png      ← card screenshot
+    cover.png      ← wide screenshot
+    assets/        ← optional
     README.md
 - When zipping: zip the CONTENTS so index.html is at the ZIP root
   (not my-mvp/my-mvp/index.html).
@@ -39,6 +50,7 @@ Also provide:
 - Tagline (1 sentence)
 - Category: Game | Tool | Experiment | Demo
 - 2–4 short tags
+- Reminder: upload thumb.png as the Baiolo thumbnail when submitting
 
 My idea:
 [DESCRIBE YOUR IDEA IN 2–5 SENTENCES]`;
