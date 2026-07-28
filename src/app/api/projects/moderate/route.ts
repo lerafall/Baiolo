@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { ProjectSubmission } from "@/lib/moderation";
 import { applyAdminAction, type AdminAction } from "@/lib/pipeline";
+import { publishZipForPlay } from "@/lib/publish-zip";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { submissionToRow } from "@/lib/supabase/map";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -11,32 +12,6 @@ type Body = {
   note?: string;
   adminCode?: string;
 };
-
-async function publicPlayUrl(
-  storagePath: string | null | undefined,
-): Promise<string | null> {
-  if (!storagePath || !isSupabaseConfigured()) return null;
-  const supabase = getSupabaseServerClient();
-  if (!supabase) return null;
-
-  // Copy private package into the public bucket when approving.
-  const { data: file, error: downloadError } = await supabase.storage
-    .from("project-private")
-    .download(storagePath);
-  if (downloadError || !file) return null;
-
-  const publicPath = storagePath.replace(/^[^/]+\//, "published/");
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  await supabase.storage.from("project-public").upload(publicPath, bytes, {
-    contentType: "application/zip",
-    upsert: true,
-  });
-
-  const { data } = supabase.storage
-    .from("project-public")
-    .getPublicUrl(publicPath);
-  return data.publicUrl || null;
-}
 
 export async function POST(request: Request) {
   const body = (await request.json()) as Body;
@@ -63,8 +38,15 @@ export async function POST(request: Request) {
     if (next.uploadType === "link" && /^https?:\/\//i.test(next.sourceLabel)) {
       next = { ...next, playUrl: next.sourceLabel };
     } else if (next.storagePath) {
-      const url = await publicPlayUrl(next.storagePath);
-      if (url) next = { ...next, playUrl: url };
+      const supabase = getSupabaseServerClient();
+      if (supabase) {
+        const url = await publishZipForPlay(
+          supabase,
+          next.storagePath,
+          next.id,
+        );
+        if (url) next = { ...next, playUrl: url };
+      }
     }
   }
 

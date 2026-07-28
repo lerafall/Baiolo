@@ -68,7 +68,7 @@ export default function PlayPage({
             </p>
             <p className="mt-2 text-ink-muted">
               {isZip
-                ? "This build is stored as a ZIP. Download it to try locally, or paste a live link next time for in-browser play."
+                ? "This ZIP isn’t unpacked for in-browser play yet. Ask admin to Approve again (Baiolo will extract index.html), or submit with Paste link next time."
                 : "We’ll open the project in a new tab."}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
