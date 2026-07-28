@@ -11,6 +11,7 @@ import { useSession } from "@/lib/session";
 
 const links = [
   { href: "/explore", label: "Explore" },
+  { href: "/make", label: "How to make" },
   { href: "/create", label: "Create" },
   { href: "/projects", label: "My Projects" },
   { href: "/favorites", label: "Favorites" },
