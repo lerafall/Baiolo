@@ -6,9 +6,10 @@
   --purple2: #a78bfa;
   --mint: #9fe0c8;
   --mint2: #6ecfad;
-  --wood: #e8d5b7;
-  --wood2: #d4bc95;
-  --cream: #f7efe6;
+  --wood: #ead9bf;
+  --wood2: #d7c09a;
+  --cream: #f6eee4;
+  --gold: #f0c35a;
 }
 
 * {
@@ -23,8 +24,8 @@ body {
   color: var(--ink);
   background:
     radial-gradient(ellipse at top, #f8d7ea 0%, transparent 55%),
-    radial-gradient(ellipse at bottom left, #e9ddff 0%, transparent 50%),
-    linear-gradient(160deg, #f9e7f2, #efe8ff 50%, #e8f7f0);
+    radial-gradient(ellipse at bottom, #e4d4ff 0%, transparent 52%),
+    linear-gradient(180deg, #f4e4f4, #ebe0f8 55%, #e8d5ec);
   overflow-x: hidden;
 }
 
@@ -39,7 +40,7 @@ body {
   position: absolute;
   top: -20px;
   font-size: 0.85rem;
-  opacity: 0.55;
+  opacity: 0.5;
   animation: flake linear infinite;
 }
 
@@ -64,10 +65,11 @@ body {
   gap: 0.75rem;
 }
 
-.level-card {
-  padding: 0.65rem 0.9rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.82);
+.level-card,
+.leaves {
+  padding: 0.65rem 0.95rem;
+  border-radius: 1.1rem;
+  background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 8px 22px rgba(74, 53, 96, 0.1);
   font-weight: 800;
 }
@@ -79,7 +81,7 @@ body {
 .dots {
   display: flex;
   gap: 0.35rem;
-  margin-top: 0.35rem;
+  margin-top: 0.4rem;
 }
 
 .dots span {
@@ -93,46 +95,42 @@ body {
   background: var(--purple2);
 }
 
-.leaves {
-  padding: 0.55rem 0.8rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 22px rgba(74, 53, 96, 0.1);
-  font-weight: 800;
-}
-
 .tools {
   position: absolute;
   left: 0.75rem;
-  top: 7.5rem;
+  top: 7.2rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.7rem;
   z-index: 3;
 }
 
 .tool {
   position: relative;
-  width: 58px;
-  height: 58px;
+  width: 56px;
+  height: 56px;
   border: 0;
   border-radius: 50%;
   color: #fff;
-  font-size: 1.15rem;
-  font-weight: 800;
   cursor: pointer;
   box-shadow: 0 8px 18px rgba(74, 53, 96, 0.16);
   display: grid;
   place-items: center;
 }
 
+.tool svg {
+  width: 24px;
+  height: 24px;
+}
+
 .tool span {
   position: absolute;
   left: 64px;
   white-space: nowrap;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
+  font-weight: 800;
   color: var(--ink);
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
 .tool i {
@@ -146,6 +144,7 @@ body {
   color: #fff;
   font-style: normal;
   font-size: 0.65rem;
+  font-weight: 800;
   display: grid;
   place-items: center;
 }
@@ -154,51 +153,54 @@ body {
   background: linear-gradient(145deg, #c4b5fd, #8b5cf6);
 }
 .restart {
-  background: linear-gradient(145deg, #fda4af, #fb7185);
+  background: linear-gradient(145deg, #fda4af, #f43f5e);
 }
 .hint {
-  background: linear-gradient(145deg, #99f6e4, #2dd4bf);
+  background: linear-gradient(145deg, #99f6e4, #14b8a6);
 }
 
 .stage {
-  margin-top: 1.5rem;
+  margin-top: 1.35rem;
   display: grid;
   place-items: center;
 }
 
 .wheel {
   position: relative;
-  width: min(300px, 78vw);
-  height: min(300px, 78vw);
+  width: min(310px, 80vw);
+  height: min(310px, 80vw);
   border-radius: 50%;
   background:
-    radial-gradient(circle at 50% 50%, #f3e7d4 0 28%, transparent 29%),
-    radial-gradient(circle at 50% 50%, var(--wood) 0 48%, var(--wood2) 49% 58%, #cbb08a 59% 62%, transparent 63%);
+    radial-gradient(circle at 50% 50%, #f4ebdc 0 26%, transparent 27%),
+    radial-gradient(circle at 50% 50%, var(--wood) 0 49%, var(--wood2) 50% 58%, #c7ae86 59% 63%, transparent 64%);
   box-shadow:
-    inset 0 0 0 10px rgba(212, 188, 149, 0.65),
-    0 16px 36px rgba(74, 53, 96, 0.16);
+    inset 0 0 0 12px rgba(232, 214, 186, 0.75),
+    0 18px 40px rgba(74, 53, 96, 0.16);
 }
 
 .slot {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 72px;
-  height: 96px;
-  margin: -48px -36px;
+  width: 70px;
+  height: 98px;
+  margin: -49px -35px;
   transform-origin: 50% 50%;
 }
 
 .petal {
-  width: 72px;
-  height: 96px;
+  width: 70px;
+  height: 98px;
   border: 0;
   padding: 0;
-  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  /* Egg / almond petal */
+  border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%;
   cursor: pointer;
-  box-shadow: 0 8px 16px rgba(74, 53, 96, 0.18), inset 0 -10px 18px rgba(0, 0, 0, 0.08),
-    inset 0 10px 14px rgba(255, 255, 255, 0.35);
-  transition: transform 0.15s ease, filter 0.15s ease;
+  box-shadow:
+    0 10px 18px rgba(74, 53, 96, 0.16),
+    inset 0 -14px 20px rgba(0, 0, 0, 0.1),
+    inset 0 12px 16px rgba(255, 255, 255, 0.4);
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
 }
 
 .petal:active {
@@ -207,43 +209,63 @@ body {
 
 .petal.empty {
   background: var(--cream) !important;
-  box-shadow: inset 0 0 0 2px rgba(203, 176, 138, 0.55);
+  box-shadow:
+    0 0 0 3px var(--gold),
+    0 0 16px rgba(240, 195, 90, 0.85),
+    inset 0 0 0 1px rgba(203, 176, 138, 0.45);
   cursor: pointer;
+  animation: pulse-gold 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse-gold {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px var(--gold),
+      0 0 14px rgba(240, 195, 90, 0.7),
+      inset 0 0 0 1px rgba(203, 176, 138, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px #f6d078,
+      0 0 22px rgba(240, 195, 90, 1),
+      inset 0 0 0 1px rgba(203, 176, 138, 0.45);
+  }
 }
 
 .petal.pink {
-  background: linear-gradient(160deg, #ffd0e4, var(--pink) 45%, var(--pink2));
+  background: linear-gradient(165deg, #ffe0ee 0%, #f7b0d0 42%, #ef7fb0 100%);
 }
 .petal.purple {
-  background: linear-gradient(160deg, #e9d5ff, var(--purple) 45%, var(--purple2));
+  background: linear-gradient(165deg, #f0e4ff 0%, #d0b4f6 42%, #a78bfa 100%);
 }
 .petal.mint {
-  background: linear-gradient(160deg, #d1fae5, var(--mint) 45%, var(--mint2));
+  background: linear-gradient(165deg, #e4fff4 0%, #a8ebce 42%, #5fcfad 100%);
 }
 
 .petal.glow {
-  filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.8));
+  filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.9));
 }
 
 .breath {
   margin: 1rem 0 0;
   font-family: Caveat, cursive;
-  font-size: 1.45rem;
+  font-size: 1.5rem;
   color: #7c5c8a;
 }
 
 .tray {
-  margin: 1.25rem auto 0;
-  width: min(220px, 70vw);
-  height: 88px;
+  margin: 1.15rem auto 0;
+  width: min(230px, 72vw);
+  height: 92px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 10px 28px rgba(74, 53, 96, 0.12);
   display: grid;
   place-items: center;
 }
 
 .tray-petal {
-  width: 56px;
+  width: 54px;
   height: 76px;
 }

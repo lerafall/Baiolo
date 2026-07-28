@@ -15,11 +15,10 @@
   let hints = 3;
   let slots = [];
   let empty = 0;
-  let tray = "purple";
+  let tray = "pink";
   let history = [];
 
   function targetFor(i) {
-    // Soft repeating pattern around the flower.
     return COLORS[i % COLORS.length];
   }
 
@@ -37,23 +36,23 @@
     slots.forEach((color, i) => {
       const wrap = document.createElement("div");
       wrap.className = "slot";
-      const angle = (i / SIZE) * 360;
-      wrap.style.transform = `rotate(${angle}deg) translateY(-96px) rotate(${-angle}deg)`;
+      const angle = -90 + (i / SIZE) * 360;
+      wrap.style.transform = `rotate(${angle}deg) translateY(-102px) rotate(${-angle}deg)`;
 
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = `petal ${color || "empty"}`;
       btn.setAttribute(
         "aria-label",
-        color ? `${color} petal` : "Empty petal slot",
+        color ? `${color} petal` : "Empty petal slot — tap to place",
       );
-      btn.addEventListener("click", () => onSlot(i));
+      btn.addEventListener("click", () => placeIntoEmpty(i));
       wrap.appendChild(btn);
       wheel.appendChild(wrap);
     });
 
     trayPetal.className = `petal tray-petal ${tray}`;
-    trayPetal.onclick = () => onSlot(empty);
+    trayPetal.onclick = () => placeIntoEmpty(empty);
     levelEl.textContent = String(level);
     leavesEl.textContent = String(leaves);
     hintCount.textContent = String(hints);
@@ -71,35 +70,33 @@
       tray,
       leaves,
     });
-    if (history.length > 20) history.shift();
+    if (history.length > 24) history.shift();
   }
 
-  function onSlot(i) {
-    if (i !== empty) return;
-    if (tray !== targetFor(i)) {
-      trayPetal.classList.add("glow");
-      setTimeout(() => trayPetal.classList.remove("glow"), 350);
-      return;
-    }
+  /** Always place tray petal into the empty slot (as on the card art). */
+  function placeIntoEmpty(i) {
+    if (i !== empty || empty < 0) return;
     snapshot();
     slots[i] = tray;
-    // Pull a wrong/missing petal out into the tray for the next empty.
-    const wrong = [];
-    for (let s = 0; s < SIZE; s += 1) {
-      if (slots[s] && slots[s] !== targetFor(s)) wrong.push(s);
-    }
-    if (wrong.length === 0 && isComplete()) {
+
+    if (isComplete()) {
       empty = -1;
-      tray = COLORS[level % COLORS.length];
       paint();
       leaves += 15;
       level += 1;
-      setTimeout(newLevel, 450);
+      setTimeout(newLevel, 500);
       return;
     }
-    const nextEmpty =
-      wrong[Math.floor(Math.random() * wrong.length)] ??
-      Math.floor(Math.random() * SIZE);
+
+    // Pull another petal into the tray — prefer mismatched ones.
+    const candidates = [];
+    for (let s = 0; s < SIZE; s += 1) {
+      if (s === i) continue;
+      if (slots[s]) candidates.push(s);
+    }
+    const wrong = candidates.filter((s) => slots[s] !== targetFor(s));
+    const pool = wrong.length ? wrong : candidates;
+    const nextEmpty = pool[Math.floor(Math.random() * pool.length)];
     tray = slots[nextEmpty];
     slots[nextEmpty] = null;
     empty = nextEmpty;
@@ -112,12 +109,16 @@
     empty = Math.floor(Math.random() * SIZE);
     tray = filled[empty];
     filled[empty] = null;
-    // Swap two others to create a soft puzzle.
-    const a = (empty + 2) % SIZE;
-    const b = (empty + 5) % SIZE;
-    [filled[a], filled[b]] = [filled[b], filled[a]];
+    // Soft scramble: a few swaps so it isn't already solved.
+    for (let n = 0; n < 3 + (level % 3); n += 1) {
+      const a = Math.floor(Math.random() * SIZE);
+      const b = Math.floor(Math.random() * SIZE);
+      if (a === empty || b === empty || a === b) continue;
+      [filled[a], filled[b]] = [filled[b], filled[a]];
+    }
     slots = filled;
     history = [];
+    if (hints < 3) hints = Math.min(3, hints + 1);
     paint();
   }
 
@@ -131,9 +132,7 @@
     paint();
   });
 
-  document.getElementById("restartBtn").addEventListener("click", () => {
-    newLevel();
-  });
+  document.getElementById("restartBtn").addEventListener("click", newLevel);
 
   document.getElementById("hintBtn").addEventListener("click", () => {
     if (hints <= 0 || empty < 0) return;
@@ -145,10 +144,10 @@
     setTimeout(() => {
       btn?.classList.remove("glow");
       trayPetal.classList.remove("glow");
-    }, 900);
+    }, 1000);
   });
 
-  for (let i = 0; i < 12; i += 1) {
+  for (let i = 0; i < 14; i += 1) {
     const f = document.createElement("span");
     f.className = "flake";
     f.textContent = "🌸";
