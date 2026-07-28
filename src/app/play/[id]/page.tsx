@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
 import { getProject } from "@/lib/data/projects";
+import { toEmbedPlayUrl } from "@/lib/play-url";
 import { submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 
@@ -36,7 +37,7 @@ export default function PlayPage({
     );
   }
 
-  const url = project.playUrl;
+  const url = toEmbedPlayUrl(project.playUrl, project.id);
   const external = /^https?:\/\//i.test(url);
   const sameOrigin = url.startsWith("/") && !url.startsWith("//");
   const isZip = url.toLowerCase().includes(".zip") || url.includes("package.zip");
