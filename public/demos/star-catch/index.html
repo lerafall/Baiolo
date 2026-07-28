@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Star Catch · Baiolo demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div>
+          <p class="eyebrow">Baiolo demo</p>
+          <h1>Star Catch</h1>
+        </div>
+        <div class="stats" aria-live="polite">
+          <span>Score <strong id="score">0</strong></span>
+          <span>Time <strong id="time">30</strong></span>
+        </div>
+      </header>
+
+      <section id="stage" class="stage" aria-label="Game area">
+        <div id="overlay" class="overlay">
+          <p class="overlay-title" id="overlayTitle">Catch the falling stars</p>
+          <p class="overlay-body" id="overlayBody">
+            Tap or click stars before they vanish. 30 seconds. Go!
+          </p>
+          <button type="button" id="startBtn" class="btn">Play</button>
+        </div>
+      </section>
+
+      <p class="hint">Tip: gold stars are worth more. Missed stars cost a blink.</p>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

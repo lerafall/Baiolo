@@ -25,6 +25,7 @@ import {
   normalizeTag,
   suggestedTags,
 } from "@/lib/data/projects";
+import { thumbBackgroundStyle } from "@/lib/thumb-style";
 
 const steps = [
   "Choose type",
@@ -753,28 +754,14 @@ function CreateWizard() {
 
           {draft.step === 4 && (
             <div>
-              <p className="text-lg font-bold">Pick a thumbnail vibe</p>
+              <p className="text-lg font-bold">Add a game screenshot</p>
               <p className="mt-1 text-ink-muted">
-                Choose a colorful vibe — or upload your own cover.
+                Cards show this image — upload a real screen from your MVP so
+                people know what they’ll play. Gradients are only a fallback.
               </p>
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                {THUMB_OPTIONS.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => patch({ thumb: t })}
-                    className={cn(
-                      "aspect-[4/3] rounded-lg border-4 transition-transform hover:scale-[1.02]",
-                      draft.thumb === t ? "border-brand" : "border-transparent",
-                    )}
-                    style={{ background: t }}
-                    aria-label="Choose thumbnail"
-                  />
-                ))}
-              </div>
               <label className="mt-5 block">
                 <span className="text-sm font-bold text-ink-muted">
-                  Or upload a cover image
+                  Upload screenshot (best)
                 </span>
                 <input
                   type="file"
@@ -798,14 +785,32 @@ function CreateWizard() {
                   }}
                 />
               </label>
-              {draft.thumb.startsWith("data:") && (
+              {draft.thumb.startsWith("data:") || draft.thumb.startsWith("/") ? (
                 <div
                   className="mt-4 aspect-[4/3] rounded-lg border-4 border-brand bg-cover bg-center"
                   style={{ backgroundImage: `url(${draft.thumb})` }}
                   role="img"
-                  aria-label="Uploaded cover preview"
+                  aria-label="Screenshot preview"
                 />
-              )}
+              ) : null}
+              <p className="mt-5 text-sm font-bold text-ink-muted">
+                Or pick a color vibe
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                {THUMB_OPTIONS.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => patch({ thumb: t })}
+                    className={cn(
+                      "aspect-[4/3] rounded-lg border-4 transition-transform hover:scale-[1.02]",
+                      draft.thumb === t ? "border-brand" : "border-transparent",
+                    )}
+                    style={{ background: t }}
+                    aria-label="Choose thumbnail vibe"
+                  />
+                ))}
+              </div>
             </div>
           )}
 
@@ -823,15 +828,7 @@ function CreateWizard() {
               <div className="mt-6 overflow-hidden rounded-xl border border-border shadow-[var(--shadow-1)]">
                 <div
                   className="aspect-[4/3] bg-cover bg-center"
-                  style={
-                    draft.thumb.startsWith("data:") ||
-                    draft.thumb.startsWith("http")
-                      ? {
-                          backgroundImage: `url(${draft.thumb})`,
-                          backgroundColor: "#e0cfff",
-                        }
-                      : { background: draft.thumb }
-                  }
+                  style={thumbBackgroundStyle(draft.thumb)}
                 />
                 <div className="p-5">
                   <p className="text-xl font-extrabold">

@@ -8,6 +8,7 @@ import { StatusBadge, StatusMessage } from "@/components/ui/StatusBadge";
 import { useCreatorFeedback } from "@/lib/engagement";
 import { formatCount } from "@/lib/format";
 import { useSubmissions } from "@/lib/submissions";
+import { thumbBackgroundStyle } from "@/lib/thumb-style";
 
 function CreatorTips({
   needsChanges,
@@ -187,15 +188,7 @@ export default function MyProjectsPage() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                   <div
                     className="h-20 w-full shrink-0 rounded-lg bg-cover bg-center sm:w-28"
-                    style={
-                      p.thumbnail.startsWith("data:") ||
-                      p.thumbnail.startsWith("http")
-                        ? {
-                            backgroundImage: `url(${p.thumbnail})`,
-                            backgroundColor: "#e0cfff",
-                          }
-                        : { background: p.thumbnail }
-                    }
+                    style={thumbBackgroundStyle(p.thumbnail)}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -253,15 +246,7 @@ export default function MyProjectsPage() {
               >
                 <div
                   className="h-20 w-full shrink-0 rounded-lg bg-cover bg-center sm:w-28"
-                  style={
-                    p.thumbnail.startsWith("data:") ||
-                    p.thumbnail.startsWith("http")
-                      ? {
-                          backgroundImage: `url(${p.thumbnail})`,
-                          backgroundColor: "#e0cfff",
-                        }
-                      : { background: p.thumbnail }
-                  }
+                  style={thumbBackgroundStyle(p.thumbnail)}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">

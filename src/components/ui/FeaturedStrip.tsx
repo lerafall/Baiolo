@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import type { Project } from "@/lib/types";
 
 export function FeaturedStrip({ projects }: { projects: Project[] }) {
@@ -29,8 +30,10 @@ export function FeaturedStrip({ projects }: { projects: Project[] }) {
           >
             <Link href={`/project/${p.id}`} className="block">
               <div
-                className="aspect-[4/3] rounded-lg"
-                style={{ background: p.thumbnail }}
+                className="aspect-[4/3] rounded-lg bg-cover bg-center"
+                style={thumbBackgroundStyle(p.thumbnail)}
+                role="img"
+                aria-label={`${p.title} preview`}
               />
               <p className="mt-3 font-extrabold text-ink">{p.title}</p>
               <p className="mt-1 line-clamp-2 text-sm text-ink-muted">

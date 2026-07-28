@@ -9,6 +9,7 @@ import { submissionToProject } from "@/lib/project-map";
 import { rankProjects } from "@/lib/ranking";
 import { formatCount } from "@/lib/format";
 import { useSubmissions } from "@/lib/submissions";
+import { thumbBackgroundStyle } from "@/lib/thumb-style";
 
 export default function ThisWeekPage() {
   const { items, ready } = useSubmissions();
@@ -69,15 +70,7 @@ export default function ThisWeekPage() {
                 </span>
                 <div
                   className="size-16 shrink-0 rounded-lg bg-cover bg-center"
-                  style={
-                    project.thumbnail.startsWith("data:") ||
-                    project.thumbnail.startsWith("http")
-                      ? {
-                          backgroundImage: `url(${project.thumbnail})`,
-                          backgroundColor: "#e0cfff",
-                        }
-                      : { background: project.thumbnail }
-                  }
+                  style={thumbBackgroundStyle(project.thumbnail)}
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-xl font-extrabold">{project.title}</p>

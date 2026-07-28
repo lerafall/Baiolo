@@ -7,6 +7,7 @@ import { useFavorites } from "@/lib/favorites";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
+import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import type { Project } from "@/lib/types";
 
 type ProjectCardProps = {
@@ -51,15 +52,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       >
         <div
           className="aspect-[4/3] w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.02]"
-          style={
-            project.thumbnail.startsWith("data:") ||
-            project.thumbnail.startsWith("http")
-              ? {
-                  backgroundImage: `url(${project.thumbnail})`,
-                  backgroundColor: "#e0cfff",
-                }
-              : { background: project.thumbnail }
-          }
+          style={thumbBackgroundStyle(project.thumbnail)}
           role="img"
           aria-label={`${project.title} thumbnail`}
         />

@@ -2,6 +2,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
 import { HomeLiveStrip } from "@/components/home/HomeLiveStrip";
 import { projects } from "@/lib/data/projects";
+import { thumbBackgroundStyle } from "@/lib/thumb-style";
 
 export default function LandingPage() {
   const samples = projects.slice(0, 3);
@@ -51,8 +52,10 @@ export default function LandingPage() {
                     }}
                   >
                     <div
-                      className="mb-2 h-16 rounded-md"
-                      style={{ background: p.thumbnail }}
+                      className="mb-2 h-16 rounded-md bg-cover bg-center"
+                      style={thumbBackgroundStyle(p.thumbnail)}
+                      role="img"
+                      aria-label={`${p.title} preview`}
                     />
                     <p className="font-extrabold text-ink">{p.title}</p>
                     <p className="text-sm text-ink-muted">{p.tagline}</p>

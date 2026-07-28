@@ -2,6 +2,23 @@ import type { Project } from "@/lib/types";
 
 export const projects: Project[] = [
   {
+    id: "star-catch",
+    title: "Star Catch",
+    tagline: "Tap falling stars before they vanish.",
+    description:
+      "A 30-second arcade loop: catch yellow and teal stars, grab gold ones for bonus points. Built as a Baiolo-ready static demo — open and play in the browser with no install.",
+    category: "game",
+    tags: ["arcade", "tap", "cozy", "mobile"],
+    creator: "Baiolo",
+    thumbnail: "/demos/star-catch/thumb.jpg",
+    cover: "/demos/star-catch/cover.jpg",
+    playUrl: "/demos/star-catch/index.html",
+    plays: 42,
+    reactions: { fun: 28, interesting: 12, "would-use-again": 19 },
+    featured: true,
+    ownerId: "baiolo",
+  },
+  {
     id: "cloud-hopper",
     title: "Cloud Hopper",
     tagline: "Jump soft clouds. Catch sun coins.",

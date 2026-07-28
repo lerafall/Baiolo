@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { rankProjects } from "@/lib/ranking";
 import { formatCount } from "@/lib/format";
+import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import type { Project } from "@/lib/types";
 
 export function WeeklyRanking({ projects }: { projects: Project[] }) {
@@ -35,15 +36,7 @@ export function WeeklyRanking({ projects }: { projects: Project[] }) {
               </span>
               <div
                 className="size-12 shrink-0 rounded-lg bg-cover bg-center"
-                style={
-                  project.thumbnail.startsWith("data:") ||
-                  project.thumbnail.startsWith("http")
-                    ? {
-                        backgroundImage: `url(${project.thumbnail})`,
-                        backgroundColor: "#e0cfff",
-                      }
-                    : { background: project.thumbnail }
-                }
+                style={thumbBackgroundStyle(project.thumbnail)}
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-extrabold text-ink">

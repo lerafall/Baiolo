@@ -12,6 +12,7 @@ import { useSession } from "@/lib/session";
 import { reportReasonLabel, useContentReports } from "@/lib/reports";
 import { formatDateTime } from "@/lib/format";
 import { useSubmissions } from "@/lib/submissions";
+import { thumbBackgroundStyle } from "@/lib/thumb-style";
 
 const riskFilters: Array<{ id: "all" | RiskLevel; label: string }> = [
   { id: "all", label: "All risk" },
@@ -307,7 +308,7 @@ export default function AdminModerationPage() {
                 >
                   <div
                     className="h-16 w-20 shrink-0 rounded-lg"
-                    style={{ background: p.thumbnail }}
+                    style={thumbBackgroundStyle(p.thumbnail)}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -333,7 +334,7 @@ export default function AdminModerationPage() {
             <aside className="rounded-xl bg-surface p-6 shadow-[var(--shadow-2)]">
               <div
                 className="aspect-[16/10] rounded-lg"
-                style={{ background: selected.thumbnail }}
+                style={thumbBackgroundStyle(selected.thumbnail)}
               />
               <h2 className="mt-5 text-2xl font-extrabold">{selected.title}</h2>
               <p className="mt-2 text-ink-muted">{selected.description}</p>

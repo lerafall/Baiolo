@@ -23,6 +23,7 @@ import { submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
+import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import type { Project, ReactionKind } from "@/lib/types";
 
 export default function ProjectPage({
@@ -148,15 +149,7 @@ export default function ProjectPage({
 
   const totalPlays = live.plays + engagement.localPlays;
 
-  const coverStyle =
-    live.cover.startsWith("data:") || live.cover.startsWith("http")
-      ? {
-          backgroundImage: `url(${live.cover})`,
-          backgroundColor: "#e0cfff",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }
-      : { background: live.cover };
+  const coverStyle = thumbBackgroundStyle(live.cover);
 
   return (
     <>

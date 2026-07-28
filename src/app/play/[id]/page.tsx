@@ -38,7 +38,9 @@ export default function PlayPage({
 
   const url = project.playUrl;
   const external = /^https?:\/\//i.test(url);
+  const sameOrigin = url.startsWith("/") && !url.startsWith("//");
   const isZip = url.toLowerCase().includes(".zip") || url.includes("package.zip");
+  const embeddable = (external || sameOrigin) && !isZip && url !== "#play";
 
   return (
     <>
@@ -50,7 +52,7 @@ export default function PlayPage({
         <h1 className="mt-2 text-4xl font-extrabold">{project.title}</h1>
         <p className="mt-2 text-ink-muted">{project.tagline}</p>
 
-        {external && !isZip ? (
+        {embeddable ? (
           <div className="mt-8 overflow-hidden rounded-xl border-2 border-border bg-surface shadow-[var(--shadow-2)]">
             <iframe
               title={project.title}
