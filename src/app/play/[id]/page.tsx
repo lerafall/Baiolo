@@ -54,14 +54,26 @@ export default function PlayPage({
         <p className="mt-2 text-ink-muted">{project.tagline}</p>
 
         {embeddable ? (
-          <div className="mt-8 overflow-hidden rounded-xl border-2 border-border bg-surface shadow-[var(--shadow-2)]">
-            <iframe
-              title={project.title}
-              src={url}
-              className="h-[70vh] w-full bg-canvas"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            />
-          </div>
+          <>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button href={url} size="m" variant="secondary">
+                Open fullscreen
+              </Button>
+              <p className="text-sm text-ink-muted">
+                Tip: many games need a first tap on <span className="font-bold">Play</span>,
+                then drag on the character.
+              </p>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-xl border-2 border-border bg-surface shadow-[var(--shadow-2)]">
+              <iframe
+                title={project.title}
+                src={url}
+                className="h-[70vh] w-full touch-none bg-canvas"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                allow="autoplay"
+              />
+            </div>
+          </>
         ) : (
           <div className="mt-8 rounded-xl bg-lilac/40 p-8 text-center shadow-[var(--shadow-1)]">
             <p className="text-xl font-extrabold">
