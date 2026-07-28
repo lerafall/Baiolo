@@ -450,6 +450,14 @@ function CreateWizard() {
           </div>
         )}
 
+        <div className="mb-6 rounded-xl bg-mint/40 px-5 py-4 text-sm text-ink">
+          <span className="font-bold">New here? </span>
+          See the simple guide + ready AI prompt on{" "}
+          <a href="/make" className="font-bold text-brand-strong underline">
+            How to make an MVP
+          </a>
+          .
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-bold uppercase tracking-wide text-ink-muted">

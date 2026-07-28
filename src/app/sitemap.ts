@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/favorites",
     "/this-week",
     "/safety",
+    "/make",
     "/auth",
     "/onboarding",
     "/profile",

@@ -28,6 +28,9 @@ export function SiteFooter() {
           <Link href="/explore" className="hover:text-ink">
             Explore
           </Link>
+          <Link href="/make" className="hover:text-ink">
+            How to make
+          </Link>
           <Link href="/create" className="hover:text-ink">
             Create
           </Link>
