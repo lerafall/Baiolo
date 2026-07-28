@@ -142,8 +142,11 @@ export default function MakeGuidePage() {
             <p className="font-extrabold">Zip tip</p>
             <p className="mt-1 text-ink-muted">
               Open the folder → select the files inside → compress. After unzip,
-              you should see <code className="font-bold">index.html</code>{" "}
-              immediately — not another nested folder.
+              you should see <code className="font-bold">index.html</code>,{" "}
+              <code className="font-bold">thumb.png</code>, and{" "}
+              <code className="font-bold">cover.png</code> immediately — not
+              another nested folder. Screenshots belong in the package, not only
+              in the chat.
             </p>
           </div>
         </section>
