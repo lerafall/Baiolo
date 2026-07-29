@@ -33,10 +33,10 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-canvas/90 backdrop-blur-md">
-      <div className="mx-auto flex min-h-[72px] w-full max-w-6xl items-center gap-6 px-5 md:px-8">
+      <div className="mx-auto flex min-h-[64px] w-full max-w-6xl items-center gap-2 px-3 sm:min-h-[72px] sm:gap-4 sm:px-5 md:gap-6 md:px-8">
         <Link
           href="/"
-          className="shrink-0 text-2xl font-extrabold tracking-tight text-brand-strong"
+          className="shrink-0 text-xl font-extrabold tracking-tight text-brand-strong sm:text-2xl"
         >
           Baiolo
         </Link>
@@ -94,37 +94,38 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
             ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 md:hidden">
-          <LanguageSwitcher />
-          <NotificationBell />
+        <div className="ml-auto flex max-w-[65%] shrink-0 items-center justify-end gap-1.5 sm:max-w-none sm:gap-2 md:hidden">
+          <LanguageSwitcher className="shrink-0 scale-90 origin-right sm:scale-100" />
+          {signedIn && <NotificationBell />}
           {showJoin &&
             (signedIn ? (
               <>
-                <Button href="/profile" size="m" variant="secondary">
+                <Button
+                  href="/profile"
+                  size="m"
+                  variant="secondary"
+                  className="min-h-10 shrink-0 px-3 text-sm"
+                >
                   {t("nav.profile")}
                 </Button>
                 <Button
                   type="button"
                   size="m"
                   variant="ghost"
+                  className="min-h-10 shrink-0 px-2.5 text-sm"
                   onClick={() => void handleSignOut()}
                 >
                   {t("nav.out")}
                 </Button>
               </>
             ) : (
-              <>
-                <Button
-                  href={authHref(pathname || "/explore", { mode: "signin" })}
-                  size="m"
-                  variant="ghost"
-                >
-                  {t("nav.in")}
-                </Button>
-                <Button href={joinHref} size="m">
-                  {t("nav.join")}
-                </Button>
-              </>
+              <Button
+                href={joinHref}
+                size="m"
+                className="min-h-10 shrink-0 px-3.5 text-sm"
+              >
+                {t("nav.join")}
+              </Button>
             ))}
         </div>
       </div>
