@@ -17,9 +17,11 @@ import {
   type SocialProviderId,
 } from "@/lib/social-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { useSession } from "@/lib/session";
 
 function AuthBody() {
+  const t = useT();
   const router = useRouter();
   const search = useSearchParams();
   const next = safeNextPath(search.get("next"), "/explore");
@@ -105,7 +107,7 @@ function AuthBody() {
               : "text-ink-muted hover:text-ink",
           )}
         >
-          Join
+          {t("auth.joinTab")}
         </Link>
         <Link
           href={modeHref("signin")}
@@ -116,33 +118,31 @@ function AuthBody() {
               : "text-ink-muted hover:text-ink",
           )}
         >
-          Sign in
+          {t("auth.signInTab")}
         </Link>
       </div>
 
       <h1 className="mt-8 text-4xl font-extrabold">
-        {signingIn ? "Welcome back" : "Join Baiolo"}
+        {signingIn ? t("auth.signInTitle") : t("auth.joinTitle")}
       </h1>
       <p className="mt-3 text-lg text-ink-muted">
-        {signingIn
-          ? "Sign in with the same WhatsApp, Google, Discord, or email you used before."
-          : "Free account to play projects, leave reactions, and save favorites. WhatsApp, Google, Discord — or a magic email link."}
+        {signingIn ? t("auth.signInSub") : t("auth.joinSub")}
       </p>
       {(linkError || oauthError) && (
         <p className="mt-4 rounded-lg bg-warning/20 px-4 py-3 text-sm font-semibold">
           {oauthError
-            ? "That social sign-in didn’t finish. Try again."
-            : "That magic link didn’t work. Try sending a new one."}
+            ? t("auth.oauthFail")
+            : t("auth.linkFail")}
         </p>
       )}
 
       {!sent && waStep !== "done" && (
         <div className="mt-8 rounded-xl bg-mint/40 p-5 shadow-[var(--shadow-1)]">
           <p className="text-lg font-extrabold">
-            {signingIn ? "Sign in with WhatsApp" : "Continue with WhatsApp"}
+            {signingIn ? t("auth.waSignInTitle") : t("auth.waJoinTitle")}
           </p>
           <p className="mt-1 text-sm text-ink-muted">
-            We’ll send a one-time code to your WhatsApp.
+            {t("auth.waHint")}
           </p>
           {waStep === "phone" ? (
             <form
@@ -153,7 +153,7 @@ function AuthBody() {
               }}
             >
               <label className="block">
-                <span className="font-bold">Phone</span>
+                <span className="font-bold">{t("auth.phone")}</span>
                 <input
                   type="tel"
                   required
@@ -169,7 +169,7 @@ function AuthBody() {
                 size="l"
                 disabled={busy}
               >
-                {busy ? "Sending…" : "Send WhatsApp code"}
+                {busy ? t("auth.sending") : t("auth.sendCode")}
               </Button>
             </form>
           ) : (
@@ -181,7 +181,7 @@ function AuthBody() {
               }}
             >
               <label className="block">
-                <span className="font-bold">Code from WhatsApp</span>
+                <span className="font-bold">{t("auth.codeLabel")}</span>
                 <input
                   inputMode="numeric"
                   required
@@ -197,11 +197,7 @@ function AuthBody() {
                 size="l"
                 disabled={busy}
               >
-                {busy
-                  ? "Checking…"
-                  : signingIn
-                    ? "Verify & sign in"
-                    : "Verify & join"}
+                {busy ? t("auth.checking") : signingIn ? t("auth.verifySignIn") : t("auth.verifyJoin")}
               </Button>
               <button
                 type="button"
@@ -212,7 +208,7 @@ function AuthBody() {
                   setWaHint("");
                 }}
               >
-                Use a different number
+                {t("auth.differentNumber")}
               </button>
             </form>
           )}
@@ -221,7 +217,7 @@ function AuthBody() {
           )}
           {!cloud && (
             <p className="mt-2 text-xs text-ink-muted">
-              Demo mode: any number works without a real WhatsApp message.
+              {t("auth.waDemo")}
             </p>
           )}
         </div>
@@ -229,9 +225,9 @@ function AuthBody() {
 
       {waStep === "done" && (
         <div className="mt-8 rounded-xl bg-mint/50 p-6 shadow-[var(--shadow-1)]">
-          <p className="text-xl font-extrabold">You’re in</p>
+          <p className="text-xl font-extrabold">{t("auth.youreIn")}</p>
           <p className="mt-2 text-ink-muted">
-            WhatsApp sign-in worked for <strong>{session.email || phone}</strong>
+            {t("auth.waWorked")} <strong>{session.email || phone}</strong>
             .
           </p>
           <Button
@@ -241,7 +237,7 @@ function AuthBody() {
               router.push(profileReady ? next : onboardingNext)
             }
           >
-            Continue
+            {t("common.continue")}
           </Button>
         </div>
       )}
@@ -250,7 +246,7 @@ function AuthBody() {
         <div className="mt-8 space-y-3">
           <div className="mb-1 flex items-center gap-3 text-sm font-bold text-ink-muted">
             <span className="h-px flex-1 bg-border" />
-            or continue with
+            {t("auth.orContinue")}
             <span className="h-px flex-1 bg-border" />
           </div>
           {VISIBLE_SOCIAL_PROVIDERS.map((p) => (
@@ -264,10 +260,8 @@ function AuthBody() {
               onClick={() => void startSocial(p.id)}
             >
               {oauthBusy === p.id
-                ? "Opening…"
-                : signingIn
-                  ? `Sign in with ${p.label}`
-                  : p.hint}
+                ? t("auth.opening")
+                : signingIn ? t("auth.signInWith", { label: p.label }) : t("auth.continueWith", { label: p.label })}
             </Button>
           ))}
           {socialHint && (
@@ -279,17 +273,17 @@ function AuthBody() {
       {sent ? (
         <div className="mt-8 rounded-xl bg-mint/50 p-6 shadow-[var(--shadow-1)]">
           <p className="text-xl font-extrabold">
-            {cloud ? "Check your inbox" : "You’re in"}
+            {cloud ? t("auth.checkInbox") : t("auth.youreIn")}
           </p>
           <p className="mt-2 text-ink-muted">
             {cloud ? (
               <>
-                We sent a link to <strong>{email}</strong>. Open it on this
-                device to finish signing in.
+                {t("auth.sentLink")} <strong>{email}</strong>.{" "}
+                {t("auth.openOnDevice")}
               </>
             ) : (
               <>
-                Demo mode for <strong>{email}</strong>. Continue to Baiolo.
+                {t("auth.demoFor")} <strong>{email}</strong>. {t("auth.continueBaiolo")}
               </>
             )}
           </p>
@@ -303,7 +297,7 @@ function AuthBody() {
               router.push(profileReady ? next : onboardingNext)
             }
           >
-            Continue
+            {t("common.continue")}
           </Button>
         </div>
       ) : waStep !== "done" ? (
@@ -322,11 +316,11 @@ function AuthBody() {
         >
           <div className="mb-5 flex items-center gap-3 text-sm font-bold text-ink-muted">
             <span className="h-px flex-1 bg-border" />
-            or email
+            {t("auth.orEmail")}
             <span className="h-px flex-1 bg-border" />
           </div>
           <label className="block">
-            <span className="font-bold">Email</span>
+            <span className="font-bold">{t("auth.email")}</span>
             <input
               type="email"
               required
@@ -342,13 +336,7 @@ function AuthBody() {
             size="l"
             disabled={busy}
           >
-            {busy
-              ? "Sending…"
-              : cloud
-                ? signingIn
-                  ? "Email me a sign-in link"
-                  : "Send magic link"
-                : "Continue (demo)"}
+            {busy ? t("auth.sending") : cloud ? (signingIn ? t("auth.emailSignIn") : t("auth.sendMagic")) : t("auth.continueDemo")}
           </Button>
         </form>
       ) : null}
@@ -357,22 +345,22 @@ function AuthBody() {
         <p className="mt-8 text-center text-sm text-ink-muted">
           {signingIn ? (
             <>
-              New here?{" "}
+              {t("auth.newHere")}{" "}
               <Link
                 href={modeHref("join")}
                 className="font-bold text-brand-strong underline"
               >
-                Create a free account
+                {t("auth.createFree")}
               </Link>
             </>
           ) : (
             <>
-              Already have an account?{" "}
+              {t("auth.alreadyHave")}{" "}
               <Link
                 href={modeHref("signin")}
                 className="font-bold text-brand-strong underline"
               >
-                Sign in
+                {t("auth.signInTab")}
               </Link>
             </>
           )}

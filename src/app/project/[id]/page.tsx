@@ -17,6 +17,7 @@ import {
   projects as catalog,
 } from "@/lib/data/projects";
 import { useRequireAuth } from "@/lib/auth-gate";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { useSyncedEngagement } from "@/lib/synced-engagement";
 import { reportReasons, type ReportReason } from "@/lib/report-reasons";
 import { addContentReport } from "@/lib/reports";
@@ -40,6 +41,7 @@ export default function ProjectPage({
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
   const { requireAuth, signedIn } = useRequireAuth(`/project/${id}`);
   const { push } = useToast();
+  const t = useT();
   const [feedback, setFeedback] = useState("");
   const [playing, setPlaying] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -121,7 +123,7 @@ export default function ProjectPage({
     requireAuth(() => {
       const next = engagement.reaction === kind ? null : kind;
       engagement.setReaction(next);
-      if (next) push("Nice! Reaction saved.");
+      if (next) push(t("project.reactionSaved"));
     });
   }
 
@@ -160,7 +162,7 @@ export default function ProjectPage({
         )}
         <div className="mt-5 flex flex-wrap gap-3">
           <Button size="m" onClick={startPlay}>
-            {signedIn ? "Tap to play" : "Join to play"}
+            {signedIn ? t("project.tapToPlay") : t("project.joinToPlay")}
           </Button>
           <Button
             size="m"
@@ -172,11 +174,11 @@ export default function ProjectPage({
             onClick={() => {
               requireAuth(() => {
                 const on = toggleFavorite(live.id);
-                push(on ? "Saved to favorites" : "Removed from favorites");
+                push(on ? t("card.savedToast") : t("card.removedToast"));
               });
             }}
           >
-            {isFavorite(live.id) ? "♥ Saved" : "♡ Save"}
+            {isFavorite(live.id) ? t("project.saved") : t("project.save")}
           </Button>
         </div>
 
@@ -209,7 +211,7 @@ export default function ProjectPage({
               </div>
             ) : (
               <Button size="l" onClick={startPlay}>
-                {signedIn ? "Tap to play" : "Join free to play"}
+                {signedIn ? t("project.tapToPlay") : t("project.joinFreePlay")}
               </Button>
             )}
           </div>
@@ -217,22 +219,22 @@ export default function ProjectPage({
 
         <div className="mt-8 grid gap-10 lg:grid-cols-[1.4fr_1fr]">
           <section>
-            <h2 className="text-2xl font-extrabold">About</h2>
+            <h2 className="text-2xl font-extrabold">{t("project.about")}</h2>
             <p className="mt-3 text-lg leading-relaxed text-ink-muted">
               {live.description}
             </p>
 
-            <h2 className="mt-10 text-2xl font-extrabold">How does it feel?</h2>
+            <h2 className="mt-10 text-2xl font-extrabold">{t("project.howFeel")}</h2>
             <p className="mt-2 text-ink-muted">
-              Pick one quick reaction. It helps the creator decide.
+              {t("project.howFeelSub")}
             </p>
             {!signedIn ? (
               <div className="mt-4">
                 <AuthGateCard
-                  title="Join to react"
-                  body="Reactions, notes, and favorites need a free Baiolo account — so creators know real people tried their work."
+                  title={t("gate.joinToReact")}
+                  body={t("gate.joinToReactBody")}
                   nextPath={`/project/${live.id}`}
-                  actionLabel="Join to leave a reaction"
+                  actionLabel={t("gate.joinReaction")}
                 />
               </div>
             ) : (
@@ -257,12 +259,12 @@ export default function ProjectPage({
                 requireAuth(() => {
                   engagement.addFeedback(feedback);
                   setFeedback("");
-                  push("Thanks! Your note was saved.");
+                  push(t("project.noteThanks"));
                 });
               }}
             >
               <label htmlFor="feedback" className="text-lg font-bold">
-                Short feedback (optional)
+                {t("project.feedbackLabel")}
               </label>
               <textarea
                 id="feedback"
@@ -272,15 +274,15 @@ export default function ProjectPage({
                 maxLength={280}
                 placeholder={
                   signedIn
-                    ? "One kind sentence is enough."
-                    : "Sign in to leave a note for the creator."
+                    ? t("project.feedbackPh")
+                    : t("project.feedbackPhGuest")
                 }
                 disabled={!signedIn}
                 className="mt-3 w-full rounded-lg border-2 border-border bg-surface p-4 text-base text-ink placeholder:text-placeholder focus:border-brand focus:outline-none disabled:opacity-60"
               />
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Button type="submit">
-                  {signedIn ? "Send note" : "Join to send a note"}
+                  {signedIn ? t("project.sendNote") : t("project.joinSendNote")}
                 </Button>
               </div>
             </form>
@@ -289,12 +291,12 @@ export default function ProjectPage({
           <aside className="space-y-6">
             <div className="rounded-xl bg-surface p-6 shadow-[var(--shadow-1)]">
               <p className="text-sm font-bold uppercase tracking-wide text-ink-muted">
-                Results so far
+                {t("project.results")}
               </p>
               <p className="mt-3 text-3xl font-extrabold">
                 {formatCount(totalPlays)}
               </p>
-              <p className="text-ink-muted">plays</p>
+              <p className="text-ink-muted">{t("project.plays")}</p>
               <p className="mt-4 text-3xl font-extrabold">
                 {formatCount(
                   counts.fun +
@@ -302,13 +304,13 @@ export default function ProjectPage({
                     counts["would-use-again"],
                 )}
               </p>
-              <p className="text-ink-muted">reactions</p>
+              <p className="text-ink-muted">{t("project.reactions")}</p>
             </div>
 
             <div className="rounded-xl border-2 border-border bg-canvas p-6">
-              <p className="font-bold text-ink">Feel unsafe?</p>
+              <p className="font-bold text-ink">{t("project.unsafe")}</p>
               <p className="mt-1 text-sm text-ink-muted">
-                Report this project. We will take a look.
+                {t("project.unsafeBody")}
               </p>
               <Button
                 className="mt-4"
@@ -319,7 +321,7 @@ export default function ProjectPage({
                 }}
                 disabled={engagement.reported}
               >
-                {engagement.reported ? "Reported" : "Report project"}
+                {engagement.reported ? t("project.reported") : t("project.report")}
               </Button>
             </div>
           </aside>
@@ -327,16 +329,16 @@ export default function ProjectPage({
 
         <ConfirmDialog
           open={reportOpen}
-          title="Report this project?"
-          body="Pick why you’re reporting. We’ll flag it for a human look."
-          confirmLabel="Yes, report"
+          title={t("project.reportTitle")}
+          body={t("project.reportBody")}
+          confirmLabel={t("project.reportConfirm")}
           tone="danger"
           onCancel={() => setReportOpen(false)}
           onConfirm={() => {
             engagement.report();
             addContentReport(live.id, live.title, reportReason);
             setReportOpen(false);
-            push("Reported. We’ll take a look.", "warn");
+            push(t("project.reportedToast"), "warn");
           }}
         >
           <div className="flex flex-wrap gap-2">
@@ -360,12 +362,12 @@ export default function ProjectPage({
 
         <section className="mt-16">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="text-2xl font-extrabold">More like this</h2>
+            <h2 className="text-2xl font-extrabold">{t("project.moreLike")}</h2>
             <Link
               href="/explore"
               className="font-bold text-brand-strong underline"
             >
-              Explore more
+              {t("project.exploreMore")}
             </Link>
           </div>
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

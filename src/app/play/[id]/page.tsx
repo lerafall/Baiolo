@@ -12,6 +12,7 @@ import { toEmbedPlayUrl } from "@/lib/play-url";
 import { submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 import { useSyncedEngagement } from "@/lib/synced-engagement";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export default function PlayPage({
   params,
@@ -23,6 +24,7 @@ export default function PlayPage({
   const { signedIn, ready: authReady } = useSignedIn();
   const engagement = useSyncedEngagement(id);
   const playCounted = useRef(false);
+  const t = useT();
 
   const project = useMemo(() => {
     const fromCatalog = getProject(id);
@@ -44,7 +46,7 @@ export default function PlayPage({
       <>
         <SiteHeader />
         <main className="mx-auto max-w-3xl px-5 py-16 text-ink-muted">
-          Opening play…
+          {t("play.opening")}
         </main>
       </>
     );
@@ -56,16 +58,16 @@ export default function PlayPage({
         <SiteHeader />
         <main className="mx-auto w-full max-w-xl px-5 py-16 md:px-8">
           <p className="text-center text-sm font-bold uppercase tracking-wide text-ink-muted">
-            Members only
+            {t("gate.membersOnly")}
           </p>
           <h1 className="mt-2 text-center text-3xl font-extrabold">{project.title}</h1>
           <p className="mt-2 text-center text-ink-muted">{project.tagline}</p>
           <div className="mt-8">
             <AuthGateCard
-              title="Join to play"
-              body="Create a free account to play this project. Guests can browse — playing needs a Baiolo account."
+              title={t("gate.joinToPlay")}
+              body={t("gate.joinToPlayBody")}
               nextPath={`/play/${project.id}`}
-              actionLabel="Join free to play"
+              actionLabel={t("gate.joinFreePlay")}
             />
           </div>
         </main>
@@ -84,7 +86,7 @@ export default function PlayPage({
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl px-5 py-10 md:px-8">
         <p className="text-sm font-bold uppercase tracking-wide text-ink-muted">
-          Playing
+          {t("play.playing")}
         </p>
         <h1 className="mt-2 text-4xl font-extrabold">{project.title}</h1>
         <p className="mt-2 text-ink-muted">{project.tagline}</p>
@@ -99,11 +101,10 @@ export default function PlayPage({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Open fullscreen
+                {t("play.fullscreen")}
               </Button>
               <p className="text-sm text-ink-muted">
-                Tip: tap <span className="font-bold">Play</span>, then drag
-                anywhere near the blue wisp (pull back like a slingshot).
+                {t("play.tip")}
               </p>
             </div>
             <div className="mt-4 overflow-hidden rounded-xl border-2 border-border bg-surface shadow-[var(--shadow-2)]">
@@ -119,21 +120,19 @@ export default function PlayPage({
         ) : (
           <div className="mt-8 rounded-xl bg-lilac/40 p-8 text-center shadow-[var(--shadow-1)]">
             <p className="text-xl font-extrabold">
-              {isZip ? "Package ready" : "Open this project"}
+              {isZip ? t("play.packageReady") : t("play.openProject")}
             </p>
             <p className="mt-2 text-ink-muted">
-              {isZip
-                ? "This ZIP isn’t unpacked for in-browser play yet. Ask admin to Approve again (Baiolo will extract index.html), or submit with Paste link next time."
-                : "We’ll open the project in a new tab."}
+              {isZip ? t("play.zipHint") : t("play.openTab")}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               {external && (
                 <Button href={url} size="l">
-                  {isZip ? "Download package" : "Open project"}
+                  {isZip ? t("play.download") : t("play.open")}
                 </Button>
               )}
               <Button href={`/project/${project.id}`} variant="secondary" size="l">
-                Back to project
+                {t("play.back")}
               </Button>
             </div>
           </div>

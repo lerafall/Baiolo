@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Nunito } from "next/font/google";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { InstallHint } from "@/components/layout/InstallHint";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SkipToContent } from "@/components/i18n/SkipToContent";
 import { AppProviders } from "@/components/providers/AppProviders";
+import {
+  DEFAULT_LOCALE,
+  isLocale,
+  LOCALE_COOKIE,
+  type Locale,
+} from "@/lib/i18n/config";
 import "./globals.css";
 
 const nunito = Nunito({
   variable: "--font-nunito",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   weight: ["500", "600", "700", "800"],
 });
 
@@ -23,21 +31,24 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 };
 
-export default function RootLayout({
+async function readLocale(): Promise<Locale> {
+  const jar = await cookies();
+  const value = jar.get(LOCALE_COOKIE)?.value;
+  return isLocale(value) ? value : DEFAULT_LOCALE;
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await readLocale();
+
   return (
-    <html lang="en" className={`${nunito.variable} h-full antialiased`}>
+    <html lang={locale} className={`${nunito.variable} h-full antialiased`}>
       <body className="min-h-full bg-canvas font-sans text-ink">
-        <AppProviders>
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-pill focus:bg-brand focus:px-4 focus:py-2 focus:font-bold focus:text-on-brand"
-          >
-            Skip to content
-          </a>
+        <AppProviders locale={locale}>
+          <SkipToContent />
           <div
             id="main"
             className="flex min-h-full flex-col pb-20 md:pb-0"

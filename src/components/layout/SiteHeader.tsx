@@ -3,25 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { ModeBadge } from "@/components/layout/ModeBadge";
 import { cn } from "@/lib/cn";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { authHref } from "@/lib/next-path";
 import { useSession } from "@/lib/session";
 
-const links = [
-  { href: "/explore", label: "Explore" },
-  { href: "/make", label: "How to make" },
-  { href: "/create", label: "Create" },
-  { href: "/projects", label: "My Projects" },
-  { href: "/favorites", label: "Favorites" },
-];
-
 export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
   const pathname = usePathname();
+  const t = useT();
   const { session, ready, signOut } = useSession();
   const signedIn = ready && Boolean(session.userId || session.email);
   const joinHref = authHref(pathname || "/explore");
+
+  const links = [
+    { href: "/explore", label: t("nav.explore") },
+    { href: "/make", label: t("nav.make") },
+    { href: "/create", label: t("nav.create") },
+    { href: "/projects", label: t("nav.projects") },
+    { href: "/favorites", label: t("nav.favorites") },
+  ];
 
   async function handleSignOut() {
     await signOut();
@@ -58,12 +61,13 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
               </Link>
             );
           })}
+          <LanguageSwitcher />
           <NotificationBell />
           {showJoin &&
             (signedIn ? (
               <>
                 <Button href="/profile" size="m" variant="secondary">
-                  {session.avatar} Profile
+                  {session.avatar} {t("nav.profile")}
                 </Button>
                 <Button
                   type="button"
@@ -71,7 +75,7 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
                   variant="ghost"
                   onClick={() => void handleSignOut()}
                 >
-                  Sign out
+                  {t("nav.signOut")}
                 </Button>
               </>
             ) : (
@@ -81,22 +85,23 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
                   size="m"
                   variant="ghost"
                 >
-                  Sign in
+                  {t("nav.signIn")}
                 </Button>
                 <Button href={joinHref} size="m">
-                  Join
+                  {t("nav.join")}
                 </Button>
               </>
             ))}
         </nav>
 
         <div className="ml-auto flex items-center gap-2 md:hidden">
+          <LanguageSwitcher />
           <NotificationBell />
           {showJoin &&
             (signedIn ? (
               <>
                 <Button href="/profile" size="m" variant="secondary">
-                  Profile
+                  {t("nav.profile")}
                 </Button>
                 <Button
                   type="button"
@@ -104,7 +109,7 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
                   variant="ghost"
                   onClick={() => void handleSignOut()}
                 >
-                  Out
+                  {t("nav.out")}
                 </Button>
               </>
             ) : (
@@ -114,10 +119,10 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
                   size="m"
                   variant="ghost"
                 >
-                  In
+                  {t("nav.in")}
                 </Button>
                 <Button href={joinHref} size="m">
-                  Join
+                  {t("nav.join")}
                 </Button>
               </>
             ))}

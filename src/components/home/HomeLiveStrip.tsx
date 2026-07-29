@@ -7,9 +7,11 @@ import { WeeklyRanking } from "@/components/ui/WeeklyRanking";
 import { projects as catalog } from "@/lib/data/projects";
 import { submissionToProject } from "@/lib/project-map";
 import { rankProjects } from "@/lib/ranking";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { useSubmissions } from "@/lib/submissions";
 
 export function HomeLiveStrip() {
+  const t = useT();
   const { items, ready, mode } = useSubmissions();
 
   const feed = useMemo(() => {
@@ -24,8 +26,8 @@ export function HomeLiveStrip() {
   const samples = rankProjects(feed, 3).map((r) => r.project);
   const label =
     mode === "supabase" && items.some((i) => i.status === "published")
-      ? "Loved right now"
-      : "Top rated picks";
+      ? t("home.lovedNow")
+      : t("home.topPicks");
 
   return (
     <section className="py-16">
@@ -34,13 +36,11 @@ export function HomeLiveStrip() {
           <div>
             <h2 className="text-3xl font-extrabold">{label}</h2>
             <p className="mt-2 text-lg text-ink-muted">
-              {ready
-                ? "The highest-rated ideas to try first."
-                : "Loading soft picks…"}
+              {ready ? t("home.lovedSub") : t("home.loadingPicks")}
             </p>
           </div>
           <Button href="/explore" variant="secondary">
-            See all
+            {t("explore.seeAll")}
           </Button>
         </div>
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

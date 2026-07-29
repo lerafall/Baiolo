@@ -8,6 +8,7 @@ import { useFavorites } from "@/lib/favorites";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import type { Project } from "@/lib/types";
 
@@ -16,6 +17,7 @@ type ProjectCardProps = {
 };
 
 export function ProjectCard({ project }: ProjectCardProps) {
+  const t = useT();
   const { isFavorite, toggle } = useFavorites();
   const { requireAuth, signedIn } = useRequireAuth(`/project/${project.id}`);
   const { push } = useToast();
@@ -34,9 +36,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
         aria-label={
           signedIn
             ? liked
-              ? "Remove from favorites"
-              : "Save to favorites"
-            : "Join to save favorites"
+              ? t("card.unsave")
+              : t("card.save")
+            : t("card.joinSave")
         }
         className={cn(
           "absolute right-3 top-3 z-10 flex size-11 items-center justify-center rounded-full border-2 bg-surface/95 text-lg font-bold shadow-[var(--shadow-1)] transition-transform hover:scale-105",
@@ -49,7 +51,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           e.stopPropagation();
           requireAuth(() => {
             const on = toggle(project.id);
-            push(on ? "Saved to favorites" : "Removed from favorites");
+            push(on ? t("card.savedToast") : t("card.removedToast"));
           });
         }}
       >
@@ -64,7 +66,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           className="aspect-[4/3] w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.02]"
           style={thumbBackgroundStyle(project.thumbnail)}
           role="img"
-          aria-label={`${project.title} thumbnail`}
+          aria-label={t("landing.previewAria", { title: project.title })}
         />
       </Link>
       <div className="flex flex-1 flex-col gap-3 p-5">
@@ -90,14 +92,18 @@ export function ProjectCard({ project }: ProjectCardProps) {
           )}
         </div>
         <p className="text-sm text-ink-muted">
-          by <span className="font-bold text-ink">{project.creator}</span>
+          {t("card.by")}{" "}
+          <span className="font-bold text-ink">{project.creator}</span>
         </p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-1">
           <p className="text-xs font-semibold text-ink-muted">
-            {formatCount(project.plays)} plays · {totalReactions} reactions
+            {t("card.playsReactions", {
+              plays: formatCount(project.plays),
+              reactions: totalReactions,
+            })}
           </p>
           <Button href={`/project/${project.id}`} size="m">
-            {signedIn ? "Play" : "Join to play"}
+            {signedIn ? t("card.play") : t("card.joinToPlay")}
           </Button>
         </div>
       </div>

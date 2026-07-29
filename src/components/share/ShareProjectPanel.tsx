@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useShareLinks } from "@/lib/auth-gate";
 import { cn } from "@/lib/cn";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 type ShareProjectPanelProps = {
   projectId: string;
@@ -22,6 +23,7 @@ export function ShareProjectPanel({
   emphasis = "hero",
   className,
 }: ShareProjectPanelProps) {
+  const t = useT();
   const links = useShareLinks(projectId, title, tagline);
   const { push } = useToast();
   const [copied, setCopied] = useState(false);
@@ -30,10 +32,10 @@ export function ShareProjectPanel({
     try {
       await navigator.clipboard.writeText(links.url);
       setCopied(true);
-      push("Link copied — send it to friends!");
+      push(t("share.linkCopied"));
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      push("Couldn’t copy the link.", "warn");
+      push(t("share.copyFail"), "warn");
     }
   }
 
@@ -45,7 +47,7 @@ export function ShareProjectPanel({
           text: links.text,
           url: links.url,
         });
-        push("Shared!");
+        push(t("share.shared"));
         return;
       }
     } catch {
@@ -67,7 +69,7 @@ export function ShareProjectPanel({
       )}
     >
       <p className="text-sm font-bold uppercase tracking-wide text-brand-strong">
-        Share with friends
+        {t("share.eyebrow")}
       </p>
       <h2
         className={cn(
@@ -75,18 +77,13 @@ export function ShareProjectPanel({
           hero ? "text-2xl md:text-3xl" : "text-xl",
         )}
       >
-        {hero
-          ? "Send this to people you know"
-          : "Invite friends to try it"}
+        {hero ? t("share.heroTitle") : t("share.compactTitle")}
       </h2>
-      <p className="mt-2 max-w-xl text-ink-muted">
-        The more friends open it, the more reactions you get — and Baiolo grows
-        with every share.
-      </p>
+      <p className="mt-2 max-w-xl text-ink-muted">{t("share.body")}</p>
 
       <div className="mt-5 flex flex-wrap gap-3">
         <Button type="button" size="l" onClick={() => void nativeShare()}>
-          Share now
+          {t("share.shareNow")}
         </Button>
         <Button
           type="button"
@@ -94,7 +91,7 @@ export function ShareProjectPanel({
           variant="secondary"
           onClick={() => void copyLink()}
         >
-          {copied ? "Copied!" : "Copy link"}
+          {copied ? t("share.copied") : t("share.copyLink")}
         </Button>
       </div>
 

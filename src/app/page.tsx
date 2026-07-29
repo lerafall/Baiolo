@@ -1,12 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
 import { HomeLiveStrip } from "@/components/home/HomeLiveStrip";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { projects } from "@/lib/data/projects";
 import { rankProjects } from "@/lib/ranking";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 
 export default function LandingPage() {
+  const t = useT();
   const samples = rankProjects(projects, 3).map((r) => r.project);
 
   return (
@@ -24,18 +28,17 @@ export default function LandingPage() {
                 Baiolo
               </p>
               <h1 className="mt-4 max-w-xl text-3xl font-extrabold leading-tight text-ink md:text-4xl">
-                Share little ideas. Let people play. See what they love.
+                {t("landing.headline")}
               </h1>
               <p className="mt-4 max-w-lg text-lg text-ink-muted">
-                Baiolo is a playful place to share prototypes, test ideas, and
-                find what people love.
+                {t("landing.sub")}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button href="/explore" size="l">
-                  Start exploring
+                  {t("landing.startExploring")}
                 </Button>
                 <Button href="/create" variant="secondary" size="l">
-                  Add your project
+                  {t("landing.addProject")}
                 </Button>
               </div>
             </div>
@@ -61,7 +64,7 @@ export default function LandingPage() {
                         className="mb-2 h-16 rounded-md bg-cover bg-center"
                         style={thumbBackgroundStyle(p.thumbnail)}
                         role="img"
-                        aria-label={`${p.title} preview`}
+                        aria-label={t("landing.previewAria", { title: p.title })}
                       />
                       <p className="font-extrabold text-ink">{p.title}</p>
                       <p className="text-sm text-ink-muted">{p.tagline}</p>
@@ -75,26 +78,26 @@ export default function LandingPage() {
 
         <section className="bg-surface/70 py-16">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
-            <h2 className="text-3xl font-extrabold text-ink">How it works</h2>
-            <p className="mt-2 text-lg text-ink-muted">
-              Three simple steps. No heavy dashboards.
-            </p>
+            <h2 className="text-3xl font-extrabold text-ink">
+              {t("landing.howTitle")}
+            </h2>
+            <p className="mt-2 text-lg text-ink-muted">{t("landing.howSub")}</p>
             <ol className="mt-10 grid gap-6 md:grid-cols-3">
               {[
                 {
                   n: "1",
-                  title: "Share a tiny idea",
-                  body: "Upload a ZIP, paste a link, or start from a friendly template.",
+                  title: t("landing.step1Title"),
+                  body: t("landing.step1Body"),
                 },
                 {
                   n: "2",
-                  title: "People play and react",
-                  body: "Soft signals — plays and quick feelings — not heavy metrics.",
+                  title: t("landing.step2Title"),
+                  body: t("landing.step2Body"),
                 },
                 {
                   n: "3",
-                  title: "Decide what to build next",
-                  body: "See what people love, then keep going or try something new.",
+                  title: t("landing.step3Title"),
+                  body: t("landing.step3Body"),
                 },
               ].map((step) => (
                 <li
@@ -117,23 +120,21 @@ export default function LandingPage() {
         <section className="bg-lilac/35 py-16">
           <div className="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-2 md:px-8">
             <div className="rounded-xl bg-surface p-8 shadow-[var(--shadow-1)]">
-              <h2 className="text-2xl font-extrabold">For creators</h2>
-              <p className="mt-3 text-ink-muted">
-                Publish in minutes. See plays and reactions. Decide if the idea
-                deserves another weekend.
-              </p>
+              <h2 className="text-2xl font-extrabold">
+                {t("landing.creatorsTitle")}
+              </h2>
+              <p className="mt-3 text-ink-muted">{t("landing.creatorsBody")}</p>
               <Button href="/create" className="mt-6">
-                Add your project
+                {t("landing.addProject")}
               </Button>
             </div>
             <div className="rounded-xl bg-surface p-8 shadow-[var(--shadow-1)]">
-              <h2 className="text-2xl font-extrabold">For explorers</h2>
-              <p className="mt-3 text-ink-muted">
-                Browse colorful cards, tap Play, leave a quick reaction. No
-                long forms.
-              </p>
+              <h2 className="text-2xl font-extrabold">
+                {t("landing.explorersTitle")}
+              </h2>
+              <p className="mt-3 text-ink-muted">{t("landing.explorersBody")}</p>
               <Button href="/explore" className="mt-6">
-                Start exploring
+                {t("landing.startExploring")}
               </Button>
             </div>
           </div>
@@ -142,13 +143,13 @@ export default function LandingPage() {
         <section className="border-t border-border py-12">
           <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-5 md:flex-row md:items-center md:px-8">
             <div>
-              <p className="text-2xl font-extrabold text-brand-strong">Ready?</p>
-              <p className="mt-1 text-ink-muted">
-                A playful home for mini games, MVPs, and experiments.
+              <p className="text-2xl font-extrabold text-brand-strong">
+                {t("landing.ready")}
               </p>
+              <p className="mt-1 text-ink-muted">{t("landing.readySub")}</p>
             </div>
             <Button href="/auth?next=%2Fexplore" variant="secondary">
-              Join Baiolo
+              {t("landing.joinBaiolo")}
             </Button>
           </div>
         </section>

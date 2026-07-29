@@ -12,22 +12,24 @@ import { allTags, projects as catalog } from "@/lib/data/projects";
 import { submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import type { ProjectCategory } from "@/lib/types";
 
-const filters: Array<{ id: "all" | ProjectCategory; label: string }> = [
-  { id: "all", label: "All" },
-  { id: "game", label: "Game" },
-  { id: "tool", label: "Tool" },
-  { id: "experiment", label: "Experiment" },
-  { id: "demo", label: "Demo" },
-];
-
 function ExploreBody() {
+  const t = useT();
   const router = useRouter();
   const search = useSearchParams();
   const initialQ = search.get("q") ?? "";
   const initialFilter = (search.get("type") as "all" | ProjectCategory) || "all";
   const initialTag = search.get("tag") ?? "";
+
+  const filters: Array<{ id: "all" | ProjectCategory; label: string }> = [
+    { id: "all", label: t("explore.all") },
+    { id: "game", label: t("explore.game") },
+    { id: "tool", label: t("explore.tool") },
+    { id: "experiment", label: t("explore.experiment") },
+    { id: "demo", label: t("explore.demo") },
+  ];
 
   const [query, setQuery] = useState(initialQ);
   const debouncedQuery = useDebouncedValue(query, 250);
@@ -86,7 +88,7 @@ function ExploreBody() {
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-10 md:px-8">
       <div className="animate-rise">
-        <h1 className="text-4xl font-extrabold text-ink">Explore</h1>
+        <h1 className="text-4xl font-extrabold text-ink">{t("explore.title")}</h1>
         <p className="mt-2 text-lg text-ink-muted">
           {mode === "supabase"
             ? "Published cloud projects first — catalog demos only if the cloud is empty."
@@ -124,12 +126,12 @@ function ExploreBody() {
             active={!tag}
             onClick={() => setTag("")}
           />
-          {tags.map((t) => (
+          {tags.map((tagName) => (
             <FilterPill
-              key={t}
-              label={t}
-              active={tag === t}
-              onClick={() => setTag(t === tag ? "" : t)}
+              key={tagName}
+              label={tagName}
+              active={tag === tagName}
+              onClick={() => setTag(tagName === tag ? "" : tagName)}
             />
           ))}
         </div>

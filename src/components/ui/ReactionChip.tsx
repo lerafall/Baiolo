@@ -1,12 +1,13 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import type { ReactionKind } from "@/lib/types";
 
-const labels: Record<ReactionKind, string> = {
-  fun: "Fun",
-  interesting: "Interesting",
-  "would-use-again": "Would use again",
+const labelKeys: Record<ReactionKind, string> = {
+  fun: "reaction.fun",
+  interesting: "reaction.interesting",
+  "would-use-again": "reaction.wouldUseAgain",
 };
 
 const accents: Record<ReactionKind, string> = {
@@ -30,6 +31,7 @@ export function ReactionChip({
   selected,
   onToggle,
 }: ReactionChipProps) {
+  const t = useT();
   return (
     <button
       type="button"
@@ -42,7 +44,7 @@ export function ReactionChip({
         selected && "animate-spark shadow-[var(--shadow-1)]",
       )}
     >
-      <span>{labels[kind]}</span>
+      <span>{t(labelKeys[kind])}</span>
       {typeof count === "number" && (
         <span className="rounded-pill bg-lilac/70 px-2 py-0.5 text-xs text-ink-muted">
           {count}

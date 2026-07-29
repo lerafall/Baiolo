@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function SiteFooter() {
+  const t = useT();
   const [mode, setMode] = useState<"mock" | "supabase" | "…">("…");
 
   useEffect(() => {
@@ -20,31 +22,29 @@ export function SiteFooter() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-lg font-extrabold text-brand-strong">Baiolo</p>
-          <p className="text-sm text-ink-muted">
-            Share little ideas. See which ones grow.
-          </p>
+          <p className="text-sm text-ink-muted">{t("footer.tagline")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm font-bold text-ink-muted">
           <Link href="/explore" className="hover:text-ink">
-            Explore
+            {t("nav.explore")}
           </Link>
           <Link href="/make" className="hover:text-ink">
-            How to make
+            {t("nav.make")}
           </Link>
           <Link href="/create" className="hover:text-ink">
-            Create
+            {t("nav.create")}
           </Link>
           <Link href="/this-week" className="hover:text-ink">
-            This week
+            {t("nav.thisWeek")}
           </Link>
           <Link href="/safety" className="hover:text-ink">
-            Stay safe
+            {t("nav.safety")}
           </Link>
           <Link href="/admin" className="hover:text-ink">
-            Admin
+            {t("nav.admin")}
           </Link>
           <span className="rounded-pill bg-lilac/70 px-3 py-1 text-xs uppercase tracking-wide text-brand-strong">
-            {mode} mode
+            {t("common.mode", { mode })}
           </span>
         </div>
       </div>

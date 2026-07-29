@@ -8,10 +8,12 @@ import { ProjectCard } from "@/components/ui/ProjectCard";
 import { useSignedIn } from "@/lib/auth-gate";
 import { projects as catalog } from "@/lib/data/projects";
 import { useFavorites } from "@/lib/favorites";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 
 export default function FavoritesPage() {
+  const t = useT();
   const { ids, ready } = useFavorites();
   const { items } = useSubmissions();
   const { signedIn, ready: authReady } = useSignedIn();
@@ -31,34 +33,30 @@ export default function FavoritesPage() {
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-6xl px-5 py-10 md:px-8">
-        <h1 className="text-4xl font-extrabold">Favorites</h1>
-        <p className="mt-2 text-lg text-ink-muted">
-          Projects you saved for later. Just tap the heart on a card.
-        </p>
+        <h1 className="text-4xl font-extrabold">{t("favorites.title")}</h1>
+        <p className="mt-2 text-lg text-ink-muted">{t("favorites.sub")}</p>
 
         {authReady && !signedIn && (
           <div className="mx-auto mt-12 max-w-lg">
             <AuthGateCard
-              title="Join to save favorites"
-              body="Create a free account to keep a list of projects you love — and play them anytime."
+              title={t("gate.joinFavorites")}
+              body={t("gate.joinFavoritesBody")}
               nextPath="/favorites"
-              actionLabel="Join free"
+              actionLabel={t("gate.action")}
             />
           </div>
         )}
 
         {signedIn && !ready && (
-          <p className="mt-10 text-ink-muted">Loading your favorites…</p>
+          <p className="mt-10 text-ink-muted">{t("favorites.loading")}</p>
         )}
 
         {signedIn && ready && liked.length === 0 && (
           <div className="mt-12 rounded-xl bg-lilac/40 p-10 text-center">
-            <p className="text-xl font-extrabold">No favorites yet</p>
-            <p className="mt-2 text-ink-muted">
-              Explore something fun and tap ♡ to save it.
-            </p>
+            <p className="text-xl font-extrabold">{t("favorites.emptyTitle")}</p>
+            <p className="mt-2 text-ink-muted">{t("favorites.emptyBody")}</p>
             <Button href="/explore" className="mt-6">
-              Explore
+              {t("common.explore")}
             </Button>
           </div>
         )}

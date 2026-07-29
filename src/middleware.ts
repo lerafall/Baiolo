@@ -1,8 +1,47 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import {
+  isLocale,
+  LOCALE_COOKIE,
+  localeFromAcceptLanguage,
+  type Locale,
+} from "@/lib/i18n/config";
 import { updateSession } from "@/lib/supabase/middleware";
 
+function resolveLocale(request: NextRequest): Locale {
+  const fromQuery = request.nextUrl.searchParams.get("lang");
+  if (isLocale(fromQuery)) return fromQuery;
+  const fromCookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (isLocale(fromCookie)) return fromCookie;
+  return localeFromAcceptLanguage(request.headers.get("accept-language"));
+}
+
+function setLocaleCookie(response: NextResponse, locale: Locale) {
+  response.cookies.set(LOCALE_COOKIE, locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+}
+
 export async function middleware(request: NextRequest) {
-  return updateSession(request);
+  const locale = resolveLocale(request);
+  const wantedLang = request.nextUrl.searchParams.get("lang");
+
+  if (isLocale(wantedLang)) {
+    const url = request.nextUrl.clone();
+    url.searchParams.delete("lang");
+    const redirect = NextResponse.redirect(url);
+    setLocaleCookie(redirect, locale);
+    return redirect;
+  }
+
+  const response = await updateSession(request);
+  const existing = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (!isLocale(existing)) {
+    setLocaleCookie(response, locale);
+  }
+
+  return response;
 }
 
 export const config = {
