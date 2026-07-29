@@ -1,11 +1,13 @@
+import Link from "next/link";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
 import { HomeLiveStrip } from "@/components/home/HomeLiveStrip";
 import { projects } from "@/lib/data/projects";
+import { rankProjects } from "@/lib/ranking";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 
 export default function LandingPage() {
-  const samples = projects.slice(0, 3);
+  const samples = rankProjects(projects, 3).map((r) => r.project);
 
   return (
     <>
@@ -45,27 +47,27 @@ export default function LandingPage() {
                 {samples.map((p, i) => (
                   <div
                     key={p.id}
-                    className="animate-rise rounded-lg border border-border bg-surface p-3 shadow-[var(--shadow-1)]"
+                    className="animate-rise origin-center"
                     style={{
                       transform: `translateX(${i * 12}px) rotate(${(i - 1) * 2}deg)`,
                       animationDelay: `${i * 80}ms`,
                     }}
                   >
-                    <div
-                      className="mb-2 h-16 rounded-md bg-cover bg-center"
-                      style={thumbBackgroundStyle(p.thumbnail)}
-                      role="img"
-                      aria-label={`${p.title} preview`}
-                    />
-                    <p className="font-extrabold text-ink">{p.title}</p>
-                    <p className="text-sm text-ink-muted">{p.tagline}</p>
+                    <Link
+                      href={`/play/${p.id}`}
+                      className="block rounded-lg border border-border bg-surface p-3 shadow-[var(--shadow-1)] transition-transform duration-200 ease-out hover:z-10 hover:scale-[1.05] hover:shadow-[var(--shadow-2)] focus-visible:z-10 focus-visible:scale-[1.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      <div
+                        className="mb-2 h-16 rounded-md bg-cover bg-center"
+                        style={thumbBackgroundStyle(p.thumbnail)}
+                        role="img"
+                        aria-label={`${p.title} preview`}
+                      />
+                      <p className="font-extrabold text-ink">{p.title}</p>
+                      <p className="text-sm text-ink-muted">{p.tagline}</p>
+                    </Link>
                   </div>
                 ))}
-              </div>
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
-                <Button href="/explore" size="m">
-                  Tap to play
-                </Button>
               </div>
             </div>
           </div>

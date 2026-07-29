@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { ShareProjectPanel } from "@/components/share/ShareProjectPanel";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge, StatusMessage } from "@/components/ui/StatusBadge";
 import { cn } from "@/lib/cn";
@@ -142,6 +143,19 @@ function SubmittedBody() {
       <p className="mt-4 text-center text-lg text-ink-muted">
         It stays private until a Baiolo teammate approves it.
       </p>
+
+      {ready && submission && (
+        <ShareProjectPanel
+          className="mt-8 w-full text-left"
+          projectId={submission.id}
+          title={submission.title}
+          tagline={
+            submission.description ||
+            "Coming soon on Baiolo — I’ll send you the link when it’s live."
+          }
+          emphasis="hero"
+        />
+      )}
 
       {ready && submission && (
         <div className="mt-6 flex flex-col items-center gap-2">

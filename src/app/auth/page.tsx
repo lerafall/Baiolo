@@ -81,6 +81,7 @@ function AuthBody() {
     <main className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col justify-center px-5 py-12 md:px-8">
       <h1 className="text-4xl font-extrabold">Join Baiolo</h1>
       <p className="mt-3 text-lg text-ink-muted">
+        Free account to play projects, leave reactions, and save favorites.
         WhatsApp, Google, Apple, and more — or a magic email link.
       </p>
       {(linkError || oauthError) && (

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { useRequireAuth } from "@/lib/auth-gate";
 import { categoryLabels } from "@/lib/data/projects";
 import { useFavorites } from "@/lib/favorites";
 import { useToast } from "@/components/ui/Toast";
@@ -16,6 +17,7 @@ type ProjectCardProps = {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   const { isFavorite, toggle } = useFavorites();
+  const { requireAuth, signedIn } = useRequireAuth(`/project/${project.id}`);
   const { push } = useToast();
   const liked = isFavorite(project.id);
 
@@ -29,7 +31,13 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <button
         type="button"
         aria-pressed={liked}
-        aria-label={liked ? "Remove from favorites" : "Save to favorites"}
+        aria-label={
+          signedIn
+            ? liked
+              ? "Remove from favorites"
+              : "Save to favorites"
+            : "Join to save favorites"
+        }
         className={cn(
           "absolute right-3 top-3 z-10 flex size-11 items-center justify-center rounded-full border-2 bg-surface/95 text-lg font-bold shadow-[var(--shadow-1)] transition-transform hover:scale-105",
           liked
@@ -39,8 +47,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          const on = toggle(project.id);
-          push(on ? "Saved to favorites" : "Removed from favorites");
+          requireAuth(() => {
+            const on = toggle(project.id);
+            push(on ? "Saved to favorites" : "Removed from favorites");
+          });
         }}
       >
         {liked ? "♥" : "♡"}
@@ -87,7 +97,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             {formatCount(project.plays)} plays · {totalReactions} reactions
           </p>
           <Button href={`/project/${project.id}`} size="m">
-            Play
+            {signedIn ? "Play" : "Join to play"}
           </Button>
         </div>
       </div>

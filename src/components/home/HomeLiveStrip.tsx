@@ -6,6 +6,7 @@ import { ProjectCard } from "@/components/ui/ProjectCard";
 import { WeeklyRanking } from "@/components/ui/WeeklyRanking";
 import { projects as catalog } from "@/lib/data/projects";
 import { submissionToProject } from "@/lib/project-map";
+import { rankProjects } from "@/lib/ranking";
 import { useSubmissions } from "@/lib/submissions";
 
 export function HomeLiveStrip() {
@@ -20,11 +21,11 @@ export function HomeLiveStrip() {
     return Array.from(byId.values());
   }, [items]);
 
-  const samples = feed.slice(0, 3);
+  const samples = rankProjects(feed, 3).map((r) => r.project);
   const label =
     mode === "supabase" && items.some((i) => i.status === "published")
-      ? "Live now"
-      : "Sample projects";
+      ? "Loved right now"
+      : "Top rated picks";
 
   return (
     <section className="py-16">
@@ -34,7 +35,7 @@ export function HomeLiveStrip() {
             <h2 className="text-3xl font-extrabold">{label}</h2>
             <p className="mt-2 text-lg text-ink-muted">
               {ready
-                ? "Try a few ideas people are testing right now."
+                ? "The highest-rated ideas to try first."
                 : "Loading soft picks…"}
             </p>
           </div>

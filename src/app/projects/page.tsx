@@ -134,6 +134,9 @@ export default function MyProjectsPage() {
             <p className="mt-1 text-ink-muted">
               {formatCount(best.plays)} plays · people keep coming back.
             </p>
+            <Button href={`/project/${best.id}`} className="mt-4">
+              Share it with friends
+            </Button>
           </div>
         )}
 
@@ -257,9 +260,12 @@ export default function MyProjectsPage() {
                     {formatCount(p.plays)} plays · {p.reactions} reactions
                   </p>
                 </div>
-                <Button href={`/project/${p.id}`} variant="secondary">
-                  Open
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button href={`/project/${p.id}`}>Share & play</Button>
+                  <Button href={`/project/${p.id}`} variant="secondary">
+                    Open
+                  </Button>
+                </div>
               </li>
             ))}
             {ready && published.length === 0 && (

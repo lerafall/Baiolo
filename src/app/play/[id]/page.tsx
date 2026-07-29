@@ -1,13 +1,17 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use, useEffect, useMemo, useRef } from "react";
 import { notFound } from "next/navigation";
+import { AuthGateCard } from "@/components/auth/AuthGateCard";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { ShareProjectPanel } from "@/components/share/ShareProjectPanel";
 import { Button } from "@/components/ui/Button";
+import { useSignedIn } from "@/lib/auth-gate";
 import { getProject } from "@/lib/data/projects";
 import { toEmbedPlayUrl } from "@/lib/play-url";
 import { submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
+import { useSyncedEngagement } from "@/lib/synced-engagement";
 
 export default function PlayPage({
   params,
@@ -16,6 +20,9 @@ export default function PlayPage({
 }) {
   const { id } = use(params);
   const { items, ready } = useSubmissions();
+  const { signedIn, ready: authReady } = useSignedIn();
+  const engagement = useSyncedEngagement(id);
+  const playCounted = useRef(false);
 
   const project = useMemo(() => {
     const fromCatalog = getProject(id);
@@ -25,13 +32,42 @@ export default function PlayPage({
     return null;
   }, [id, items]);
 
+  useEffect(() => {
+    if (!signedIn || !project || !engagement.ready || playCounted.current) return;
+    playCounted.current = true;
+    engagement.recordPlay();
+  }, [signedIn, project, engagement]);
+
   if (ready && !project) notFound();
-  if (!ready || !project) {
+  if (!ready || !project || !authReady) {
     return (
       <>
         <SiteHeader />
         <main className="mx-auto max-w-3xl px-5 py-16 text-ink-muted">
           Opening play…
+        </main>
+      </>
+    );
+  }
+
+  if (!signedIn) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-xl px-5 py-16 md:px-8">
+          <p className="text-center text-sm font-bold uppercase tracking-wide text-ink-muted">
+            Members only
+          </p>
+          <h1 className="mt-2 text-center text-3xl font-extrabold">{project.title}</h1>
+          <p className="mt-2 text-center text-ink-muted">{project.tagline}</p>
+          <div className="mt-8">
+            <AuthGateCard
+              title="Join to play"
+              body="Create a free account to play this project. Guests can browse — playing needs a Baiolo account."
+              nextPath={`/play/${project.id}`}
+              actionLabel="Join free to play"
+            />
+          </div>
         </main>
       </>
     );
@@ -102,6 +138,14 @@ export default function PlayPage({
             </div>
           </div>
         )}
+
+        <ShareProjectPanel
+          className="mt-10"
+          projectId={project.id}
+          title={project.title}
+          tagline={project.tagline}
+          emphasis="compact"
+        />
       </main>
     </>
   );

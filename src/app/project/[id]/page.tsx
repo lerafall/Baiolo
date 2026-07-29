@@ -3,7 +3,9 @@
 import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AuthGateCard } from "@/components/auth/AuthGateCard";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { ShareProjectPanel } from "@/components/share/ShareProjectPanel";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ProjectCard } from "@/components/ui/ProjectCard";
@@ -14,6 +16,7 @@ import {
   getSimilarProjects,
   projects as catalog,
 } from "@/lib/data/projects";
+import { useRequireAuth } from "@/lib/auth-gate";
 import { useSyncedEngagement } from "@/lib/synced-engagement";
 import { reportReasons, type ReportReason } from "@/lib/report-reasons";
 import { addContentReport } from "@/lib/reports";
@@ -35,6 +38,7 @@ export default function ProjectPage({
   const { items, ready } = useSubmissions();
   const engagement = useSyncedEngagement(id);
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
+  const { requireAuth, signedIn } = useRequireAuth(`/project/${id}`);
   const { push } = useToast();
   const [feedback, setFeedback] = useState("");
   const [playing, setPlaying] = useState(false);
@@ -106,29 +110,6 @@ export default function ProjectPage({
 
   const live = project;
 
-  async function shareProject() {
-    const url = window.location.href;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: live.title,
-          text: live.tagline,
-          url,
-        });
-        push("Shared!");
-        return;
-      }
-    } catch {
-      /* fall through to clipboard */
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      push("Link copied!");
-    } catch {
-      push("Couldn’t copy the link.", "warn");
-    }
-  }
-
   const playUrl = live.playUrl;
   const external =
     playUrl.startsWith("http://") || playUrl.startsWith("https://");
@@ -137,14 +118,17 @@ export default function ProjectPage({
   if (engagement.reaction) counts[engagement.reaction] += 1;
 
   function toggle(kind: ReactionKind) {
-    const next = engagement.reaction === kind ? null : kind;
-    engagement.setReaction(next);
-    if (next) push("Nice! Reaction saved.");
+    requireAuth(() => {
+      const next = engagement.reaction === kind ? null : kind;
+      engagement.setReaction(next);
+      if (next) push("Nice! Reaction saved.");
+    });
   }
 
   function startPlay() {
-    engagement.recordPlay();
-    window.location.href = `/play/${live.id}`;
+    requireAuth(() => {
+      window.location.href = `/play/${live.id}`;
+    });
   }
 
   const totalPlays = live.plays + engagement.localPlays;
@@ -176,10 +160,7 @@ export default function ProjectPage({
         )}
         <div className="mt-5 flex flex-wrap gap-3">
           <Button size="m" onClick={startPlay}>
-            Tap to play
-          </Button>
-          <Button size="m" variant="secondary" onClick={shareProject}>
-            Share
+            {signedIn ? "Tap to play" : "Join to play"}
           </Button>
           <Button
             size="m"
@@ -189,13 +170,23 @@ export default function ProjectPage({
               isFavorite(live.id) && "text-accent-coral",
             )}
             onClick={() => {
-              const on = toggleFavorite(live.id);
-              push(on ? "Saved to favorites" : "Removed from favorites");
+              requireAuth(() => {
+                const on = toggleFavorite(live.id);
+                push(on ? "Saved to favorites" : "Removed from favorites");
+              });
             }}
           >
             {isFavorite(live.id) ? "♥ Saved" : "♡ Save"}
           </Button>
         </div>
+
+        <ShareProjectPanel
+          className="mt-8"
+          projectId={live.id}
+          title={live.title}
+          tagline={live.tagline}
+          emphasis="hero"
+        />
 
         <div
           className="relative mt-8 overflow-hidden rounded-xl shadow-[var(--shadow-2)]"
@@ -218,7 +209,7 @@ export default function ProjectPage({
               </div>
             ) : (
               <Button size="l" onClick={startPlay}>
-                Tap to play
+                {signedIn ? "Tap to play" : "Join free to play"}
               </Button>
             )}
           </div>
@@ -235,26 +226,39 @@ export default function ProjectPage({
             <p className="mt-2 text-ink-muted">
               Pick one quick reaction. It helps the creator decide.
             </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {(Object.keys(counts) as ReactionKind[]).map((kind) => (
-                <ReactionChip
-                  key={kind}
-                  kind={kind}
-                  count={counts[kind]}
-                  selected={engagement.reaction === kind}
-                  onToggle={toggle}
+            {!signedIn ? (
+              <div className="mt-4">
+                <AuthGateCard
+                  title="Join to react"
+                  body="Reactions, notes, and favorites need a free Baiolo account — so creators know real people tried their work."
+                  nextPath={`/project/${live.id}`}
+                  actionLabel="Join to leave a reaction"
                 />
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-wrap gap-3">
+                {(Object.keys(counts) as ReactionKind[]).map((kind) => (
+                  <ReactionChip
+                    key={kind}
+                    kind={kind}
+                    count={counts[kind]}
+                    selected={engagement.reaction === kind}
+                    onToggle={toggle}
+                  />
+                ))}
+              </div>
+            )}
 
             <form
               className="mt-8"
               onSubmit={(e) => {
                 e.preventDefault();
                 if (!feedback.trim()) return;
-                engagement.addFeedback(feedback);
-                setFeedback("");
-                push("Thanks! Your note was saved.");
+                requireAuth(() => {
+                  engagement.addFeedback(feedback);
+                  setFeedback("");
+                  push("Thanks! Your note was saved.");
+                });
               }}
             >
               <label htmlFor="feedback" className="text-lg font-bold">
@@ -266,11 +270,18 @@ export default function ProjectPage({
                 onChange={(e) => setFeedback(e.target.value)}
                 rows={3}
                 maxLength={280}
-                placeholder="One kind sentence is enough."
-                className="mt-3 w-full rounded-lg border-2 border-border bg-surface p-4 text-base text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
+                placeholder={
+                  signedIn
+                    ? "One kind sentence is enough."
+                    : "Sign in to leave a note for the creator."
+                }
+                disabled={!signedIn}
+                className="mt-3 w-full rounded-lg border-2 border-border bg-surface p-4 text-base text-ink placeholder:text-placeholder focus:border-brand focus:outline-none disabled:opacity-60"
               />
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <Button type="submit">Send note</Button>
+                <Button type="submit">
+                  {signedIn ? "Send note" : "Join to send a note"}
+                </Button>
               </div>
             </form>
           </section>
@@ -303,7 +314,9 @@ export default function ProjectPage({
                 className="mt-4"
                 variant="destructive"
                 size="m"
-                onClick={() => setReportOpen(true)}
+                onClick={() => {
+                  requireAuth(() => setReportOpen(true));
+                }}
                 disabled={engagement.reported}
               >
                 {engagement.reported ? "Reported" : "Report project"}
