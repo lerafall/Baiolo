@@ -15,6 +15,7 @@ import { formatDateTime } from "@/lib/format";
 import { useSubmissions } from "@/lib/submissions";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import { AdminAccountsPanel } from "@/components/admin/AdminAccountsPanel";
+import { DictationField } from "@/components/ui/DictationField";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 const riskFilters: Array<{ id: "all" | RiskLevel; label: string }> = [
@@ -267,12 +268,18 @@ export default function AdminModerationPage() {
               setGateError(ok ? "" : "That admin code didn’t work.");
             }}
           >
-            <input
+            <DictationField
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder={t("admin.codePlaceholder")}
-              className="min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
-            />
+              onChange={setCode}
+              append={false}
+            >
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder={t("admin.codePlaceholder")}
+                className="min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
+              />
+            </DictationField>
             {gateError && (
               <p className="mt-3 font-semibold text-danger">{gateError}</p>
             )}
@@ -313,12 +320,18 @@ export default function AdminModerationPage() {
 
         <label className="mt-6 block max-w-md">
           <span className="sr-only">Search queue</span>
-          <input
+          <DictationField
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search title, description, flags"
-            className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
-          />
+            onChange={setQuery}
+            append={false}
+          >
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search title, description, flags"
+              className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
+            />
+          </DictationField>
         </label>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -498,13 +511,19 @@ export default function AdminModerationPage() {
 
               <label className="mt-5 block">
                 <span className="font-bold">Note for creator (optional)</span>
-                <textarea
+                <DictationField
+                  className="mt-2"
                   value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={3}
-                  placeholder="Please soften the cover colors a little."
-                  className="mt-2 w-full rounded-lg border-2 border-border p-3 focus:border-brand focus:outline-none"
-                />
+                  onChange={setNote}
+                >
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={3}
+                    placeholder="Please soften the cover colors a little."
+                    className="w-full rounded-lg border-2 border-border p-3 focus:border-brand focus:outline-none"
+                  />
+                </DictationField>
               </label>
 
               <div className="mt-6 flex flex-wrap gap-2">

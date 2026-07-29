@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DictationField } from "@/components/ui/DictationField";
 import { formatDateTime } from "@/lib/format";
 import type { AdminAccount } from "@/lib/admin-accounts";
 
@@ -101,12 +102,18 @@ export function AdminAccountsPanel() {
 
       <label className="mt-5 block max-w-md">
         <span className="sr-only">Search accounts</span>
-        <input
+        <DictationField
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name, email, provider"
-          className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
-        />
+          onChange={setQuery}
+          append={false}
+        >
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name, email, provider"
+            className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
+          />
+        </DictationField>
       </label>
 
       {error && (

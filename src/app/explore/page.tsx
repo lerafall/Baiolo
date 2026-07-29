@@ -13,6 +13,7 @@ import { submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { DictationField } from "@/components/ui/DictationField";
 import type { ProjectCategory } from "@/lib/types";
 
 function ExploreBody() {
@@ -98,12 +99,18 @@ function ExploreBody() {
 
       <label className="mt-8 block animate-rise-delay-1">
         <span className="sr-only">{t("exploreExtra.searchSr")}</span>
-        <input
+        <DictationField
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("exploreExtra.search")}
-          className="min-h-14 w-full rounded-pill border-2 border-border bg-surface px-6 text-lg text-ink shadow-[var(--shadow-1)] placeholder:text-placeholder focus:border-brand focus:outline-none"
-        />
+          onChange={setQuery}
+          append={false}
+        >
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("exploreExtra.search")}
+            className="min-h-14 w-full rounded-pill border-2 border-border bg-surface px-6 text-lg text-ink shadow-[var(--shadow-1)] placeholder:text-placeholder focus:border-brand focus:outline-none"
+          />
+        </DictationField>
       </label>
 
       <div className="-mx-5 mt-5 animate-rise-delay-2 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:overflow-visible md:px-0">

@@ -22,6 +22,7 @@ import { reportReasons, type ReportReason } from "@/lib/report-reasons";
 import { addContentReport } from "@/lib/reports";
 import { useFavorites } from "@/lib/favorites";
 import { useToast } from "@/components/ui/Toast";
+import { DictationField } from "@/components/ui/DictationField";
 import { submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 import { cn } from "@/lib/cn";
@@ -268,20 +269,27 @@ export default function ProjectPage({
               <label htmlFor="feedback" className="text-lg font-bold">
                 {t("project.feedbackLabel")}
               </label>
-              <textarea
-                id="feedback"
+              <DictationField
+                className="mt-3"
                 value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                rows={3}
-                maxLength={280}
-                placeholder={
-                  signedIn
-                    ? t("project.feedbackPh")
-                    : t("project.feedbackPhGuest")
-                }
+                onChange={setFeedback}
                 disabled={!signedIn}
-                className="mt-3 w-full rounded-lg border-2 border-border bg-surface p-4 text-base text-ink placeholder:text-placeholder focus:border-brand focus:outline-none disabled:opacity-60"
-              />
+              >
+                <textarea
+                  id="feedback"
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  rows={3}
+                  maxLength={280}
+                  placeholder={
+                    signedIn
+                      ? t("project.feedbackPh")
+                      : t("project.feedbackPhGuest")
+                  }
+                  disabled={!signedIn}
+                  className="w-full rounded-lg border-2 border-border bg-surface p-4 text-base text-ink placeholder:text-placeholder focus:border-brand focus:outline-none disabled:opacity-60"
+                />
+              </DictationField>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Button type="submit">
                   {signedIn ? t("project.sendNote") : t("project.joinSendNote")}

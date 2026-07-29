@@ -634,6 +634,14 @@ export const en = {
       "Meanwhile: use the HTML starter, or copy a prompt on How to make.",
     aiUseHtml: "Or pick HTML starter",
   },
+  dictation: {
+    start: "Dictate",
+    stop: "Stop dictation",
+    unsupported: "Voice input isn’t supported in this browser.",
+    permission: "Allow the microphone to dictate.",
+    noSpeech: "No speech heard — try again.",
+    failed: "Couldn’t start dictation.",
+  },
 } as const;
 
 type DeepStringify<T> = {

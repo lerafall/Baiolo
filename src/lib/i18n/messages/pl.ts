@@ -637,4 +637,12 @@ export const pl: Messages = {
       "Na razie: użyj startera HTML albo skopiuj prompt w Jak zrobić.",
     aiUseHtml: "Albo wybierz starter HTML",
   },
+  dictation: {
+    start: "Dyktuj",
+    stop: "Zatrzymaj dyktowanie",
+    unsupported: "Ta przeglądarka nie obsługuje dyktowania.",
+    permission: "Zezwól na mikrofon, żeby dyktować.",
+    noSpeech: "Nic nie usłyszano — spróbuj ponownie.",
+    failed: "Nie udało się uruchomić dyktowania.",
+  },
 };

@@ -30,6 +30,7 @@ import {
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { AiBuildTeaser } from "@/components/create/AiBuildTeaser";
+import { DictationField } from "@/components/ui/DictationField";
 import {
   cloneStarterFiles,
   HTML_STARTERS,
@@ -644,25 +645,38 @@ function CreateWizard() {
               <p className="mt-4 text-sm font-bold text-ink-muted">
                 {t("create.orTypeName")}
               </p>
-              <input
+              <DictationField
+                className="mt-2"
                 value={draft.sourceLabel}
-                onChange={(e) =>
+                append={false}
+                onChange={(sourceLabel) =>
                   patch({
-                    sourceLabel: e.target.value,
+                    sourceLabel,
                     packageReady: false,
                     hints: [],
                   })
                 }
-                onBlur={() => tryAutoPackage(draft.sourceLabel)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    tryAutoPackage(draft.sourceLabel);
+              >
+                <input
+                  value={draft.sourceLabel}
+                  onChange={(e) =>
+                    patch({
+                      sourceLabel: e.target.value,
+                      packageReady: false,
+                      hints: [],
+                    })
                   }
-                }}
-                placeholder="my-fun-game.zip or my-folder"
-                className="mt-2 min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
-              />
+                  onBlur={() => tryAutoPackage(draft.sourceLabel)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      tryAutoPackage(draft.sourceLabel);
+                    }
+                  }}
+                  placeholder="my-fun-game.zip or my-folder"
+                  className="min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
+                />
+              </DictationField>
               <Button
                 type="button"
                 variant="secondary"
@@ -710,12 +724,19 @@ function CreateWizard() {
               <p className="mt-1 text-ink-muted">
                 {t("create.pasteLinkSub")}
               </p>
-              <input
+              <DictationField
+                className="mt-4"
                 value={draft.sourceLabel}
-                onChange={(e) => patch({ sourceLabel: e.target.value })}
-                placeholder="https://..."
-                className="mt-4 min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
-              />
+                onChange={(sourceLabel) => patch({ sourceLabel })}
+                append={false}
+              >
+                <input
+                  value={draft.sourceLabel}
+                  onChange={(e) => patch({ sourceLabel: e.target.value })}
+                  placeholder="https://..."
+                  className="min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
+                />
+              </DictationField>
             </label>
           )}
 
@@ -793,22 +814,34 @@ function CreateWizard() {
             <div className="space-y-5">
               <label className="block">
                 <span className="text-lg font-bold">{t("create.title")}</span>
-                <input
+                <DictationField
+                  className="mt-2"
                   value={draft.title}
-                  onChange={(e) => patch({ title: e.target.value })}
-                  placeholder="Cloud Hopper"
-                  className="mt-2 min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
-                />
+                  onChange={(title) => patch({ title })}
+                >
+                  <input
+                    value={draft.title}
+                    onChange={(e) => patch({ title: e.target.value })}
+                    placeholder="Cloud Hopper"
+                    className="min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
+                  />
+                </DictationField>
               </label>
               <label className="block">
                 <span className="text-lg font-bold">{t("create.shortDesc")}</span>
-                <textarea
+                <DictationField
+                  className="mt-2"
                   value={draft.description}
-                  onChange={(e) => patch({ description: e.target.value })}
-                  rows={4}
-                  placeholder="A tiny platformer where you bounce on soft clouds."
-                  className="mt-2 w-full rounded-lg border-2 border-border p-4 text-base focus:border-brand focus:outline-none"
-                />
+                  onChange={(description) => patch({ description })}
+                >
+                  <textarea
+                    value={draft.description}
+                    onChange={(e) => patch({ description: e.target.value })}
+                    rows={4}
+                    placeholder="A tiny platformer where you bounce on soft clouds."
+                    className="w-full rounded-lg border-2 border-border p-4 text-base focus:border-brand focus:outline-none"
+                  />
+                </DictationField>
               </label>
             </div>
           )}
@@ -848,20 +881,27 @@ function CreateWizard() {
                     />
                   ))}
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <input
+              <div className="mt-4 flex flex-wrap items-start gap-2">
+                <DictationField
+                  className="min-w-0 flex-1"
                   value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addCustomTag();
-                    }
-                  }}
-                  placeholder={t("create.ownTag")}
-                  maxLength={24}
-                  className="min-h-12 flex-1 rounded-pill border-2 border-border bg-surface px-5 text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
-                />
+                  onChange={setTagInput}
+                  append={false}
+                >
+                  <input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addCustomTag();
+                      }
+                    }}
+                    placeholder={t("create.ownTag")}
+                    maxLength={24}
+                    className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
+                  />
+                </DictationField>
                 <Button
                   type="button"
                   variant="secondary"

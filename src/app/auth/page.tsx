@@ -18,6 +18,7 @@ import {
 } from "@/lib/social-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { DictationField } from "@/components/ui/DictationField";
 import { useSession } from "@/lib/session";
 
 function AuthBody() {
@@ -154,14 +155,21 @@ function AuthBody() {
             >
               <label className="block">
                 <span className="font-bold">{t("auth.phone")}</span>
-                <input
-                  type="tel"
-                  required
+                <DictationField
+                  className="mt-2"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+48 500 000 000"
-                  className="mt-2 min-h-14 w-full rounded-pill border-2 border-border bg-surface px-5 text-lg focus:border-brand focus:outline-none"
-                />
+                  onChange={setPhone}
+                  append={false}
+                >
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+48 500 000 000"
+                    className="min-h-14 w-full rounded-pill border-2 border-border bg-surface px-5 text-lg focus:border-brand focus:outline-none"
+                  />
+                </DictationField>
               </label>
               <Button
                 type="submit"
@@ -182,14 +190,21 @@ function AuthBody() {
             >
               <label className="block">
                 <span className="font-bold">{t("auth.codeLabel")}</span>
-                <input
-                  inputMode="numeric"
-                  required
+                <DictationField
+                  className="mt-2"
                   value={waCode}
-                  onChange={(e) => setWaCode(e.target.value)}
-                  placeholder="123456"
-                  className="mt-2 min-h-14 w-full rounded-pill border-2 border-border bg-surface px-5 text-lg tracking-widest focus:border-brand focus:outline-none"
-                />
+                  onChange={setWaCode}
+                  append={false}
+                >
+                  <input
+                    inputMode="numeric"
+                    required
+                    value={waCode}
+                    onChange={(e) => setWaCode(e.target.value)}
+                    placeholder="123456"
+                    className="min-h-14 w-full rounded-pill border-2 border-border bg-surface px-5 text-lg tracking-widest focus:border-brand focus:outline-none"
+                  />
+                </DictationField>
               </label>
               <Button
                 type="submit"
@@ -321,14 +336,21 @@ function AuthBody() {
           </div>
           <label className="block">
             <span className="font-bold">{t("auth.email")}</span>
-            <input
-              type="email"
-              required
+            <DictationField
+              className="mt-2"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="mt-2 min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
-            />
+              onChange={setEmail}
+              append={false}
+            >
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
+              />
+            </DictationField>
           </label>
           <Button
             type="submit"
