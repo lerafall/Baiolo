@@ -76,6 +76,11 @@ export function AdminAccountsPanel() {
     return "Free";
   }
 
+  function isActivePlan(current: string | null | undefined, button: string) {
+    const n = labelPlan(current).toLowerCase();
+    return n === button;
+  }
+
   async function setAccountPlan(id: string, nextPlan: string) {
     setError("");
     setPlanBusyId(id);
@@ -85,12 +90,25 @@ export function AdminAccountsPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, plan: nextPlan, adminCode }),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        detail?: string;
+        plan?: string;
+      };
       if (!res.ok || !data.ok) {
-        setError(data.error || "Plan update failed.");
+        setError(
+          [data.error || "Plan update failed.", data.detail]
+            .filter(Boolean)
+            .join(" "),
+        );
         return;
       }
-      setItems((prev) => prev.map((a) => (a.id === id ? { ...a, plan: nextPlan } : a)));
+      setItems((prev) =>
+        prev.map((a) =>
+          a.id === id ? { ...a, plan: data.plan || nextPlan } : a,
+        ),
+      );
     } catch {
       setError("Plan update failed.");
     } finally {
@@ -117,7 +135,7 @@ export function AdminAccountsPanel() {
         <div>
           <h2 className="text-2xl font-extrabold">Accounts</h2>
           <p className="mt-1 text-ink-muted">
-            Browse sign-ups and remove accounts when needed.
+            Browse sign-ups, award Pro/Studio, and remove accounts when needed.
           </p>
         </div>
         <Button
@@ -183,7 +201,7 @@ export function AdminAccountsPanel() {
               <Button
                 size="l"
                 disabled={busy || planBusyId === a.id}
-                variant={(a.plan ?? "free") === "free" ? undefined : "secondary"}
+                variant={isActivePlan(a.plan, "free") ? undefined : "secondary"}
                 onClick={() => void setAccountPlan(a.id, "free")}
               >
                 Free
@@ -191,7 +209,7 @@ export function AdminAccountsPanel() {
               <Button
                 size="l"
                 disabled={busy || planBusyId === a.id}
-                variant={(a.plan ?? "free") === "pro" ? undefined : "secondary"}
+                variant={isActivePlan(a.plan, "pro") ? undefined : "secondary"}
                 onClick={() => void setAccountPlan(a.id, "pro")}
               >
                 Pro
@@ -199,7 +217,9 @@ export function AdminAccountsPanel() {
               <Button
                 size="l"
                 disabled={busy || planBusyId === a.id}
-                variant={(a.plan ?? "free") === "studio" ? undefined : "secondary"}
+                variant={
+                  isActivePlan(a.plan, "studio") ? undefined : "secondary"
+                }
                 onClick={() => void setAccountPlan(a.id, "studio")}
               >
                 Studio

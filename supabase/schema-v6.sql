@@ -8,7 +8,11 @@ ALTER TYPE public.upload_type ADD VALUE IF NOT EXISTS 'ai';
 -- Migrate legacy plan values
 update public.profiles
 set plan = 'pro'
-where plan in ('paid', 'paid_basic', 'paid_pro');
+where plan in ('paid', 'paid_basic');
+
+update public.profiles
+set plan = 'studio'
+where plan = 'paid_pro';
 
 alter table public.profiles
   alter column plan set default 'free';
