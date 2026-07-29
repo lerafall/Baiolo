@@ -130,8 +130,9 @@ export function AiBuildPanel({
           mode: files ? "regenerate" : "new_project",
         }),
       });
-      const data = (await res.json()) as {
+      let data: {
         error?: string;
+        code?: string;
         status?: string;
         message?: string;
         title?: string;
@@ -140,15 +141,27 @@ export function AiBuildPanel({
         categoryHint?: ProjectCategory | null;
         files?: StarterFiles;
         quota?: QuotaState;
-      };
+      } = {};
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        setError(
+          res.status === 504 || res.status === 408
+            ? t("workshop.aiTimeout")
+            : t("workshop.aiFailed"),
+        );
+        return;
+      }
 
       if (data.quota) setQuota(data.quota);
 
       if (!res.ok) {
         if (res.status === 429) {
           setError(data.error || t("workshop.aiQuotaLimit"));
-        } else if (res.status === 503) {
+        } else if (res.status === 503 || data.code === "ai_unavailable") {
           setError(t("workshop.aiUnavailable"));
+        } else if (res.status === 401) {
+          setError(t("workshop.aiNeedAccount"));
         } else {
           setError(data.error || t("workshop.aiFailed"));
         }
@@ -169,6 +182,7 @@ export function AiBuildPanel({
       }
 
       if (!data.files?.["index.html"]) {
+        // Chat-only success already returned above; missing files = failed build.
         setError(data.error || t("workshop.aiFailed"));
         return;
       }

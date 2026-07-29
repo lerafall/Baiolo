@@ -167,6 +167,13 @@ export async function chatCompletionJson(options: {
   });
 
   if (!res.ok) {
+    const detail = (await res.text().catch(() => "")).slice(0, 400);
+    console.error("[baiolo-ai] llm_http_error", {
+      status: res.status,
+      provider: cfg.provider,
+      model: cfg.model,
+      detail,
+    });
     throw new Error(`llm_http_${res.status}`);
   }
 

@@ -765,6 +765,7 @@ export const en = {
     aiHintPaid: "Member feature — may become paid later.",
     aiUnavailable:
       "AI building is temporarily unavailable. Please try again in a moment.",
+    aiTimeout: "That took too long. Try again in a moment.",
     aiQuota: "{remaining} of {limit} AI generations left this month ({plan}).",
     aiQuotaPaid: "paid",
     aiQuotaPro: "pro",

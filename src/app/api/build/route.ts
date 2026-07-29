@@ -301,6 +301,22 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
+    if (code === "llm_http_401" || code === "llm_http_403") {
+      return NextResponse.json(
+        { error: AI_UNAVAILABLE_PUBLIC, code: "ai_provider_auth" },
+        { status: 503 },
+      );
+    }
+    if (code === "llm_http_402" || code === "llm_http_429") {
+      return NextResponse.json(
+        {
+          error:
+            "AI building is busy right now. Please try again in a few minutes.",
+          code: "ai_provider_limit",
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json(
       {
         error: AI_BUILD_FAILED_PUBLIC,

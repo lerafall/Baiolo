@@ -768,6 +768,7 @@ export const pl: Messages = {
     aiHintPaid: "Funkcja dla członków — później może być płatna.",
     aiUnavailable:
       "Budowanie AI jest chwilowo niedostępne — spróbuj ponownie za chwilę.",
+    aiTimeout: "To trwało zbyt długo. Spróbuj za chwilę ponownie.",
     aiQuota: "Zostało {remaining} z {limit} generowań AI w tym miesiącu ({plan}).",
     aiQuotaPaid: "płatny",
     aiQuotaPro: "pro",
