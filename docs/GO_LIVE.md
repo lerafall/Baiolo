@@ -64,9 +64,12 @@ Recommended for production:
 ```
 NEXT_PUBLIC_SITE_URL=https://baiolo.com
 NEXT_PUBLIC_BAIOLO_CONTACT_EMAIL=hello@baiolo.com
+OPENROUTER_API_KEY=...          # required for “Build from description”
 RESEND_API_KEY=...
 NOTIFY_EMAIL_FROM=Baiolo <hello@baiolo.com>
 ```
+
+Without `OPENROUTER_API_KEY` / `OPENAI_API_KEY` / `BUILDER_API_URL`, AI build returns a friendly “temporarily unavailable” message (no env names in the UI). After changing `.env`, rebuild the image (`docker compose up -d --build`) so the server process picks up the key.
 
 See `.env.example` and `.env.production.example` for the full list.
 

@@ -194,7 +194,7 @@ export async function reviewZipBytes(
   const summary = ok
     ? source === "static+ai"
       ? "Static + AI check finished. Review the notes, then play the game."
-      : "Static check finished. Optional: set OPENROUTER_API_KEY or OPENAI_API_KEY for deeper AI review."
+      : "Static check finished. AI review is optional when a model provider is configured on the server."
     : "Blocking issues found — ask for changes before publish.";
 
   return {

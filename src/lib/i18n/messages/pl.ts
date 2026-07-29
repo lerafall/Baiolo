@@ -766,6 +766,8 @@ export const pl: Messages = {
     aiChatThinking: "Baiolo pisze…",
     aiFailed: "Nie udało się tego zbudować. Spróbuj prostszego pomysłu.",
     aiHintPaid: "Funkcja dla członków — później może być płatna.",
+    aiUnavailable:
+      "Budowanie AI jest chwilowo niedostępne — spróbuj ponownie za chwilę.",
     aiQuota: "Zostało {remaining} z {limit} generowań AI w tym miesiącu ({plan}).",
     aiQuotaPaid: "płatny",
     aiQuotaPro: "pro",

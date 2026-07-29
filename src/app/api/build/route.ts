@@ -15,7 +15,12 @@ import {
   getAiUsageSummary,
   incrementAiUsage,
 } from "@/lib/ai-usage";
-import { isLlmConfigured } from "@/lib/llm";
+import {
+  AI_BUILD_FAILED_PUBLIC,
+  AI_UNAVAILABLE_PUBLIC,
+  gateAiBuildReady,
+  shouldChargeAiGeneration,
+} from "@/lib/ai-public-errors";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServer } from "@/lib/supabase/server-auth";
 import type { ProjectCategory } from "@/lib/types";
@@ -155,13 +160,11 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isLlmConfigured()) {
+  const ready = gateAiBuildReady();
+  if (!ready.ok) {
     return NextResponse.json(
-      {
-        error:
-          "AI building isn’t configured yet. Set OPENROUTER_API_KEY or OPENAI_API_KEY (or BUILDER_API_URL) on the server.",
-      },
-      { status: 503 },
+      { error: ready.error, code: "ai_unavailable" },
+      { status: ready.status },
     );
   }
 
@@ -229,10 +232,17 @@ export async function POST(request: Request) {
         categoryHint: turn.categoryHint || body.categoryHint,
         locale,
       });
+      const charge = shouldChargeAiGeneration({
+        configured: true,
+        producedBuild: Boolean(result.files?.["index.html"]),
+      });
       const incremented =
-        userId && isSupabaseConfigured()
+        charge && userId && isSupabaseConfigured()
           ? await incrementAiUsage(userId)
-          : { generationsUsed: 0 };
+          : {
+              generationsUsed:
+                usageGate?.summary.generationsUsed ?? 0,
+            };
       return NextResponse.json({
         status: "built",
         message: turn.message,
@@ -256,10 +266,16 @@ export async function POST(request: Request) {
       categoryHint: body.categoryHint,
       locale,
     });
+    const charge = shouldChargeAiGeneration({
+      configured: true,
+      producedBuild: Boolean(result.files?.["index.html"]),
+    });
     const incremented =
-      userId && isSupabaseConfigured()
+      charge && userId && isSupabaseConfigured()
         ? await incrementAiUsage(userId)
-        : { generationsUsed: 0 };
+        : {
+            generationsUsed: usageGate?.summary.generationsUsed ?? 0,
+          };
     return NextResponse.json({
       status: "built",
       title: result.title,
@@ -278,17 +294,17 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const code = err instanceof Error ? err.message : "build_failed";
+    console.error("[baiolo-ai] build_failed", { code });
     if (code === "missing_llm_key" || code === "missing_openai_key") {
       return NextResponse.json(
-        { error: "AI building isn’t configured yet." },
+        { error: AI_UNAVAILABLE_PUBLIC, code: "ai_unavailable" },
         { status: 503 },
       );
     }
     return NextResponse.json(
       {
-        error:
-          "Couldn’t build that right now. Try a simpler description, or try again.",
-        detail: code,
+        error: AI_BUILD_FAILED_PUBLIC,
+        code: "ai_build_failed",
       },
       { status: 502 },
     );

@@ -147,6 +147,8 @@ export function AiBuildPanel({
       if (!res.ok) {
         if (res.status === 429) {
           setError(data.error || t("workshop.aiQuotaLimit"));
+        } else if (res.status === 503) {
+          setError(t("workshop.aiUnavailable"));
         } else {
           setError(data.error || t("workshop.aiFailed"));
         }
