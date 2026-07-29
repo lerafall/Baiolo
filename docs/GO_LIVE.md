@@ -60,7 +60,7 @@ BAIOLO_ADMIN_CODE=...   # server-only secret; promote admins via /admin unlock o
 OPENROUTER_API_KEY=...
 ```
 
-Also run `supabase/schema-v7.sql` (AI quota) and `supabase/schema-v8.sql` (profiles RLS) in the SQL editor.
+Also run `supabase/schema-v7.sql` (AI quota), `schema-v8.sql` / `schema-v9.sql` (profiles RLS + `is_baiolo_admin`) in the SQL editor.
 Recommended for production:
 
 ```
@@ -110,7 +110,8 @@ set raw_app_meta_data =
 where email = 'you@example.com';
 ```
 
-Demo fallback: signed-in user enters **server** `BAIOLO_ADMIN_CODE` on `/admin` (writes `profiles.role = admin`). Award Pro/Studio from the accounts panel.
+Demo: promote via SQL `update profiles set role = 'admin' where email = '...'`
+or signed-in visit `/admin/unlock` with server-only `BAIOLO_ADMIN_CODE`. Award Pro/Studio from the accounts panel.
 
 ## 9. Smoke test
 

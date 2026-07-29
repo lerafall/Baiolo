@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "@/lib/session";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function SiteFooter() {
   const t = useT();
+  const { isAdmin, ready } = useSession();
   const [mode, setMode] = useState<"mock" | "supabase" | "…">("…");
 
   useEffect(() => {
@@ -40,9 +42,11 @@ export function SiteFooter() {
           <Link href="/safety" className="hover:text-ink">
             {t("nav.safety")}
           </Link>
-          <Link href="/admin" className="hover:text-ink">
-            {t("nav.admin")}
-          </Link>
+          {ready && isAdmin && (
+            <Link href="/admin" className="hover:text-ink">
+              {t("nav.admin")}
+            </Link>
+          )}
           <span className="rounded-pill bg-lilac/70 px-3 py-1 text-xs uppercase tracking-wide text-brand-strong">
             {t("common.mode", { mode })}
           </span>

@@ -3,7 +3,11 @@ import { createSupabaseServer } from "@/lib/supabase/server-auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cookies } from "next/headers";
-import { createHmac, timingSafeEqual } from "crypto";
+import {
+  ADMIN_GATE_COOKIE,
+  adminGateToken,
+  cookieMatchesAdminGate,
+} from "@/lib/admin-auth-shared";
 
 export type AdminAuthOk = {
   ok: true;
@@ -16,61 +20,127 @@ export type AdminAuthFail = {
   response: NextResponse;
 };
 
-export const ADMIN_GATE_COOKIE = "baiolo_admin_gate";
+export { ADMIN_GATE_COOKIE, adminGateToken } from "@/lib/admin-auth-shared";
 
-export function adminGateToken(serverCode: string) {
-  return createHmac("sha256", serverCode).update("baiolo-admin-gate").digest("hex");
+function forbidden(message = "Brak uprawnień administratora.") {
+  return {
+    ok: false as const,
+    response: NextResponse.json(
+      { error: "FORBIDDEN", message },
+      { status: 403 },
+    ),
+  };
 }
 
-function cookieMatchesAdminGate(token: string | undefined, serverCode: string) {
-  if (!token || !serverCode) return false;
-  const expected = adminGateToken(serverCode);
-  try {
-    const a = Buffer.from(token);
-    const b = Buffer.from(expected);
-    return a.length === b.length && timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
+function unauthorized(message = "Zaloguj się, żeby użyć panelu admina.") {
+  return {
+    ok: false as const,
+    response: NextResponse.json(
+      { error: "UNAUTHORIZED", message },
+      { status: 401 },
+    ),
+  };
 }
 
 /**
- * Server-only admin gate.
- * Accepts signed-in users with profiles.role = 'admin' or JWT app_metadata.role = 'admin'.
- * Optional bootstrap: BAIOLO_ADMIN_CODE (server env only) promotes the signed-in user once.
- * Mock mode: httpOnly cookie set by /api/admin/session after verifying the server code.
- * NEVER accepts NEXT_PUBLIC_BAIOLO_ADMIN_CODE as auth.
+ * Server-only admin gate (fail-closed).
+ * Admin = signed-in user with profiles.role = 'admin' OR JWT app_metadata.role = 'admin'.
+ * Does NOT accept NEXT_PUBLIC_BAIOLO_ADMIN_CODE.
+ * Does NOT auto-promote — only /api/admin/session may promote.
  */
-export async function requireAdmin(options?: {
-  adminCode?: string | null;
-}): Promise<AdminAuthOk | AdminAuthFail> {
+export async function requireAdmin(): Promise<AdminAuthOk | AdminAuthFail> {
   const serverCode = (process.env.BAIOLO_ADMIN_CODE || "").trim();
-  const publicCode = (process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "").trim();
-  const provided = (options?.adminCode || "").trim();
-
-  const secretOk =
-    Boolean(serverCode) &&
-    provided === serverCode &&
-    (!publicCode || serverCode !== publicCode);
 
   if (!isSupabaseConfigured()) {
-    if (secretOk) {
-      return { ok: true, userId: "local-admin", email: null };
-    }
     const jar = await cookies();
-    if (cookieMatchesAdminGate(jar.get(ADMIN_GATE_COOKIE)?.value, serverCode)) {
+    if (
+      await cookieMatchesAdminGate(jar.get(ADMIN_GATE_COOKIE)?.value, serverCode)
+    ) {
       return { ok: true, userId: "local-admin", email: null };
     }
+    return forbidden();
+  }
+
+  const supabase = await createSupabaseServer();
+  if (!supabase) return unauthorized();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return unauthorized();
+
+  const jwtRole =
+    typeof user.app_metadata?.role === "string"
+      ? user.app_metadata.role
+      : null;
+  if (jwtRole === "admin") {
+    return { ok: true, userId: user.id, email: user.email ?? null };
+  }
+
+  // Fail closed: without service role we cannot verify profiles.role safely.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return forbidden("Admin gate misconfigured (missing service role).");
+  }
+
+  const admin = getSupabaseServerClient();
+  if (!admin) {
+    return forbidden("Admin gate misconfigured (missing service role).");
+  }
+
+  const { data: profile, error } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    return forbidden("Could not verify admin role.");
+  }
+
+  if (profile?.role === "admin") {
+    return { ok: true, userId: user.id, email: user.email ?? null };
+  }
+
+  return forbidden();
+}
+
+/**
+ * Promote signed-in user to admin after verifying BAIOLO_ADMIN_CODE.
+ * Call only from /api/admin/session.
+ */
+export async function promoteAdminWithServerCode(
+  code: string,
+): Promise<AdminAuthOk | AdminAuthFail> {
+  const serverCode = (process.env.BAIOLO_ADMIN_CODE || "").trim();
+  const publicCode = (process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "").trim();
+  const provided = code.trim();
+
+  if (!serverCode || provided !== serverCode) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "That admin code didn’t work." },
+        { status: 401 },
+      ),
+    };
+  }
+
+  if (publicCode && serverCode === publicCode) {
     return {
       ok: false,
       response: NextResponse.json(
         {
-          error: "FORBIDDEN",
-          message: "Brak uprawnień administratora.",
+          error:
+            "Server misconfigured: BAIOLO_ADMIN_CODE must differ from NEXT_PUBLIC_BAIOLO_ADMIN_CODE (leave the public one empty).",
         },
-        { status: 403 },
+        { status: 503 },
       ),
     };
+  }
+
+  if (!isSupabaseConfigured()) {
+    return { ok: true, userId: "local-admin", email: null };
   }
 
   const supabase = await createSupabaseServer();
@@ -78,65 +148,33 @@ export async function requireAdmin(options?: {
     data: { user },
   } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
 
-  if (!user) {
+  if (!user) return unauthorized("Sign in first, then unlock admin.");
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return forbidden("Admin gate misconfigured (missing service role).");
+  }
+
+  const admin = getSupabaseServerClient();
+  if (!admin) {
+    return forbidden("Admin gate misconfigured (missing service role).");
+  }
+
+  const { error } = await admin.from("profiles").upsert({
+    id: user.id,
+    email: user.email ?? null,
+    role: "admin",
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) {
     return {
       ok: false,
       response: NextResponse.json(
-        {
-          error: "UNAUTHORIZED",
-          message: "Zaloguj się, żeby użyć panelu admina.",
-        },
-        { status: 401 },
+        { error: "Couldn’t grant admin role.", detail: error.message },
+        { status: 502 },
       ),
     };
   }
 
-  const jwtRole =
-    typeof user.app_metadata?.role === "string"
-      ? user.app_metadata.role
-      : null;
-
-  const admin = getSupabaseServerClient();
-  let profileRole: string | null = null;
-  if (admin) {
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-    profileRole = typeof profile?.role === "string" ? profile.role : null;
-  }
-
-  if (profileRole === "admin" || jwtRole === "admin") {
-    return {
-      ok: true,
-      userId: user.id,
-      email: user.email ?? null,
-    };
-  }
-
-  if (secretOk && admin) {
-    await admin.from("profiles").upsert({
-      id: user.id,
-      email: user.email ?? null,
-      role: "admin",
-      updated_at: new Date().toISOString(),
-    });
-    return {
-      ok: true,
-      userId: user.id,
-      email: user.email ?? null,
-    };
-  }
-
-  return {
-    ok: false,
-    response: NextResponse.json(
-      {
-        error: "FORBIDDEN",
-        message: "Brak uprawnień administratora.",
-      },
-      { status: 403 },
-    ),
-  };
+  return { ok: true, userId: user.id, email: user.email ?? null };
 }

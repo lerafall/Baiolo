@@ -60,11 +60,21 @@ const basket = { x: canvas.width / 2, y: canvas.height - 36, w: 72, h: 22, speed
 const coins = [];
 let score = 0;
 let spawnTimer = 0;
+let playerReady = false;
 const keys = { left: false, right: false };
 
+function markReady() {
+  playerReady = true;
+}
+
 function spawnCoin() {
+  // Prefer sides so idle center basket does not auto-score.
+  const side = Math.random() < 0.5 ? 0 : 1;
+  const x = side
+    ? 24 + Math.random() * (canvas.width * 0.28)
+    : canvas.width * 0.72 + Math.random() * (canvas.width * 0.28 - 24);
   coins.push({
-    x: 24 + Math.random() * (canvas.width - 48),
+    x: Math.max(24, Math.min(canvas.width - 24, x)),
     y: -20,
     r: 14,
     vy: 2.2 + Math.random() * 1.8,
@@ -106,8 +116,8 @@ function drawBasket() {
 }
 
 function loop() {
-  if (keys.left) basket.x -= basket.speed;
-  if (keys.right) basket.x += basket.speed;
+  if (keys.left) { basket.x -= basket.speed; markReady(); }
+  if (keys.right) { basket.x += basket.speed; markReady(); }
   basket.x = Math.max(basket.w / 2, Math.min(canvas.width - basket.w / 2, basket.x));
 
   spawnTimer += 1;
@@ -120,8 +130,11 @@ function loop() {
     const c = coins[i];
     c.y += c.vy;
     if (hit(c)) {
-      score += 1;
-      scoreEl.textContent = "Score: " + score;
+      // Score only after the player has moved / touched — never idle auto-score.
+      if (playerReady) {
+        score += 1;
+        scoreEl.textContent = "Score: " + score;
+      }
       coins.splice(i, 1);
       continue;
     }
@@ -135,8 +148,8 @@ function loop() {
 }
 
 window.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft" || e.key === "a") keys.left = true;
-  if (e.key === "ArrowRight" || e.key === "d") keys.right = true;
+  if (e.key === "ArrowLeft" || e.key === "a") { keys.left = true; markReady(); }
+  if (e.key === "ArrowRight" || e.key === "d") { keys.right = true; markReady(); }
 });
 window.addEventListener("keyup", (e) => {
   if (e.key === "ArrowLeft" || e.key === "a") keys.left = false;
@@ -150,9 +163,13 @@ function pointerX(e) {
 canvas.addEventListener("pointerdown", (e) => {
   canvas.setPointerCapture(e.pointerId);
   basket.x = pointerX(e);
+  markReady();
 });
 canvas.addEventListener("pointermove", (e) => {
-  if (e.buttons || e.pressure > 0) basket.x = pointerX(e);
+  if (e.buttons || e.pressure > 0) {
+    basket.x = pointerX(e);
+    markReady();
+  }
 });
 
 spawnCoin();

@@ -11,6 +11,7 @@ import { WeeklyRanking } from "@/components/ui/WeeklyRanking";
 import { allTags, projects as catalog } from "@/lib/data/projects";
 import { submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
+import { useSession } from "@/lib/session";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { DictationField } from "@/components/ui/DictationField";
@@ -19,6 +20,7 @@ import type { ProjectCategory } from "@/lib/types";
 function ExploreBody() {
   const t = useT();
   const router = useRouter();
+  const { isAdmin } = useSession();
   const search = useSearchParams();
   const initialQ = search.get("q") ?? "";
   const initialFilter = (search.get("type") as "all" | ProjectCategory) || "all";
@@ -189,7 +191,7 @@ function ExploreBody() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button href="/create">{t("exploreExtra.addProject")}</Button>
-            {mode === "supabase" && (
+            {mode === "supabase" && isAdmin && (
               <Button href="/admin" variant="secondary">
                 {t("exploreExtra.openAdmin")}
               </Button>

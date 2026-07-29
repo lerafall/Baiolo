@@ -334,7 +334,7 @@ Quality bar (games / interactive demos MUST meet all):
 6. CSS sizes the play area (min-height ~70vh or fixed canvas). Canvas must have width/height attributes AND CSS size.
 7. script.js must run without thrown errors on load — define variables before use; wait for DOM if needed.
 8. Prefer ~80–250 lines of clear JS over tiny stubs. Incomplete “Score: 0” shells are failures.
-9. Score / points may increase ONLY from a real player action (click, key, touch) or a real collision / collect / win event. NEVER auto-increment score in the background (no setInterval/requestAnimationFrame that only does score += n). Leaving the game idle for 10 seconds must leave Score at 0 until the player interacts.
+9. Score / points may increase ONLY from a real player action (click, key, touch) or a real collision / collect / win event AFTER the player has interacted at least once. NEVER auto-increment score in the background (no setInterval/setTimeout that only does score += n; no requestAnimationFrame that increments score every frame). Leaving the game idle for 10+ seconds with no input MUST leave Score at 0. Falling objects must NOT award points if they hit a stationary default player position without prior input — spawn collectibles away from the start position, or gate scoring behind a playerMoved / hasInteracted flag.
 
 For catch / collect games specifically:
 - Draw the player (basket/paddle) every frame near the bottom.
@@ -405,7 +405,30 @@ export function sanitizeAiFiles(files: StarterFiles): StarterFiles {
   };
 }
 
-/** Heuristic: games that look like empty shells should be rebuilt / replaced. */
+/** Detect background score timers / per-frame score bumps without clear collision gating. */
+export function hasSuspiciousAutoScore(js: string): boolean {
+  // setInterval/setTimeout whose nearby body bumps score
+  const timerRe = /set(?:Interval|Timeout)\s*\(/gi;
+  let match: RegExpExecArray | null;
+  while ((match = timerRe.exec(js))) {
+    const slice = js.slice(match.index, match.index + 320);
+    if (/score\s*(\+\+|\+=\s*[1-9]\d*)/i.test(slice)) {
+      return true;
+    }
+  }
+
+  // score++ / score += n in an rAF loop without collision/input keywords
+  if (
+    /requestAnimationFrame\s*\(/i.test(js) &&
+    /score\s*(\+\+|\+=\s*[1-9]\d*)/i.test(js) &&
+    !/\b(hit|collid|overlap|intersect|catch|collect|onClick|keydown|pointerdown|playerReady|hasInteract)/i.test(
+      js,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
 export function looksIncompletePlayable(
   files: StarterFiles,
   category: ProjectCategory = "game",
@@ -448,6 +471,18 @@ export function ensurePlayableFiles(
 ): StarterFiles {
   const category = options?.category ?? "game";
   const sanitized = sanitizeAiFiles(files);
+  const js = sanitized["script.js"] || "";
+
+  // Replace idle auto-score games with a known-good catcher that gates on input.
+  if (
+    (category === "game" || category === "demo" || category === "experiment") &&
+    hasSuspiciousAutoScore(js)
+  ) {
+    const title =
+      (options?.title || "").trim().slice(0, 40) || "Coin Catcher";
+    return sanitizeAiFiles(coinCatcherFiles(title));
+  }
+
   if (!looksIncompletePlayable(sanitized, category)) return sanitized;
 
   const brief = options?.brief ?? "";

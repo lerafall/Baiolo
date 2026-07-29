@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   composeBuildBrief,
   ensurePlayableFiles,
+  hasSuspiciousAutoScore,
   isFixIntent,
   looksIncompletePlayable,
   normalizeAiBuildFiles,
@@ -139,6 +140,26 @@ describe("ai-build parsers", () => {
     );
     expect(out["index.html"]).toContain("<canvas");
     expect(out["script.js"]).toContain("requestAnimationFrame");
+  });
+
+  it("flags and replaces idle auto-score timers", () => {
+    const bad = `let score = 0;
+setInterval(() => { score++; document.body.textContent = score; }, 100);
+requestAnimationFrame(function loop(){ requestAnimationFrame(loop); });
+window.addEventListener("keydown", () => {});
+ctx.fillRect(0,0,1,1);`;
+    expect(hasSuspiciousAutoScore(bad)).toBe(true);
+    const out = ensurePlayableFiles(
+      {
+        "index.html":
+          '<html><body><canvas id="game"></canvas><p>Score: 0</p></body></html>',
+        "style.css": "canvas{display:block}",
+        "script.js": bad + "x".repeat(80),
+      },
+      { title: "Auto", brief: "game", category: "game" },
+    );
+    expect(hasSuspiciousAutoScore(out["script.js"] || "")).toBe(false);
+    expect(out["script.js"]).toContain("playerReady");
   });
 
   it("composeBuildAck varies by edit intent", async () => {
