@@ -59,7 +59,7 @@ type SessionContextValue = {
     avatar: string;
     interests: string[];
   }) => Promise<void>;
-  unlockAdmin: (code: string) => boolean;
+  unlockAdmin: (code: string) => Promise<boolean>;
   setPlan: (plan: SessionPlan) => void;
   signOut: () => Promise<void>;
 };
@@ -191,20 +191,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
                   ? "studio"
                   : cur.plan || "free",
           role:
-            meta === "admin"
+            meta === "admin" || profile?.role === "admin"
               ? ("admin" as const)
-              : mapRole(profile?.role || cur.role || "explorer"),
+              : mapRole(
+                  profile?.role ||
+                    (cur.role === "admin" ? "explorer" : cur.role) ||
+                    "explorer",
+                ),
           authMode: "supabase" as const,
         };
         persist(nextSession);
 
         if (!profile) {
+          const seedRole =
+            nextSession.role === "admin" ? "explorer" : nextSession.role;
           void supabase.from("profiles").upsert({
             id: userId,
             email: label,
             name: nextSession.name,
             avatar: nextSession.avatar,
-            role: nextSession.role,
+            role: seedRole,
             plan: nextSession.plan,
             interests: nextSession.interests,
             updated_at: new Date().toISOString(),
@@ -228,12 +234,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           ...local,
           userId: null,
           authMode: "supabase",
+          // Never trust localStorage alone for admin.
           role:
-            local.role === "admin"
-              ? "admin"
-              : local.email
-                ? local.role
-                : "guest",
+            local.email && local.role !== "admin" ? local.role : "guest",
         });
       }
       if (!cancelled) setReady(true);
@@ -480,12 +483,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
       if (isSupabaseConfigured() && next.userId) {
         const supabase = createSupabaseBrowser();
+        // Never write role=admin from the client — only /api/admin/session may.
+        const profileRole =
+          next.role === "admin" ? "explorer" : next.role;
         await supabase?.from("profiles").upsert({
           id: next.userId,
           email: next.email,
           name: next.name,
           avatar: next.avatar,
-          role: next.role,
+          role: profileRole,
           plan: next.plan,
           interests: next.interests,
           updated_at: new Date().toISOString(),
@@ -496,12 +502,42 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   );
 
   const unlockAdmin = useCallback(
-    (code: string) => {
-      const expected =
-        process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin";
-      if (code.trim() !== expected) return false;
-      persist({ ...readLocal(), role: "admin" });
-      return true;
+    async (code: string) => {
+      try {
+        const res = await fetch("/api/admin/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: code.trim() }),
+        });
+        if (!res.ok) return false;
+        persist({ ...readLocal(), role: "admin" });
+        // Re-read profile so session stays in sync with DB.
+        if (isSupabaseConfigured()) {
+          const supabase = createSupabaseBrowser();
+          const {
+            data: { user },
+          } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
+          if (user) {
+            const { data: profile } = await supabase!
+              .from("profiles")
+              .select("role, name, avatar, plan, interests, email")
+              .eq("id", user.id)
+              .maybeSingle();
+            if (profile?.role === "admin") {
+              persist({
+                ...readLocal(),
+                userId: user.id,
+                role: "admin",
+                name: profile.name || readLocal().name,
+                avatar: profile.avatar || readLocal().avatar,
+              });
+            }
+          }
+        }
+        return true;
+      } catch {
+        return false;
+      }
     },
     [persist],
   );

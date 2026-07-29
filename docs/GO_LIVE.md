@@ -55,11 +55,12 @@ Minimum:
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
-BAIOLO_ADMIN_CODE=...
-NEXT_PUBLIC_BAIOLO_ADMIN_CODE=...
+BAIOLO_ADMIN_CODE=...   # server-only secret; promote admins via /admin unlock or SQL profiles.role='admin'
+# Do NOT set NEXT_PUBLIC_BAIOLO_ADMIN_CODE (ACL hole — admin APIs must use session + profiles.role)
 OPENROUTER_API_KEY=...
 ```
 
+Also run `supabase/schema-v7.sql` (AI quota) and `supabase/schema-v8.sql` (profiles RLS) in the SQL editor.
 Recommended for production:
 
 ```
@@ -109,7 +110,7 @@ set raw_app_meta_data =
 where email = 'you@example.com';
 ```
 
-Demo fallback: enter admin code on `/admin`. Award Pro/Studio from the accounts panel.
+Demo fallback: signed-in user enters **server** `BAIOLO_ADMIN_CODE` on `/admin` (writes `profiles.role = admin`). Award Pro/Studio from the accounts panel.
 
 ## 9. Smoke test
 

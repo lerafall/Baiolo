@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { AiPlan } from "@/lib/ai-quota";
@@ -18,12 +19,6 @@ function normalizePlan(raw: string | null | undefined): AiPlan {
   return "free";
 }
 
-function adminOk(code?: string) {
-  const expected = process.env.BAIOLO_ADMIN_CODE || "baiolo-admin";
-  const publicCode = process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin";
-  return code === expected || code === publicCode;
-}
-
 function isCheckConstraintError(message: string) {
   return /check constraint|profiles_plan_check|violates/i.test(message);
 }
@@ -32,20 +27,16 @@ function isMissingColumnError(message: string) {
   return /plan_renewed_at|column .* does not exist/i.test(message);
 }
 
-/** Manually set plan for any account (trial/award) — admin code required. */
+/** Manually set plan for any account (trial/award) — real admin session required. */
 export async function POST(request: Request) {
-  let body: { id?: string; plan?: AiPlan | null; adminCode?: string };
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
+
+  let body: { id?: string; plan?: AiPlan | null };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
-  }
-
-  if (!adminOk(body.adminCode)) {
-    return NextResponse.json(
-      { error: "That admin code didn’t work." },
-      { status: 401 },
-    );
   }
 
   if (!body.id) {
@@ -78,7 +69,6 @@ export async function POST(request: Request) {
     };
     if (withRenewedAt) row.plan_renewed_at = now;
 
-    // Upsert so accounts without a profiles row still get a plan.
     const { data, error } = await supabase!
       .from("profiles")
       .upsert(row, { onConflict: "id" })
@@ -87,20 +77,16 @@ export async function POST(request: Request) {
     return { data, error };
   }
 
-  // 1) Modern schema: free | pro | studio (+ plan_renewed_at)
   let result = await writePlan(plan, true);
 
-  // 2) Column missing → retry without plan_renewed_at
   if (result.error && isMissingColumnError(result.error.message)) {
     result = await writePlan(plan, false);
   }
 
-  // 3) Check constraint still on v5 values → write paid_basic / paid_pro
   if (result.error && isCheckConstraintError(result.error.message)) {
     result = await writePlan(legacyDbPlan(plan), false);
   }
 
-  // 4) Last try: modern plan without renewed_at (some DBs have new check, no column)
   if (result.error) {
     result = await writePlan(plan, false);
   }
@@ -114,7 +100,7 @@ export async function POST(request: Request) {
         : "";
     return NextResponse.json(
       {
-        error: `Couldn’t update plan.${hint}`,
+        error: `Couldn't update plan.${hint}`,
         detail,
       },
       { status: 502 },

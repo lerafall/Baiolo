@@ -56,44 +56,46 @@ export default function ThisWeekPage() {
           </div>
         )}
 
-        <ol className="mt-10 space-y-4">
-          {ranked.map(({ rank, project }) => (
-            <li key={project.id}>
-              <Link
-                href={`/project/${project.id}`}
-                className="flex items-center gap-4 rounded-xl bg-surface p-4 shadow-[var(--shadow-1)] transition-transform hover:-translate-y-0.5"
-              >
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand text-xl font-extrabold text-on-brand">
-                  {rank}
-                </span>
-                <div
-                  className="size-16 shrink-0 rounded-lg bg-cover bg-center"
-                  style={thumbBackgroundStyle(project.thumbnail)}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xl font-extrabold">{project.title}</p>
-                  <p className="text-sm text-ink-muted">
-                    {t("thisWeek.byCreator", {
-                      category: t(`explore.${project.category}`),
-                      creator: project.creator,
-                    })}
-                  </p>
-                  <p className="mt-1 text-xs font-semibold text-ink-muted">
-                    {t("thisWeek.playsReactions", {
-                      plays: formatCount(project.plays),
-                      reactions: totalReactions(project),
-                    })}
-                  </p>
-                  {project.tags.length > 0 && (
-                    <p className="mt-1 truncate text-xs font-bold text-brand-strong">
-                      {project.tags.slice(0, 3).join(" · ")}
+        {ready && ranked.length > 0 && (
+          <ol className="mt-10 space-y-4">
+            {ranked.map(({ rank, project }) => (
+              <li key={project.id}>
+                <Link
+                  href={`/project/${project.id}`}
+                  className="flex items-center gap-4 rounded-xl bg-surface p-4 shadow-[var(--shadow-1)] transition-transform hover:-translate-y-0.5"
+                >
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand text-xl font-extrabold text-on-brand">
+                    {rank}
+                  </span>
+                  <div
+                    className="size-16 shrink-0 rounded-lg bg-cover bg-center"
+                    style={thumbBackgroundStyle(project.thumbnail)}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xl font-extrabold">{project.title}</p>
+                    <p className="text-sm text-ink-muted">
+                      {t("thisWeek.byCreator", {
+                        category: t(`explore.${project.category}`),
+                        creator: project.creator,
+                      })}
                     </p>
-                  )}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ol>
+                    <p className="mt-1 text-xs font-semibold text-ink-muted">
+                      {t("thisWeek.playsReactions", {
+                        plays: formatCount(project.plays),
+                        reactions: totalReactions(project),
+                      })}
+                    </p>
+                    {project.tags.length > 0 && (
+                      <p className="mt-1 truncate text-xs font-bold text-brand-strong">
+                        {project.tags.slice(0, 3).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        )}
 
         <div className="mt-10 text-center">
           <Button href="/explore" variant="secondary">

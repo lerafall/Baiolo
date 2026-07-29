@@ -1,21 +1,16 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-type Body = { id?: string; adminCode?: string };
+type Body = { id?: string };
 
 /** Hard-delete a project from Supabase (admin only). */
 export async function POST(request: Request) {
-  const body = (await request.json()) as Body;
-  const expected = process.env.BAIOLO_ADMIN_CODE || "baiolo-admin";
-  const publicCode = process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin";
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
 
-  if (body.adminCode !== expected && body.adminCode !== publicCode) {
-    return NextResponse.json(
-      { error: "That admin code didn’t work." },
-      { status: 401 },
-    );
-  }
+  const body = (await request.json()) as Body;
 
   if (!body.id) {
     return NextResponse.json({ error: "Missing project id." }, { status: 400 });

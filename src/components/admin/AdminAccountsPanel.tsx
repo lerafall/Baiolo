@@ -7,9 +7,6 @@ import { DictationField } from "@/components/ui/DictationField";
 import { formatDateTime } from "@/lib/format";
 import type { AdminAccount } from "@/lib/admin-accounts";
 
-const adminCode =
-  process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin";
-
 export function AdminAccountsPanel() {
   const [items, setItems] = useState<AdminAccount[]>([]);
   const [ready, setReady] = useState(false);
@@ -23,16 +20,14 @@ export function AdminAccountsPanel() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const res = await fetch(
-        `/api/admin/accounts?adminCode=${encodeURIComponent(adminCode)}`,
-      );
+      const res = await fetch("/api/admin/accounts");
       const data = (await res.json()) as {
         items?: AdminAccount[];
         error?: string;
         message?: string;
       };
       if (!res.ok) {
-        setError(data.error || "Couldn’t load accounts.");
+        setError(data.error || data.message || "Couldn’t load accounts.");
         setItems([]);
         return;
       }
@@ -56,7 +51,7 @@ export function AdminAccountsPanel() {
       const res = await fetch("/api/admin/accounts", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, adminCode }),
+        body: JSON.stringify({ id }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -88,7 +83,7 @@ export function AdminAccountsPanel() {
       const res = await fetch("/api/admin/accounts/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, plan: nextPlan, adminCode }),
+        body: JSON.stringify({ id, plan: nextPlan }),
       });
       const data = (await res.json()) as {
         ok?: boolean;

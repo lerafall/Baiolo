@@ -1,25 +1,15 @@
 import { NextResponse } from "next/server";
 import type { AdminAccount } from "@/lib/admin-accounts";
+import { requireAdmin } from "@/lib/admin-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-type Body = { adminCode?: string; id?: string };
+type Body = { id?: string };
 
-function adminOk(code?: string) {
-  const expected = process.env.BAIOLO_ADMIN_CODE || "baiolo-admin";
-  const publicCode = process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin";
-  return code === expected || code === publicCode;
-}
-
-/** List accounts (auth users + profiles). Admin code required. */
-export async function GET(request: Request) {
-  const adminCode = new URL(request.url).searchParams.get("adminCode") || "";
-  if (!adminOk(adminCode)) {
-    return NextResponse.json(
-      { error: "That admin code didn’t work." },
-      { status: 401 },
-    );
-  }
+/** List accounts (auth users + profiles). Real admin session required. */
+export async function GET() {
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
 
   if (!isSupabaseConfigured()) {
     return NextResponse.json({
@@ -39,7 +29,7 @@ export async function GET(request: Request) {
   if (authError) {
     return NextResponse.json(
       {
-        error: "Couldn’t load auth users. Is SUPABASE_SERVICE_ROLE_KEY set?",
+        error: "Couldn't load auth users. Is SUPABASE_SERVICE_ROLE_KEY set?",
         detail: authError.message,
       },
       { status: 502 },
@@ -68,7 +58,11 @@ export async function GET(request: Request) {
     return {
       id: u.id,
       email: u.email ?? u.phone ?? profile?.email ?? null,
-      name: profile?.name || u.user_metadata?.full_name || u.user_metadata?.name || "Friend",
+      name:
+        profile?.name ||
+        u.user_metadata?.full_name ||
+        u.user_metadata?.name ||
+        "Friend",
       avatar: profile?.avatar || "🟣",
       role: profile?.role || "explorer",
       provider: typeof provider === "string" ? provider : null,
@@ -90,15 +84,18 @@ export async function GET(request: Request) {
   });
 }
 
-/** Delete an auth user (cascades profile). Admin code required. */
+/** Delete an auth user (cascades profile). Real admin session required. */
 export async function DELETE(request: Request) {
-  const body = (await request.json()) as Body;
-  if (!adminOk(body.adminCode)) {
-    return NextResponse.json(
-      { error: "That admin code didn’t work." },
-      { status: 401 },
-    );
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
+
+  let body: Body;
+  try {
+    body = (await request.json()) as Body;
+  } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
+
   if (!body.id) {
     return NextResponse.json({ error: "Missing account id." }, { status: 400 });
   }
@@ -120,14 +117,13 @@ export async function DELETE(request: Request) {
   if (error) {
     return NextResponse.json(
       {
-        error: "Couldn’t delete that account.",
+        error: "Couldn't delete that account.",
         detail: error.message,
       },
       { status: 502 },
     );
   }
 
-  // Best-effort cleanup if cascade missed anything.
   await supabase.from("profiles").delete().eq("id", body.id);
   await supabase
     .from("projects")

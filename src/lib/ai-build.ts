@@ -334,6 +334,7 @@ Quality bar (games / interactive demos MUST meet all):
 6. CSS sizes the play area (min-height ~70vh or fixed canvas). Canvas must have width/height attributes AND CSS size.
 7. script.js must run without thrown errors on load — define variables before use; wait for DOM if needed.
 8. Prefer ~80–250 lines of clear JS over tiny stubs. Incomplete “Score: 0” shells are failures.
+9. Score / points may increase ONLY from a real player action (click, key, touch) or a real collision / collect / win event. NEVER auto-increment score in the background (no setInterval/requestAnimationFrame that only does score += n). Leaving the game idle for 10 seconds must leave Score at 0 until the player interacts.
 
 For catch / collect games specifically:
 - Draw the player (basket/paddle) every frame near the bottom.
@@ -360,6 +361,7 @@ Hard rules:
   • Coins/enemies never spawn or never move → spawn timer + velocity
   • No input wiring → keyboard + pointer/touch
   • Score never changes → collision checks that update DOM text
+  • Score climbs by itself with no input → remove background score timers; award points only on collision/click/key
 - Prefer repairing the provided code over rewriting from scratch, unless the code is an empty stub.
 - If a live preview observation or JPEG is provided, treat it as ground truth for what is broken.
 - If the creator clearly wants a different idea, rebuild to match the new brief (still fully playable).

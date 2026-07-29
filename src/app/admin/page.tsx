@@ -27,24 +27,18 @@ const riskFilters: Array<{ id: "all" | RiskLevel; label: string }> = [
   { id: "high", label: "High" },
 ];
 
-const adminCode =
-  process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin";
-
 function previewSrc(url: string | null | undefined) {
   if (!url) return "";
-  // Owner private play URL → admin preview proxy (same review files).
-  const asAdmin = url.replace(
+  // Owner private play URL → admin preview proxy (cookie session authorizes).
+  return url.replace(
     "/api/owner-play-site/",
     "/api/admin/preview-site/",
   );
-  if (/^https?:\/\//i.test(asAdmin)) return asAdmin;
-  if (asAdmin.includes("adminCode=")) return asAdmin;
-  return `${asAdmin}${asAdmin.includes("?") ? "&" : "?"}adminCode=${encodeURIComponent(adminCode)}`;
 }
 
 export default function AdminModerationPage() {
   const t = useT();
-  const { isAdmin, unlockAdmin, ready: sessionReady } = useSession();
+  const { unlockAdmin, ready: sessionReady } = useSession();
   const { items, ready, upsert, refresh, saveAll } = useSubmissions();
   const { open: openReports, resolve: resolveReport } = useContentReports();
   const [risk, setRisk] = useState<"all" | RiskLevel>("all");
@@ -59,14 +53,27 @@ export default function AdminModerationPage() {
   const [seedFlash, setSeedFlash] = useState("");
   const [reviewFlash, setReviewFlash] = useState("");
   const [ownerPlans, setOwnerPlans] = useState<Record<string, string>>({});
+  const [adminGate, setAdminGate] = useState<"loading" | "locked" | "open">(
+    "loading",
+  );
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!sessionReady) return;
     void (async () => {
       try {
-        const res = await fetch(
-          `/api/admin/accounts?adminCode=${encodeURIComponent(adminCode)}`,
-        );
+        const res = await fetch("/api/admin/session");
+        setAdminGate(res.ok ? "open" : "locked");
+      } catch {
+        setAdminGate("locked");
+      }
+    })();
+  }, [sessionReady]);
+
+  useEffect(() => {
+    if (adminGate !== "open") return;
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/accounts");
         if (!res.ok) return;
         const data = (await res.json()) as { items?: AdminAccount[] };
         const map: Record<string, string> = {};
@@ -78,7 +85,7 @@ export default function AdminModerationPage() {
         /* ignore */
       }
     })();
-  }, [isAdmin]);
+  }, [adminGate]);
 
   const queue = useMemo(() => {
     return items.filter((p) => {
@@ -147,7 +154,6 @@ export default function AdminModerationPage() {
           project,
           action,
           note,
-          adminCode,
         }),
       });
       const data = (await res.json()) as {
@@ -173,7 +179,7 @@ export default function AdminModerationPage() {
       const res = await fetch("/api/projects/code-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project, adminCode }),
+        body: JSON.stringify({ project }),
       });
       const data = (await res.json()) as {
         project?: ProjectSubmission;
@@ -203,7 +209,6 @@ export default function AdminModerationPage() {
       const res = await fetch("/api/projects/seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminCode }),
       });
       const data = (await res.json()) as {
         items?: ProjectSubmission[];
@@ -239,7 +244,6 @@ export default function AdminModerationPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: selected.id,
-          adminCode,
         }),
       });
       const data = (await res.json()) as { error?: string };
@@ -257,7 +261,7 @@ export default function AdminModerationPage() {
   }
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (adminGate !== "open") return;
 
     function onKey(e: KeyboardEvent) {
       if (rejectOpen || busy) return;
@@ -296,7 +300,18 @@ export default function AdminModerationPage() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  if (sessionReady && !isAdmin) {
+  if (!sessionReady || adminGate === "loading") {
+    return (
+      <>
+        <SiteHeader showJoin={false} />
+        <main className="mx-auto flex min-h-[50vh] w-full max-w-md items-center justify-center px-5 py-12">
+          <p className="text-ink-muted">Checking admin access…</p>
+        </main>
+      </>
+    );
+  }
+
+  if (adminGate !== "open") {
     return (
       <>
         <SiteHeader showJoin={false} />
@@ -309,8 +324,16 @@ export default function AdminModerationPage() {
             className="mt-8"
             onSubmit={(e) => {
               e.preventDefault();
-              const ok = unlockAdmin(code);
-              setGateError(ok ? "" : "That admin code didn’t work.");
+              void (async () => {
+                setGateError("");
+                const ok = await unlockAdmin(code);
+                if (ok) {
+                  setAdminGate("open");
+                  setGateError("");
+                } else {
+                  setGateError("That admin code didn’t work.");
+                }
+              })();
             }}
           >
             <DictationField

@@ -8,6 +8,30 @@ import { isImageThumb } from "@/lib/thumb-style";
 
 const STORAGE_KEY = "baiolo.submissions.v1";
 
+/** Admins get full list; everyone else gets published + own projects only. */
+async function fetchProjectsForClient(): Promise<ProjectSubmission[] | null> {
+  const allRes = await fetch("/api/projects?scope=all");
+  if (allRes.ok) {
+    const data = (await allRes.json()) as { items?: ProjectSubmission[] };
+    if (data.items) return data.items;
+  }
+
+  const [pubRes, mineRes] = await Promise.all([
+    fetch("/api/projects?scope=published"),
+    fetch("/api/projects?scope=mine"),
+  ]);
+  const byId = new Map<string, ProjectSubmission>();
+  if (pubRes.ok) {
+    const data = (await pubRes.json()) as { items?: ProjectSubmission[] };
+    for (const item of data.items ?? []) byId.set(item.id, item);
+  }
+  if (mineRes.ok) {
+    const data = (await mineRes.json()) as { items?: ProjectSubmission[] };
+    for (const item of data.items ?? []) byId.set(item.id, item);
+  }
+  return Array.from(byId.values());
+}
+
 const seed: ProjectSubmission[] = [
   {
     id: "cloud-hopper",
@@ -166,15 +190,11 @@ export function useSubmissions() {
 
       modeRef.current = "supabase";
       setMode("supabase");
-      const res = await fetch("/api/projects?scope=all");
-      const data = (await res.json()) as {
-        items?: ProjectSubmission[];
-        error?: string;
-      };
-      if (!res.ok || !data.items) return;
+      const remote = await fetchProjectsForClient();
+      if (!remote) return;
 
       const local = readStore();
-      const merged = mergeRemoteWithLocalDrafts(data.items, local);
+      const merged = mergeRemoteWithLocalDrafts(remote, local);
       writeStore(merged);
       setItems(merged);
     } catch {
@@ -195,13 +215,10 @@ export function useSubmissions() {
         if (health.mode === "supabase") {
           modeRef.current = "supabase";
           setMode("supabase");
-          const res = await fetch("/api/projects?scope=all");
-          const data = (await res.json()) as {
-            items?: ProjectSubmission[];
-          };
+          const remote = await fetchProjectsForClient();
           if (cancelled) return;
-          if (res.ok && data.items) {
-            const merged = mergeRemoteWithLocalDrafts(data.items, readStore());
+          if (remote) {
+            const merged = mergeRemoteWithLocalDrafts(remote, readStore());
             writeStore(merged);
             setItems(merged);
             setReady(true);

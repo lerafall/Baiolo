@@ -1,23 +1,14 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import { demoSeedSubmissions } from "@/lib/seed-demo";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { submissionToRow } from "@/lib/supabase/map";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-type Body = { adminCode?: string };
-
 /** Upsert demo catalog projects as published (admin only). */
-export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as Body;
-  const expected = process.env.BAIOLO_ADMIN_CODE || "baiolo-admin";
-  const publicCode = process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin";
-
-  if (body.adminCode !== expected && body.adminCode !== publicCode) {
-    return NextResponse.json(
-      { error: "That admin code didn’t work." },
-      { status: 401 },
-    );
-  }
+export async function POST() {
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
 
   const seeds = demoSeedSubmissions();
 

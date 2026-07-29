@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { rowToSubmission, type ProjectRow } from "@/lib/supabase/map";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server-auth";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -26,20 +28,31 @@ export async function GET(request: Request) {
 
   if (scope === "published") {
     query = query.eq("status", "published");
-  } else if (scope === "queue") {
-    query = query.in("status", [
-      "submitted",
-      "checking",
-      "in_review",
-      "needs_changes",
-      "approved",
-      "published",
-    ]);
-  } else if (scope === "all") {
-    // service role — full list for dashboard / hydrate
+  } else if (scope === "mine") {
+    const auth = await createSupabaseServer();
+    const {
+      data: { user },
+    } = (await auth?.auth.getUser()) ?? { data: { user: null } };
+    if (!user) {
+      return NextResponse.json({ mode: "supabase", items: [] });
+    }
+    query = query.eq("owner_id", user.id);
+  } else if (scope === "queue" || scope === "all") {
+    const gate = await requireAdmin();
+    if (!gate.ok) return gate.response;
+    if (scope === "queue") {
+      query = query.in("status", [
+        "submitted",
+        "checking",
+        "in_review",
+        "needs_changes",
+        "approved",
+        "published",
+      ]);
+    }
   } else {
     return NextResponse.json(
-      { error: "Unknown scope. Use published, queue, or all." },
+      { error: "Unknown scope. Use published, mine, queue, or all." },
       { status: 400 },
     );
   }
