@@ -408,7 +408,7 @@ export function sanitizeAiFiles(files: StarterFiles): StarterFiles {
 /** Detect background score timers / per-frame score bumps without clear collision gating. */
 export function hasSuspiciousAutoScore(js: string): boolean {
   const bump =
-    /score\s*(\+\+|\+=\s*[1-9]\d*|=\s*score\s*\+\s*[1-9]\d*)/i;
+    /score\s*(\+\+|\+=\s*[1-9]\d*|=\s*score\s*\+\s*[1-9]\d*)|points\s*(\+\+|\+=\s*[1-9]\d*)/i;
 
   // setInterval/setTimeout whose nearby body bumps score
   const timerRe = /set(?:Interval|Timeout)\s*\(/gi;
@@ -418,6 +418,22 @@ export function hasSuspiciousAutoScore(js: string): boolean {
     if (bump.test(slice)) {
       return true;
     }
+  }
+
+  const hasInteractGate =
+    /\b(playerReady|hasInteract|armed|interacted|__baioloInteracted)\b/i.test(
+      js,
+    );
+
+  // Falling collectibles that can hit a stationary player without an interact gate
+  if (
+    /requestAnimationFrame\s*\(/i.test(js) &&
+    bump.test(js) &&
+    /\b(hit|collid|overlap|catch|collect)\b/i.test(js) &&
+    /\b(spawn|coins\.push|vy\s*\+|falling)\b/i.test(js) &&
+    !hasInteractGate
+  ) {
+    return true;
   }
 
   // score bump every animation frame without collision/input gating keywords

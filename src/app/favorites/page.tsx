@@ -9,7 +9,7 @@ import { useSignedIn } from "@/lib/auth-gate";
 import { projects as catalog } from "@/lib/data/projects";
 import { useFavorites } from "@/lib/favorites";
 import { useT } from "@/lib/i18n/LocaleProvider";
-import { submissionToProject } from "@/lib/project-map";
+import { submissionToProject, mergeProjectStats } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 
 export default function FavoritesPage() {
@@ -23,7 +23,10 @@ export default function FavoritesPage() {
       .map((s) => submissionToProject(s))
       .filter((p): p is NonNullable<typeof p> => Boolean(p));
     const byId = new Map(catalog.map((p) => [p.id, p]));
-    for (const p of fromSubs) byId.set(p.id, p);
+    for (const p of fromSubs) {
+      const prev = byId.get(p.id);
+      byId.set(p.id, prev ? mergeProjectStats(prev, p) : p);
+    }
     return Array.from(byId.values());
   }, [items]);
 

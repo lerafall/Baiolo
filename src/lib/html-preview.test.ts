@@ -48,15 +48,16 @@ describe("buildPreviewHtml", () => {
     expect(html).toContain("console.log(1)");
   });
 
-  it("surfaces JS errors in the preview document", () => {
+  it("injects an idle score gate for the live preview iframe", () => {
     const html = buildPreviewHtml({
       "index.html":
-        "<!DOCTYPE html><html><body><p>Score: 0</p></body></html>",
+        '<!DOCTYPE html><html><body><p id="score">Score: 0</p></body></html>',
       "style.css": "",
-      "script.js": "throw new Error('boom-preview')",
+      "script.js": "setInterval(function(){ score++; }, 50); var score = 0;",
     });
-    expect(html).toContain("boom-preview");
-    expect(html).toContain("data-baiolo-preview-error");
+    expect(html).toContain("baioloScoreGate");
+    expect(html).toContain("interacted");
+    expect(html).toContain("#score");
   });
 });
 

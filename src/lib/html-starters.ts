@@ -375,6 +375,45 @@ export function buildPreviewHtml(files: StarterFiles): string {
   const safeCss = css.replace(/<\/style>/gi, "<\\/style>");
   const safeJs = js.replace(/<\/script>/gi, "<\\/script>");
 
+  // Preview-only gate: until the user interacts, keep score/points labels at 0.
+  // Stops idle auto-increment games from looking "alive" in the builder iframe.
+  const scoreGate = `(function(){
+  var interacted = false;
+  function arm(){ interacted = true; }
+  ["pointerdown","keydown","mousedown","touchstart"].forEach(function(t){
+    window.addEventListener(t, arm, true);
+  });
+  function zeroLabel(text){
+    if (!text) return text;
+    return String(text).replace(/(\\d+)/g, function(_, n){
+      return Number(n) > 0 ? "0" : n;
+    });
+  }
+  function watch(el){
+    if (!el || el.__baioloScoreGate) return;
+    el.__baioloScoreGate = true;
+    var baseline = zeroLabel(el.textContent || "Score: 0");
+    if (/\\d/.test(el.textContent || "")) el.textContent = baseline;
+    var obs = new MutationObserver(function(){
+      if (interacted) return;
+      var cur = el.textContent || "";
+      var m = cur.match(/(\\d+)/);
+      if (m && Number(m[1]) > 0) el.textContent = zeroLabel(baseline);
+    });
+    obs.observe(el, { characterData: true, childList: true, subtree: true });
+  }
+  function scan(){
+    document.querySelectorAll("#score, #points, #coins, [id*='score' i], [id*='points' i]").forEach(watch);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", scan);
+  } else {
+    scan();
+  }
+  setTimeout(scan, 0);
+  setTimeout(scan, 250);
+})();`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -388,6 +427,7 @@ ${safeCss}
 <body>
 ${bodyInner}
 <script>
+${scoreGate}
 (function () {
   try {
 ${safeJs}

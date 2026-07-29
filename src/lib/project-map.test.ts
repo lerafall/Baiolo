@@ -37,6 +37,36 @@ describe("submissionToProject visuals", () => {
     expect(project?.thumbnail).toBe("/demos/cloud-hopper/thumb.png");
     expect(project?.cover).toBe("/demos/cloud-hopper/cover.png");
   });
+
+  it("does not invent reactions when total is 0", async () => {
+    const { splitReactionTotal, totalReactions, submissionToProject } =
+      await import("@/lib/project-map");
+    expect(totalReactions(splitReactionTotal(0))).toBe(0);
+    expect(totalReactions(splitReactionTotal(59))).toBe(59);
+    const project = submissionToProject({
+      ...base,
+      playUrl: "/api/play-site/p1/index.html",
+      reactions: 0,
+    });
+    expect(totalReactions(project?.reactions)).toBe(0);
+  });
+
+  it("keeps catalog reaction total when scalars match", () => {
+    const project = submissionToProject({
+      ...base,
+      id: "star-catch",
+      title: "Star Catch",
+      playUrl: "/demos/star-catch/index.html",
+      reactions: 59,
+      plays: 42,
+    });
+    expect(project?.plays).toBe(42);
+    expect(
+      (project?.reactions.fun || 0) +
+        (project?.reactions.interesting || 0) +
+        (project?.reactions["would-use-again"] || 0),
+    ).toBe(59);
+  });
 });
 
 describe("resolvePlayableUrl for published", () => {

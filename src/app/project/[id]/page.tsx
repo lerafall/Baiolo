@@ -144,7 +144,6 @@ export default function ProjectPage({
     playUrl.startsWith("http://") || playUrl.startsWith("https://");
 
   const counts = { ...live.reactions };
-  if (engagement.reaction) counts[engagement.reaction] += 1;
 
   function toggle(kind: ReactionKind) {
     requireAuth(() => {
@@ -160,7 +159,11 @@ export default function ProjectPage({
     });
   }
 
-  const totalPlays = live.plays + engagement.localPlays;
+  // Canonical counters live on the submission / catalog project (synced-engagement bumps them).
+  // Do not add localPlays again — that double-counted plays vs /projects and /explore.
+  const totalPlays = live.plays;
+  const totalReactionCount =
+    counts.fun + counts.interesting + counts["would-use-again"];
 
   const coverStyle = thumbBackgroundStyle(live.cover);
 
@@ -357,11 +360,7 @@ export default function ProjectPage({
               </p>
               <p className="text-ink-muted">{t("project.plays")}</p>
               <p className="mt-4 text-3xl font-extrabold">
-                {formatCount(
-                  counts.fun +
-                    counts.interesting +
-                    counts["would-use-again"],
-                )}
+                {formatCount(totalReactionCount)}
               </p>
               <p className="text-ink-muted">{t("project.reactions")}</p>
             </div>

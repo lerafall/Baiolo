@@ -9,7 +9,7 @@ import { FilterPill } from "@/components/ui/FilterPill";
 import { ProjectCard } from "@/components/ui/ProjectCard";
 import { WeeklyRanking } from "@/components/ui/WeeklyRanking";
 import { allTags, projects as catalog } from "@/lib/data/projects";
-import { submissionToProject } from "@/lib/project-map";
+import { submissionToProject, mergeProjectStats } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 import { useSession } from "@/lib/session";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
@@ -72,10 +72,13 @@ function ExploreBody() {
       .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
     // Always include curated demos so Explore matches This week / Favorites.
-    // Cloud published projects overlay the same ids when present.
+    // Cloud published projects overlay the same ids when present (keep richer stats).
     const byId = new Map<string, (typeof catalog)[number]>();
     for (const p of catalog) byId.set(p.id, p);
-    for (const p of fromSubs) byId.set(p.id, p);
+    for (const p of fromSubs) {
+      const prev = byId.get(p.id);
+      byId.set(p.id, prev ? mergeProjectStats(prev, p) : p);
+    }
     return Array.from(byId.values());
   }, [items]);
 
