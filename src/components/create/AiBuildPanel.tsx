@@ -126,7 +126,7 @@ export function AiBuildPanel({
 
   useEffect(() => {
     void loadQuota();
-  }, [loadQuota, userId, email]);
+  }, [loadQuota, userId, email, activePlan]);
 
   // Re-sync quota when returning to the tab / wizard step (avoid stale “3 of 3”).
   useEffect(() => {
@@ -476,13 +476,15 @@ export function AiBuildPanel({
             disabled={actionsLocked}
             onClick={() => void startOrRebuild()}
           >
-            {busy && !chatting
-              ? busyLabel
-              : files
-                ? t("workshop.aiRebuild")
-                : chatting
-                  ? t("workshop.aiRestartChat")
-                  : t("workshop.aiStartChat")}
+            {quotaExhausted
+              ? t("workshop.aiLimitReached")
+              : busy && !chatting
+                ? busyLabel
+                : files
+                  ? t("workshop.aiRebuild")
+                  : chatting
+                    ? t("workshop.aiRestartChat")
+                    : t("workshop.aiStartChat")}
           </Button>
           <p className="text-sm text-ink-muted">{t("workshop.aiHintPaid")}</p>
         </div>

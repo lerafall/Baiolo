@@ -121,6 +121,135 @@ export async function incrementAiUsage(userId: string) {
   return { periodStart, generationsUsed: next };
 }
 
+export type ConsumeAiResult =
+  | {
+      allowed: true;
+      generationsUsed: number;
+      periodStart: string;
+      summary: AiUsageSummary;
+    }
+  | {
+      allowed: false;
+      reason: string;
+      code: "LIMIT_EXCEEDED" | "SLOT_LIMIT" | "QUOTA_UNAVAILABLE";
+      generationsUsed: number;
+      periodStart: string;
+      summary: AiUsageSummary;
+    };
+
+/**
+ * Hard server gate: check slots, then atomically reserve one generation.
+ * Call this BEFORE invoking the LLM. Refund on model failure.
+ */
+export async function tryConsumeAiGeneration(
+  userId: string,
+  plan: UserPlan,
+  mode: "new_project" | "regenerate" = "new_project",
+): Promise<ConsumeAiResult> {
+  const periodStart = startOfCurrentMonth();
+  const summary = await getAiUsageSummary(userId, plan);
+  const gate = evaluateAiGate(summary, mode);
+  if (!gate.allowed) {
+    const slotBlocked =
+      /aktywnych projektów AI|AI project limit/i.test(gate.reason) ||
+      summary.activeAiCount > summary.activeAiLimit ||
+      (mode === "new_project" &&
+        summary.activeAiCount >= summary.activeAiLimit);
+    return {
+      allowed: false,
+      reason: gate.reason,
+      code: slotBlocked ? "SLOT_LIMIT" : "LIMIT_EXCEEDED",
+      generationsUsed: summary.generationsUsed,
+      periodStart,
+      summary,
+    };
+  }
+
+  const limit = summary.generationsLimit;
+  const supabase = getSupabaseServerClient();
+  if (!supabase) throw new Error("storage_unavailable");
+
+  // Atomic FOR UPDATE reservation (requires schema-v7).
+  const { data: rpcRows, error: rpcError } = await supabase.rpc(
+    "try_consume_ai_generation",
+    {
+      p_user_id: userId,
+      p_period_start: periodStart,
+      p_limit: limit,
+    },
+  );
+
+  if (rpcError) {
+    console.error("[baiolo-ai] try_consume_rpc_failed", {
+      detail: rpcError.message,
+    });
+    // Fail closed — never call the model if we cannot reserve a slot safely.
+    return {
+      allowed: false,
+      reason:
+        "Nie udało się sprawdzić limitu AI. Uruchom supabase/schema-v7.sql albo spróbuj za chwilę.",
+      code: "QUOTA_UNAVAILABLE",
+      generationsUsed: summary.generationsUsed,
+      periodStart,
+      summary,
+    };
+  }
+
+  const row = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows;
+  const allowed = Boolean(
+    row && (row.allowed === true || row.allowed === "t"),
+  );
+  const used = Number(row?.used ?? summary.generationsUsed);
+
+  if (!allowed) {
+    return {
+      allowed: false,
+      reason: `Wykorzystano ${used}/${limit} generowań w tym miesiącu. Odnowienie: ${summary.nextPeriodStart}.`,
+      code: "LIMIT_EXCEEDED",
+      generationsUsed: used,
+      periodStart,
+      summary: {
+        ...summary,
+        generationsUsed: used,
+        generationsRemaining: Math.max(0, limit - used),
+      },
+    };
+  }
+
+  return {
+    allowed: true,
+    generationsUsed: used,
+    periodStart,
+    summary: {
+      ...summary,
+      generationsUsed: used,
+      generationsRemaining: Math.max(0, limit - used),
+    },
+  };
+}
+
+/** Undo a reservation after a failed model call. */
+export async function refundAiGeneration(
+  userId: string,
+  periodStart = startOfCurrentMonth(),
+) {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return;
+
+  const { error: rpcError } = await supabase.rpc("refund_ai_generation", {
+    p_user_id: userId,
+    p_period_start: periodStart,
+  });
+  if (!rpcError) return;
+
+  const usage = await getOrCreateUsage(userId, periodStart);
+  const next = Math.max(0, (usage.generations_used ?? 0) - 1);
+  await supabase
+    .from("ai_generation_usage")
+    .update({ generations_used: next })
+    .eq("id", usage.id);
+}
+
 export async function getAiUsageSummary(
   userId: string,
   plan: UserPlan,

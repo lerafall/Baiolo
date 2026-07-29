@@ -10,6 +10,7 @@ Run in order (skip any already applied):
 4. `supabase/schema-v4.sql`
 5. `supabase/schema-v5.sql`
 6. `supabase/schema-v6.sql` (plans Free/Pro/Studio, `ai_generation_usage`, AI slots)
+7. `supabase/schema-v7.sql` (atomic `try_consume_ai_generation` / `refund_ai_generation` — **required** so Free cannot exceed monthly AI generations)
 
 Also create storage buckets (see §3) via Dashboard or `supabase/storage.sql`.
 

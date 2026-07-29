@@ -784,6 +784,7 @@ export const en = {
     aiQuotaStudio: "studio",
     aiQuotaFree: "free",
     aiQuotaLimit: "Monthly AI generation limit reached. Upgrade or wait for renewal.",
+    aiLimitReached: "Limit reached",
     aiChatTitle: "Chat with Baiolo",
     aiChatPlaceholder: "Write like you would to a friend…",
     aiChatSend: "Send",

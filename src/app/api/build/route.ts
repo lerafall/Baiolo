@@ -14,15 +14,14 @@ import {
   type AiPlan,
 } from "@/lib/ai-quota";
 import {
-  canUseAiGeneration,
   getAiUsageSummary,
-  incrementAiUsage,
+  refundAiGeneration,
+  tryConsumeAiGeneration,
 } from "@/lib/ai-usage";
 import {
   AI_BUILD_FAILED_PUBLIC,
   AI_UNAVAILABLE_PUBLIC,
   gateAiBuildReady,
-  shouldChargeAiGeneration,
 } from "@/lib/ai-public-errors";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServer } from "@/lib/supabase/server-auth";
@@ -230,48 +229,32 @@ export async function POST(request: Request) {
         ? "regenerate"
         : "new_project";
 
-    let usageGate: Awaited<ReturnType<typeof canUseAiGeneration>> | null = null;
-    if (userId && isSupabaseConfigured()) {
-      try {
-        usageGate = await canUseAiGeneration(userId, plan, mode);
-      } catch (err) {
-        // Missing schema / table should not hard-crash AI — log and continue.
-        console.error("[baiolo-ai] usage_gate_failed", { code: errorCode(err) });
-        usageGate = null;
-      }
-    }
-
-    const quotaPeek =
-      userId && isSupabaseConfigured()
-        ? {
+    async function quotaPayload(used?: number, remaining?: number) {
+      if (userId && isSupabaseConfigured()) {
+        try {
+          const summary = await getAiUsageSummary(userId, plan);
+          const u = used ?? summary.generationsUsed;
+          return {
             plan,
-            used: usageGate?.summary.generationsUsed ?? 0,
-            limit: usageGate?.summary.generationsLimit ?? aiBuildLimit(plan),
+            used: u,
+            limit: summary.generationsLimit,
             remaining:
-              usageGate?.summary.generationsRemaining ?? aiBuildLimit(plan),
-          }
-        : {
-            plan,
-            used: 0,
-            limit: aiBuildLimit(plan),
-            remaining: aiBuildLimit(plan),
+              remaining ?? Math.max(0, summary.generationsLimit - u),
           };
-
-    if (usageGate && !usageGate.allowed) {
-      return NextResponse.json(
-        {
-          error: usageGate.reason,
-          quota: {
-            plan,
-            used: usageGate.summary.generationsUsed,
-            limit: usageGate.summary.generationsLimit,
-            remaining: usageGate.summary.generationsRemaining,
-          },
-        },
-        { status: 429 },
-      );
+        } catch {
+          /* fall through */
+        }
+      }
+      const limit = aiBuildLimit(plan);
+      return {
+        plan,
+        used: used ?? 0,
+        limit,
+        remaining: remaining ?? limit,
+      };
     }
 
+    // Chat-only clarify turns do not consume a generation.
     if (action === "chat") {
       const turn = await continueBuildChat({
         prompt,
@@ -284,7 +267,7 @@ export async function POST(request: Request) {
           status: "chat",
           message: turn.message,
           categoryHint: turn.categoryHint ?? null,
-          quota: quotaPeek,
+          quota: await quotaPayload(),
         });
       }
 
@@ -292,97 +275,133 @@ export async function POST(request: Request) {
         ...messages,
         { role: "assistant", content: turn.message },
       ];
-      const result = await buildFromDescription(prompt, nextMessages, {
+      return await runReservedBuild({
+        prompt,
+        messages: nextMessages,
         categoryHint: turn.categoryHint || body.categoryHint,
-        locale,
-        existingFiles,
-        previewInsight,
-      });
-      const charge = shouldChargeAiGeneration({
-        configured: true,
-        producedBuild: Boolean(result.files?.["index.html"]),
-      });
-      let generationsUsed = usageGate?.summary.generationsUsed ?? 0;
-      if (charge && userId && isSupabaseConfigured()) {
-        try {
-          const incremented = await incrementAiUsage(userId);
-          generationsUsed = incremented.generationsUsed;
-        } catch (err) {
-          console.error("[baiolo-ai] usage_increment_failed", {
-            code: errorCode(err),
-          });
-        }
-      }
-      return NextResponse.json({
-        status: "built",
-        message:
-          result.message ||
-          turn.message ||
-          composeBuildAck({
-            locale,
-            userText: latestUserText(prompt, nextMessages),
-            repairing: Boolean(existingFiles),
-          }),
-        title: result.title,
-        description: result.description,
-        category: result.category,
-        files: result.files,
-        provider: result.provider,
-        model: result.model,
-        tier: result.tier,
-        quota: {
-          plan,
-          used: generationsUsed,
-          limit: aiBuildLimit(plan),
-          remaining: Math.max(0, aiBuildLimit(plan) - generationsUsed),
-        },
+        ackFallback: turn.message,
       });
     }
 
-    const result = await buildFromDescription(prompt, messages, {
+    return await runReservedBuild({
+      prompt,
+      messages,
       categoryHint: body.categoryHint,
-      locale,
-      existingFiles,
-      previewInsight,
+      ackFallback: null,
     });
-    const charge = shouldChargeAiGeneration({
-      configured: true,
-      producedBuild: Boolean(result.files?.["index.html"]),
-    });
-    let generationsUsed = usageGate?.summary.generationsUsed ?? 0;
-    if (charge && userId && isSupabaseConfigured()) {
+
+    async function runReservedBuild(opts: {
+      prompt: string;
+      messages: ChatMessage[];
+      categoryHint?: ProjectCategory | null;
+      ackFallback: string | null;
+    }) {
+      let reservedPeriod: string | null = null;
+      let generationsUsed = 0;
+
+      if (userId && isSupabaseConfigured()) {
+        let consume: Awaited<ReturnType<typeof tryConsumeAiGeneration>>;
+        try {
+          consume = await tryConsumeAiGeneration(userId, plan, mode);
+        } catch (err) {
+          console.error("[baiolo-ai] usage_consume_failed", {
+            code: errorCode(err),
+          });
+          return NextResponse.json(
+            {
+              error:
+                "Nie udało się sprawdzić limitu AI. Spróbuj ponownie za chwilę.",
+              code: "QUOTA_UNAVAILABLE",
+              quota: await quotaPayload(),
+            },
+            { status: 503 },
+          );
+        }
+
+        if (!consume.allowed) {
+          return NextResponse.json(
+            {
+              error: consume.reason,
+              code: consume.code,
+              quota: {
+                plan,
+                used: consume.generationsUsed,
+                limit: consume.summary.generationsLimit,
+                remaining: Math.max(
+                  0,
+                  consume.summary.generationsLimit - consume.generationsUsed,
+                ),
+              },
+            },
+            { status: 429 },
+          );
+        }
+
+        reservedPeriod = consume.periodStart;
+        generationsUsed = consume.generationsUsed;
+      }
+
       try {
-        const incremented = await incrementAiUsage(userId);
-        generationsUsed = incremented.generationsUsed;
-      } catch (err) {
-        console.error("[baiolo-ai] usage_increment_failed", {
-          code: errorCode(err),
+        const result = await buildFromDescription(opts.prompt, opts.messages, {
+          categoryHint: opts.categoryHint,
+          locale,
+          existingFiles,
+          previewInsight,
         });
+
+        if (!result.files?.["index.html"]) {
+          if (userId && reservedPeriod) {
+            await refundAiGeneration(userId, reservedPeriod);
+          }
+          return NextResponse.json(
+            {
+              error: AI_BUILD_FAILED_PUBLIC,
+              code: "ai_build_failed",
+              quota: await quotaPayload(),
+            },
+            { status: 502 },
+          );
+        }
+
+        const limit = aiBuildLimit(plan);
+        return NextResponse.json({
+          status: "built",
+          message:
+            result.message ||
+            opts.ackFallback ||
+            composeBuildAck({
+              locale,
+              userText: latestUserText(opts.prompt, opts.messages),
+              repairing: Boolean(existingFiles),
+            }),
+          title: result.title,
+          description: result.description,
+          category: result.category,
+          files: result.files,
+          provider: result.provider,
+          model: result.model,
+          tier: result.tier,
+          quota: {
+            plan,
+            used: generationsUsed,
+            limit,
+            remaining: Math.max(0, limit - generationsUsed),
+          },
+        });
+      } catch (err) {
+        if (userId && reservedPeriod) {
+          try {
+            await refundAiGeneration(userId, reservedPeriod);
+          } catch (refundErr) {
+            console.error("[baiolo-ai] usage_refund_failed", {
+              code: errorCode(refundErr),
+            });
+          }
+        }
+        throw err;
       }
     }
-    return NextResponse.json({
-      status: "built",
-      message:
-        result.message ||
-        composeBuildAck({
-          locale,
-          userText: latestUserText(prompt, messages),
-          repairing: Boolean(existingFiles),
-        }),
-      title: result.title,
-      description: result.description,
-      category: result.category,
-      files: result.files,
-      provider: result.provider,
-      model: result.model,
-      tier: result.tier,
-      quota: {
-        plan,
-        used: generationsUsed,
-        limit: aiBuildLimit(plan),
-        remaining: Math.max(0, aiBuildLimit(plan) - generationsUsed),
-      },
-    });
+
   } catch (err) {
     const code = errorCode(err);
     console.error("[baiolo-ai] build_failed", { code });

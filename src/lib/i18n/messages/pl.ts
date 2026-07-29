@@ -787,6 +787,7 @@ export const pl: Messages = {
     aiQuotaStudio: "studio",
     aiQuotaFree: "darmowy",
     aiQuotaLimit: "Miesięczny limit generowań AI wykorzystany. Zmień plan albo poczekaj na odnowienie.",
+    aiLimitReached: "Limit wykorzystany",
     aiChatTitle: "Rozmowa z Baiolo",
     aiChatPlaceholder: "Napisz jak do znajomego…",
     aiChatSend: "Wyślij",
