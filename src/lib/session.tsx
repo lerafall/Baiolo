@@ -158,9 +158,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         userId: string,
         identity: string | null,
       ) => {
-        const meta = (
-          await supabase.auth.getUser()
-        ).data.user?.app_metadata?.role as string | undefined;
         const { data: profile } = await supabase
           .from("profiles")
           .select("*")
@@ -190,14 +187,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
                 : profile?.plan === "studio" || profile?.plan === "paid_pro"
                   ? "studio"
                   : cur.plan || "free",
-          role:
-            meta === "admin" || profile?.role === "admin"
-              ? ("admin" as const)
-              : mapRole(
-                  profile?.role ||
-                    (cur.role === "admin" ? "explorer" : cur.role) ||
-                    "explorer",
-                ),
+          // profiles.role only — ignore JWT app_metadata.role
+          role: mapRole(profile?.role || "explorer"),
           authMode: "supabase" as const,
         };
         persist(nextSession);

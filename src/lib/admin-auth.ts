@@ -44,7 +44,8 @@ function unauthorized(message = "Zaloguj się, żeby użyć panelu admina.") {
 
 /**
  * Server-only admin gate (fail-closed).
- * Admin = signed-in user with profiles.role = 'admin' OR JWT app_metadata.role = 'admin'.
+ * Sole source of truth: profiles.role = 'admin' (read via service role).
+ * Does NOT trust JWT app_metadata.role (can be stale / set independently of profiles).
  * Does NOT accept NEXT_PUBLIC_BAIOLO_ADMIN_CODE.
  * Does NOT auto-promote — only /api/admin/session may promote.
  */
@@ -69,14 +70,6 @@ export async function requireAdmin(): Promise<AdminAuthOk | AdminAuthFail> {
   } = await supabase.auth.getUser();
 
   if (!user) return unauthorized();
-
-  const jwtRole =
-    typeof user.app_metadata?.role === "string"
-      ? user.app_metadata.role
-      : null;
-  if (jwtRole === "admin") {
-    return { ok: true, userId: user.id, email: user.email ?? null };
-  }
 
   // Fail closed: without service role we cannot verify profiles.role safely.
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {

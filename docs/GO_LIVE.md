@@ -101,17 +101,22 @@ Used for moderation outcomes, collaborator invites, and public-share requests.
 
 Supabase Auth still uses its own email templates for magic links (optional custom sender there).
 
-## 8. Admin user (optional JWT)
+## 8. Admin user
+
+Source of truth is **`profiles.role = 'admin'`** (not JWT). Guards ignore `app_metadata.role`.
 
 ```sql
+-- Grant admin
+update public.profiles set role = 'admin' where email = 'you@example.com';
+
+-- If someone still has a leftover JWT claim from older docs, clear it:
 update auth.users
-set raw_app_meta_data =
-  coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
+set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) - 'role'
 where email = 'you@example.com';
+-- Then sign out / sign in so the session refreshes.
 ```
 
-Demo: promote via SQL `update profiles set role = 'admin' where email = '...'`
-or signed-in visit `/admin/unlock` with server-only `BAIOLO_ADMIN_CODE`. Award Pro/Studio from the accounts panel.
+Bootstrap: signed-in visit `/admin/unlock` with server-only `BAIOLO_ADMIN_CODE`. Award Pro/Studio from the accounts panel.
 
 ## 9. Smoke test
 

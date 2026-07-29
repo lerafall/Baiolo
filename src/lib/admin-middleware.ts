@@ -41,12 +41,7 @@ export async function middlewareUserIsAdmin(
 
   if (!user) return "anon";
 
-  const jwtRole =
-    typeof user.app_metadata?.role === "string"
-      ? user.app_metadata.role
-      : null;
-  if (jwtRole === "admin") return "admin";
-
+  // Only profiles.role — never JWT app_metadata (can disagree with profiles).
   if (!service) return "unknown";
 
   const admin = createClient(url, service, {
