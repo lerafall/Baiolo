@@ -30,9 +30,14 @@ const adminCode =
 
 function previewSrc(url: string | null | undefined) {
   if (!url) return "";
-  if (/^https?:\/\//i.test(url)) return url;
-  if (url.includes("adminCode=")) return url;
-  return `${url}${url.includes("?") ? "&" : "?"}adminCode=${encodeURIComponent(adminCode)}`;
+  // Owner private play URL → admin preview proxy (same review files).
+  const asAdmin = url.replace(
+    "/api/owner-play-site/",
+    "/api/admin/preview-site/",
+  );
+  if (/^https?:\/\//i.test(asAdmin)) return asAdmin;
+  if (asAdmin.includes("adminCode=")) return asAdmin;
+  return `${asAdmin}${asAdmin.includes("?") ? "&" : "?"}adminCode=${encodeURIComponent(adminCode)}`;
 }
 
 export default function AdminModerationPage() {

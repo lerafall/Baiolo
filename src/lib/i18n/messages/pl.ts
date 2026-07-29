@@ -144,6 +144,12 @@ export const pl: Messages = {
     linkCopied: "Link skopiowany — wyślij go znajomym!",
     copyFail: "Nie udało się skopiować linku.",
     shared: "Udostępniono!",
+    privateEyebrow: "Na razie prywatne",
+    privateTitle: "Możesz grać — publiczne udostępnianie czeka na akceptację",
+    privateBody:
+      "Wypróbuj kiedy chcesz. Gdy członek zespołu Baiolo zatwierdzi, możesz dzielić się publicznym linkiem i projekt pojawi się w Odkrywaj.",
+    playPrivately: "Graj teraz",
+    seeStatus: "Zobacz status",
   },
   card: {
     play: "Graj",
@@ -184,6 +190,8 @@ export const pl: Messages = {
     loading: "Ładowanie projektu…",
     notPublic:
       "Ten projekt nie jest jeszcze publiczny. Nadal jest sprawdzany lub recenzowany.",
+    privateOwnerNote:
+      "To Twój prywatny build — możesz grać kiedy chcesz. W Odkrywaj i w publicznym udostępnianiu pojawi się dopiero po akceptacji członka zespołu Baiolo.",
     seeStatus: "Zobacz status zgłoszenia",
     exploreInstead: "Odkrywaj zamiast tego",
     playingLocal: "Grasz!",
@@ -196,6 +204,7 @@ export const pl: Messages = {
   },
   play: {
     playing: "Grasz",
+    playingPrivate: "Grasz prywatnie",
     opening: "Otwieranie gry…",
     fullscreen: "Pełny ekran",
     tip: "Wskazówka: kliknij Play, potem przeciągnij w okolicy niebieskiego duszka (jak proca).",
@@ -207,6 +216,10 @@ export const pl: Messages = {
     download: "Pobierz paczkę",
     open: "Otwórz projekt",
     back: "Wróć do projektu",
+    privateOwnerNote:
+      "Tylko Ty możesz w to grać, dopóki członek zespołu nie zatwierdzi publicznego udostępniania.",
+    privatePreparing:
+      "Prywatna paczka do gry jeszcze się przygotowuje. Spróbuj za chwilę albo otwórz Moje projekty.",
   },
   favorites: {
     title: "Ulubione",
@@ -327,9 +340,9 @@ export const pl: Messages = {
     noDescription: "Brak opisu.",
     submitTitle: "Gotowy do wysłania?",
     submitBody:
-      "Sprawdzimy paczkę, potem członek zespołu zrecenzuje. Zostaje prywatne do akceptacji.",
-    check1: "Przyjazne sprawdzenie paczki",
-    check2: "Recenzja człowieka przed publikacją",
+      "Od razu możesz grać u siebie. Publiczne Odkrywaj i linki dla znajomych czekają na akceptację członka zespołu.",
+    check1: "Od razu grasz prywatnie",
+    check2: "Recenzja człowieka przed publicznym share",
     check3: "Możesz edytować, jeśli coś trzeba poprawić",
     back: "Wstecz",
     continue: "Dalej",
@@ -365,7 +378,10 @@ export const pl: Messages = {
     cantPublic: "Tego jeszcze nie możemy upublicznić.",
     teammateReview: "Członek zespołu to przegląda.",
     checkingNow: "Sprawdzamy Twój projekt.",
-    staysPrivate: "Zostaje prywatne, dopóki członek zespołu Baiolo nie zatwierdzi.",
+    staysPrivate:
+      "Możesz grać od razu. Publiczne udostępnianie i Odkrywaj czekają na akceptację.",
+    playNow: "Graj teraz",
+    openProject: "Otwórz projekt",
     seeStatus: "Zobacz status zgłoszenia",
     exploreMeanwhile: "Odkrywaj tymczasem",
     loading: "Ładowanie…",
@@ -374,7 +390,7 @@ export const pl: Messages = {
   },
   projects: {
     title: "Moje projekty",
-    sub: "Delikatne sygnały — i jasny status zgłoszenia.",
+    sub: "Graj w swoje buildy kiedy chcesz. Publiczny share wymaga akceptacji.",
     addProject: "Dodaj projekt",
     tip: "Wskazówka",
     startTiny: "Zacznij od małego.",
@@ -398,14 +414,15 @@ export const pl: Messages = {
     yourProject: "Twój projekt",
     submissionStatus: "Status zgłoszenia",
     submissionSub:
-      "Szkice, sprawdzanie i recenzje są tu, dopóki projekt nie będzie publiczny.",
+      "Graj prywatnie podczas sprawdzania. Lista Odkrywaj czeka na akceptację.",
     loading: "Ładowanie projektów…",
     keepEditing: "Edytuj dalej",
+    playPrivate: "Graj",
     noInProgress: "Brak zgłoszeń w toku.",
     liveProjects: "Projekty na żywo",
     playsReactions: "{plays} wejść · {reactions} reakcji",
     sharePlay: "Udostępnij i graj",
-    nothingLive: "Nic jeszcze na żywo — zaakceptowane projekty pojawią się tutaj.",
+    nothingLive: "Nic jeszcze publicznego — zaakceptowane projekty pojawią się tutaj.",
   },
   profile: {
     title: "Profil",

@@ -13,6 +13,8 @@ type ShareProjectPanelProps = {
   tagline: string;
   /** Larger hero treatment for creators after submit / on project page */
   emphasis?: "hero" | "compact";
+  /** Public social share only after admin publish. */
+  publicShare?: boolean;
   className?: string;
 };
 
@@ -21,6 +23,7 @@ export function ShareProjectPanel({
   title,
   tagline,
   emphasis = "hero",
+  publicShare = true,
   className,
 }: ShareProjectPanelProps) {
   const t = useT();
@@ -57,6 +60,33 @@ export function ShareProjectPanel({
   }
 
   const hero = emphasis === "hero";
+
+  if (!publicShare) {
+    return (
+      <section
+        className={cn(
+          "rounded-xl border-2 border-brand/30 bg-lilac/40 p-5 shadow-[var(--shadow-1)] md:p-6",
+          className,
+        )}
+      >
+        <p className="text-sm font-bold uppercase tracking-wide text-brand-strong">
+          {t("share.privateEyebrow")}
+        </p>
+        <h2 className="mt-2 text-xl font-extrabold text-ink md:text-2xl">
+          {t("share.privateTitle")}
+        </h2>
+        <p className="mt-2 max-w-xl text-ink-muted">{t("share.privateBody")}</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Button href={`/play/${projectId}`} size="l">
+            {t("share.playPrivately")}
+          </Button>
+          <Button href="/projects" size="l" variant="secondary">
+            {t("share.seeStatus")}
+          </Button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

@@ -218,11 +218,16 @@ export default function MyProjectsPage() {
                     >
                       {t("projects.keepEditing")}
                     </Button>
-                  ) : p.status === "published" || p.status === "approved" ? (
-                    <Button href={`/project/${p.id}`} variant="secondary">
-                      {t("common.open")}
-                    </Button>
-                  ) : null}
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      <Button href={`/play/${p.id}`}>
+                        {t("projects.playPrivate")}
+                      </Button>
+                      <Button href={`/project/${p.id}`} variant="secondary">
+                        {t("common.open")}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </li>
             ))}

@@ -143,6 +143,17 @@ function SubmittedBody() {
         {t("createSubmitted.staysPrivate")}
       </p>
 
+      {ready && submission && submission.status !== "draft" && (
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Button href={`/play/${submission.id}`} size="l">
+            {t("createSubmitted.playNow")}
+          </Button>
+          <Button href={`/project/${submission.id}`} size="l" variant="secondary">
+            {t("createSubmitted.openProject")}
+          </Button>
+        </div>
+      )}
+
       {ready && submission && (
         <ShareProjectPanel
           className="mt-8 w-full text-left"
@@ -152,6 +163,7 @@ function SubmittedBody() {
             submission.description || t("createSubmitted.shareTaglineSoon")
           }
           emphasis="hero"
+          publicShare={submission.status === "published"}
         />
       )}
 

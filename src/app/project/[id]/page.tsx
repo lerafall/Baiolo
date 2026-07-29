@@ -23,8 +23,9 @@ import { addContentReport } from "@/lib/reports";
 import { useFavorites } from "@/lib/favorites";
 import { useToast } from "@/components/ui/Toast";
 import { DictationField } from "@/components/ui/DictationField";
-import { submissionToProject } from "@/lib/project-map";
+import { submissionToOwnerProject, submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
+import { useSession } from "@/lib/session";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
@@ -37,6 +38,7 @@ export default function ProjectPage({
 }) {
   const { id } = use(params);
   const { items, ready } = useSubmissions();
+  const { session } = useSession();
   const engagement = useSyncedEngagement(id);
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
   const { requireAuth, signedIn } = useRequireAuth(`/project/${id}`);
@@ -47,15 +49,39 @@ export default function ProjectPage({
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState<ReportReason>("unsafe");
 
+  const ownedSubmission = useMemo(
+    () => items.find((s) => s.id === id) ?? null,
+    [id, items],
+  );
+
+  const isOwner = Boolean(
+    ownedSubmission &&
+      (ownedSubmission.ownerId
+        ? ownedSubmission.ownerId === session.userId ||
+          ownedSubmission.ownerId === "local" ||
+          ownedSubmission.ownerId === "anon"
+        : true),
+  );
+
   const project = useMemo(() => {
     const fromCatalog = getProject(id);
-    if (fromCatalog) return fromCatalog;
+    if (fromCatalog) return { project: fromCatalog, privateOwner: false as const };
     const published = items.find((s) => s.id === id && s.status === "published");
-    if (published) return submissionToProject(published);
+    if (published) {
+      const mapped = submissionToProject(published, session.name || "You");
+      if (mapped) return { project: mapped, privateOwner: false as const };
+    }
+    if (isOwner && ownedSubmission) {
+      const mapped = submissionToOwnerProject(
+        ownedSubmission,
+        session.name || "You",
+      );
+      if (mapped) return { project: mapped, privateOwner: true as const };
+    }
     return null;
-  }, [id, items]);
+  }, [id, items, isOwner, ownedSubmission, session.name]);
 
-  const pending = useMemo(() => {
+  const pendingOther = useMemo(() => {
     if (project) return null;
     return items.find((s) => s.id === id && s.status !== "published") ?? null;
   }, [id, items, project]);
@@ -71,11 +97,11 @@ export default function ProjectPage({
 
   const similar = useMemo(() => {
     if (!project) return [];
-    return getSimilarProjects(project, feed);
+    return getSimilarProjects(project.project, feed);
   }, [project, feed]);
 
-  if (ready && !project && !pending) notFound();
-  if (!ready || (!project && !pending)) {
+  if (ready && !project && !pendingOther) notFound();
+  if (!ready || (!project && !pendingOther)) {
     return (
       <>
         <SiteHeader />
@@ -86,21 +112,18 @@ export default function ProjectPage({
     );
   }
 
-  if (pending && !project) {
+  if (pendingOther && !project) {
     return (
       <>
         <SiteHeader />
         <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-5 py-16 text-center">
-          <h1 className="text-3xl font-extrabold">{pending.title}</h1>
+          <h1 className="text-3xl font-extrabold">{pendingOther.title}</h1>
           <p className="mt-3 text-lg text-ink-muted">
-            This project isn’t public yet. It’s still being checked or reviewed.
+            {t("project.notPublic")}
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button href="/projects" size="l">
-              See submission status
-            </Button>
-            <Button href="/explore" variant="secondary" size="l">
-              Explore instead
+            <Button href="/explore" size="l">
+              {t("nav.explore")}
             </Button>
           </div>
         </main>
@@ -110,7 +133,9 @@ export default function ProjectPage({
 
   if (!project) notFound();
 
-  const live = project;
+  const live = project.project;
+  const isPrivateOwnerView = project.privateOwner;
+  const isPublic = !isPrivateOwnerView;
 
   const playUrl = live.playUrl;
   const external =
@@ -151,6 +176,11 @@ export default function ProjectPage({
           {live.title}
         </h1>
         <p className="mt-3 max-w-2xl text-lg text-ink-muted">{live.tagline}</p>
+        {isPrivateOwnerView && (
+          <p className="mt-3 max-w-2xl rounded-xl border-2 border-brand/25 bg-lilac/40 px-4 py-3 text-sm font-semibold text-ink">
+            {t("project.privateOwnerNote")}
+          </p>
+        )}
         {live.tags.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {live.tags.map((tag) => (
@@ -191,6 +221,7 @@ export default function ProjectPage({
           title={live.title}
           tagline={live.tagline}
           emphasis="hero"
+          publicShare={isPublic}
         />
 
         <div

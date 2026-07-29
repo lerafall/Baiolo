@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { useSignedIn } from "@/lib/auth-gate";
 import { getProject } from "@/lib/data/projects";
 import { toEmbedPlayUrl } from "@/lib/play-url";
-import { submissionToProject } from "@/lib/project-map";
+import { submissionToOwnerProject, submissionToProject } from "@/lib/project-map";
+import { useSession } from "@/lib/session";
 import { useSubmissions } from "@/lib/submissions";
 import { useSyncedEngagement } from "@/lib/synced-engagement";
 import { useT } from "@/lib/i18n/LocaleProvider";
@@ -21,27 +22,54 @@ export default function PlayPage({
 }) {
   const { id } = use(params);
   const { items, ready } = useSubmissions();
+  const { session } = useSession();
   const { signedIn, ready: authReady } = useSignedIn();
   const engagement = useSyncedEngagement(id);
   const playCounted = useRef(false);
   const t = useT();
 
-  const project = useMemo(() => {
+  const ownedSubmission = useMemo(
+    () => items.find((s) => s.id === id) ?? null,
+    [id, items],
+  );
+  const isOwner = Boolean(ownedSubmission);
+
+  const resolved = useMemo(() => {
     const fromCatalog = getProject(id);
-    if (fromCatalog) return fromCatalog;
+    if (fromCatalog) {
+      return { project: fromCatalog, privateOwner: false as const };
+    }
     const published = items.find((s) => s.id === id && s.status === "published");
-    if (published) return submissionToProject(published);
+    if (published) {
+      const mapped = submissionToProject(published, session.name || "You");
+      if (mapped) return { project: mapped, privateOwner: false as const };
+    }
+    if (isOwner && ownedSubmission) {
+      const mapped = submissionToOwnerProject(
+        ownedSubmission,
+        session.name || "You",
+      );
+      if (mapped) return { project: mapped, privateOwner: true as const };
+    }
     return null;
-  }, [id, items]);
+  }, [id, items, isOwner, ownedSubmission, session.name]);
 
   useEffect(() => {
-    if (!signedIn || !project || !engagement.ready || playCounted.current) return;
+    if (
+      !signedIn ||
+      !resolved?.project ||
+      resolved.privateOwner ||
+      !engagement.ready ||
+      playCounted.current
+    ) {
+      return;
+    }
     playCounted.current = true;
     engagement.recordPlay();
-  }, [signedIn, project, engagement]);
+  }, [signedIn, resolved, engagement]);
 
-  if (ready && !project) notFound();
-  if (!ready || !project || !authReady) {
+  if (ready && !resolved) notFound();
+  if (!ready || !resolved || !authReady) {
     return (
       <>
         <SiteHeader />
@@ -51,6 +79,8 @@ export default function PlayPage({
       </>
     );
   }
+
+  const { project, privateOwner } = resolved;
 
   if (!signedIn) {
     return (
@@ -86,10 +116,15 @@ export default function PlayPage({
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl px-5 py-10 md:px-8">
         <p className="text-sm font-bold uppercase tracking-wide text-ink-muted">
-          {t("play.playing")}
+          {privateOwner ? t("play.playingPrivate") : t("play.playing")}
         </p>
         <h1 className="mt-2 text-4xl font-extrabold">{project.title}</h1>
         <p className="mt-2 text-ink-muted">{project.tagline}</p>
+        {privateOwner && (
+          <p className="mt-3 rounded-xl border-2 border-brand/25 bg-lilac/40 px-4 py-3 text-sm font-semibold">
+            {t("play.privateOwnerNote")}
+          </p>
+        )}
 
         {embeddable ? (
           <>
@@ -123,7 +158,11 @@ export default function PlayPage({
               {isZip ? t("play.packageReady") : t("play.openProject")}
             </p>
             <p className="mt-2 text-ink-muted">
-              {isZip ? t("play.zipHint") : t("play.openTab")}
+              {url === "#play"
+                ? t("play.privatePreparing")
+                : isZip
+                  ? t("play.zipHint")
+                  : t("play.openTab")}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               {external && (
@@ -144,6 +183,7 @@ export default function PlayPage({
           title={project.title}
           tagline={project.tagline}
           emphasis="compact"
+          publicShare={!privateOwner}
         />
       </main>
     </>

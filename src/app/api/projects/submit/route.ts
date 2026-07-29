@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { PipelineSubmitInput } from "@/lib/pipeline";
 import { runSubmitPipeline } from "@/lib/pipeline";
+import { extractZipForPlay } from "@/lib/publish-zip";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { submissionToRow } from "@/lib/supabase/map";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -38,18 +39,44 @@ export async function POST(request: Request) {
       (body.uploadType === "link" ? body.sourceLabel : null),
   });
 
+  let submission = result.submission;
+
+  // Private play for the creator immediately (public Explore still needs admin publish).
+  if (
+    submission.uploadType === "link" &&
+    /^https?:\/\//i.test(submission.sourceLabel)
+  ) {
+    submission = {
+      ...submission,
+      previewUrl: submission.sourceLabel,
+    };
+  } else if (submission.storagePath && isSupabaseConfigured()) {
+    const supabase = getSupabaseServerClient();
+    if (supabase) {
+      const previewUrl = await extractZipForPlay(
+        supabase,
+        submission.storagePath,
+        submission.id,
+        "review",
+      );
+      if (previewUrl) {
+        submission = { ...submission, previewUrl };
+      }
+    }
+  }
+
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseServerClient();
     if (supabase) {
       const { error } = await supabase
         .from("projects")
-        .upsert(submissionToRow(result.submission));
+        .upsert(submissionToRow(submission));
       if (error) {
         return NextResponse.json(
           {
             error: "We couldn’t save this project yet.",
             detail: error.message,
-            fallback: result,
+            fallback: { ...result, submission },
           },
           { status: 502 },
         );
@@ -60,5 +87,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     mode: isSupabaseConfigured() ? "supabase" : "mock",
     ...result,
+    submission,
   });
 }

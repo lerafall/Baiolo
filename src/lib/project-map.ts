@@ -13,12 +13,23 @@ function preferVisual(primary: string, fallback?: string) {
   return primary || fallback || "";
 }
 
-/** Turn an approved submission into an Explore card model. */
-export function submissionToProject(
+/** Play URL for the creator (private preview) or the public (after publish). */
+export function resolvePlayableUrl(s: ProjectSubmission): string | null {
+  if (s.status === "published" && s.playUrl) return s.playUrl;
+  if (s.previewUrl) return s.previewUrl;
+  if (s.uploadType === "link" && /^https?:\/\//i.test(s.sourceLabel)) {
+    return s.sourceLabel;
+  }
+  if (s.playUrl) return s.playUrl;
+  return null;
+}
+
+function toProjectModel(
   s: ProjectSubmission,
-  creator = "You",
-): Project | null {
-  if (s.status !== "published" || !s.category) return null;
+  creator: string,
+  playUrl: string,
+): Project {
+  const category = s.category || "experiment";
   const isLink =
     s.uploadType === "link" || /^https?:\/\//i.test(s.sourceLabel);
   const fromCatalog = catalog.find((p) => p.id === s.id);
@@ -27,9 +38,9 @@ export function submissionToProject(
     title: s.title,
     tagline: s.description.slice(0, 80) || "A new Baiolo project",
     description: s.description,
-    category: s.category,
+    category,
     tags:
-      s.tags?.length > 0 ? s.tags : defaultTagsForCategory[s.category],
+      s.tags?.length > 0 ? s.tags : defaultTagsForCategory[category],
     creator: fromCatalog?.creator ?? creator,
     thumbnail: preferVisual(s.thumbnail, fromCatalog?.thumbnail),
     cover: preferVisual(
@@ -37,7 +48,7 @@ export function submissionToProject(
       preferVisual(s.thumbnail, fromCatalog?.thumbnail),
     ),
     playUrl:
-      s.playUrl ||
+      playUrl ||
       (isLink ? s.sourceLabel : (fromCatalog?.playUrl ?? "#play")),
     plays: s.plays,
     reactions: {
@@ -46,6 +57,30 @@ export function submissionToProject(
       "would-use-again": Math.max(1, Math.round(s.reactions * 0.3)),
     },
     featured: fromCatalog?.featured,
-    ownerId: fromCatalog?.ownerId ?? "local",
+    ownerId: s.ownerId ?? fromCatalog?.ownerId ?? "local",
   };
+}
+
+/** Explore / public card — only after admin publish. */
+export function submissionToProject(
+  s: ProjectSubmission,
+  creator = "You",
+): Project | null {
+  if (s.status !== "published" || !s.category) return null;
+  const playUrl = resolvePlayableUrl(s);
+  if (!playUrl) return null;
+  return toProjectModel(s, creator, playUrl);
+}
+
+/**
+ * Creator’s own view — playable as soon as a private preview (or link) exists.
+ * Not listed in Explore until published.
+ */
+export function submissionToOwnerProject(
+  s: ProjectSubmission,
+  creator = "You",
+): Project | null {
+  if (s.status === "draft") return null;
+  const playUrl = resolvePlayableUrl(s) || "#play";
+  return toProjectModel(s, creator, playUrl);
 }

@@ -26,8 +26,8 @@ export type ExtractStage = "review" | "published";
 
 /**
  * Download a private ZIP, extract static files, return a Baiolo proxy URL to index.
- * - review → project-private review/{id}/site (admin preview only)
- * - published → project-public published/{id}/site (public play)
+ * - review → project-private review/{id}/site (owner private play + admin preview)
+ * - published → project-public published/{id}/site (public Explore play)
  */
 export async function extractZipForPlay(
   supabase: SupabaseClient,
@@ -98,7 +98,7 @@ export async function extractZipForPlay(
   if (playPath) {
     const relative = playPath.slice(`${siteRoot}/`.length);
     if (stage === "review") {
-      return `/api/admin/preview-site/${projectId}/${relative}`;
+      return `/api/owner-play-site/${projectId}/${relative}`;
     }
     return `/api/play-site/${projectId}/${relative}`;
   }

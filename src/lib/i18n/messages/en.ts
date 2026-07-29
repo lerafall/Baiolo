@@ -142,6 +142,12 @@ export const en = {
     linkCopied: "Link copied — send it to friends!",
     copyFail: "Couldn’t copy the link.",
     shared: "Shared!",
+    privateEyebrow: "Private for now",
+    privateTitle: "You can play it — public share waits for approval",
+    privateBody:
+      "Try it yourself anytime. When a Baiolo teammate approves it, you can share the public link and it appears in Explore.",
+    playPrivately: "Play now",
+    seeStatus: "See status",
   },
   card: {
     play: "Play",
@@ -181,6 +187,8 @@ export const en = {
     exploreMore: "Explore more",
     loading: "Loading project…",
     notPublic: "This project isn’t public yet. It’s still being checked or reviewed.",
+    privateOwnerNote:
+      "This is your private build — you can play it anytime. It appears in Explore and can be shared publicly only after a Baiolo teammate approves it.",
     seeStatus: "See submission status",
     exploreInstead: "Explore instead",
     playingLocal: "You are playing!",
@@ -193,6 +201,7 @@ export const en = {
   },
   play: {
     playing: "Playing",
+    playingPrivate: "Playing privately",
     opening: "Opening play…",
     fullscreen: "Open fullscreen",
     tip: "Tip: tap Play, then drag anywhere near the blue wisp (pull back like a slingshot).",
@@ -204,6 +213,10 @@ export const en = {
     download: "Download package",
     open: "Open project",
     back: "Back to project",
+    privateOwnerNote:
+      "Only you can play this until a teammate approves public sharing.",
+    privatePreparing:
+      "Your private play package is still preparing. Try again in a moment, or open My Projects.",
   },
   favorites: {
     title: "Favorites",
@@ -324,9 +337,9 @@ export const en = {
     noDescription: "No description yet.",
     submitTitle: "Ready to submit?",
     submitBody:
-      "We’ll check the package, then a teammate reviews it. It stays private until approved.",
-    check1: "Friendly package check",
-    check2: "Human review before publish",
+      "You can play it yourself right away. Public Explore and friend links wait until a teammate approves.",
+    check1: "You play privately right away",
+    check2: "Human review before public share",
     check3: "You can edit if something needs a fix",
     back: "Back",
     continue: "Continue",
@@ -362,7 +375,10 @@ export const en = {
     cantPublic: "This one can’t go public yet.",
     teammateReview: "A teammate is reviewing it.",
     checkingNow: "We’re checking your project now.",
-    staysPrivate: "It stays private until a Baiolo teammate approves it.",
+    staysPrivate:
+      "You can play it now. Public sharing and Explore wait for teammate approval.",
+    playNow: "Play now",
+    openProject: "Open project",
     seeStatus: "See submission status",
     exploreMeanwhile: "Explore meanwhile",
     loading: "Loading…",
@@ -371,7 +387,7 @@ export const en = {
   },
   projects: {
     title: "My Projects",
-    sub: "Soft signals — and clear submission status.",
+    sub: "Play your builds anytime. Public share needs approval.",
     addProject: "Add your project",
     tip: "Tip",
     startTiny: "Start tiny.",
@@ -395,14 +411,15 @@ export const en = {
     yourProject: "Your project",
     submissionStatus: "Submission status",
     submissionSub:
-      "Drafts, checking, and reviews live here until a project is public.",
+      "Play privately while checking runs. Explore listing waits for approval.",
     loading: "Loading your projects…",
     keepEditing: "Keep editing",
+    playPrivate: "Play",
     noInProgress: "No submissions in progress.",
     liveProjects: "Live projects",
     playsReactions: "{plays} plays · {reactions} reactions",
     sharePlay: "Share & play",
-    nothingLive: "Nothing live yet — approved projects will show up here.",
+    nothingLive: "Nothing public yet — approved projects will show up here.",
   },
   profile: {
     title: "Profile",
