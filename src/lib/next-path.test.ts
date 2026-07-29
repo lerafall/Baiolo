@@ -17,6 +17,13 @@ describe("safeNextPath", () => {
   it("builds auth href with next", () => {
     expect(authHref("/create")).toBe("/auth?next=%2Fcreate");
   });
+
+  it("builds auth href for sign-in mode", () => {
+    expect(authHref("/play/x", { mode: "signin" })).toBe(
+      "/auth?next=%2Fplay%2Fx&mode=signin",
+    );
+    expect(authHref(null, { mode: "signin" })).toBe("/auth?mode=signin");
+  });
 });
 
 describe("notificationHref", () => {

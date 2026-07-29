@@ -75,9 +75,18 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
                 </Button>
               </>
             ) : (
-              <Button href={joinHref} size="m">
-                Join
-              </Button>
+              <>
+                <Button
+                  href={authHref(pathname || "/explore", { mode: "signin" })}
+                  size="m"
+                  variant="ghost"
+                >
+                  Sign in
+                </Button>
+                <Button href={joinHref} size="m">
+                  Join
+                </Button>
+              </>
             ))}
         </nav>
 
@@ -99,9 +108,18 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
                 </Button>
               </>
             ) : (
-              <Button href={joinHref} size="m">
-                Join
-              </Button>
+              <>
+                <Button
+                  href={authHref(pathname || "/explore", { mode: "signin" })}
+                  size="m"
+                  variant="ghost"
+                >
+                  In
+                </Button>
+                <Button href={joinHref} size="m">
+                  Join
+                </Button>
+              </>
             ))}
         </div>
       </div>

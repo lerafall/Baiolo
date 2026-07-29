@@ -11,9 +11,22 @@ export function safeNextPath(
   return value;
 }
 
-export function authHref(next?: string | null) {
-  if (!next) return "/auth";
-  const path = safeNextPath(next, "");
-  if (!path) return "/auth";
-  return `/auth?next=${encodeURIComponent(path)}`;
+export type AuthMode = "join" | "signin";
+
+export function authModeFromSearch(raw: string | null | undefined): AuthMode {
+  return raw === "signin" ? "signin" : "join";
+}
+
+export function authHref(
+  next?: string | null,
+  options?: { mode?: AuthMode },
+) {
+  const params = new URLSearchParams();
+  if (next) {
+    const path = safeNextPath(next, "");
+    if (path) params.set("next", path);
+  }
+  if (options?.mode === "signin") params.set("mode", "signin");
+  const qs = params.toString();
+  return qs ? `/auth?${qs}` : "/auth";
 }

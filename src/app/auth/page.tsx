@@ -1,11 +1,21 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
-import { safeNextPath } from "@/lib/next-path";
-import { VISIBLE_SOCIAL_PROVIDERS, type SocialProviderId } from "@/lib/social-auth";
+import { cn } from "@/lib/cn";
+import {
+  authHref,
+  authModeFromSearch,
+  safeNextPath,
+  type AuthMode,
+} from "@/lib/next-path";
+import {
+  VISIBLE_SOCIAL_PROVIDERS,
+  type SocialProviderId,
+} from "@/lib/social-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { useSession } from "@/lib/session";
 
@@ -13,6 +23,8 @@ function AuthBody() {
   const router = useRouter();
   const search = useSearchParams();
   const next = safeNextPath(search.get("next"), "/explore");
+  const mode = authModeFromSearch(search.get("mode"));
+  const signingIn = mode === "signin";
   const onboardingNext = `/onboarding?next=${encodeURIComponent(next)}`;
   const linkError = search.get("error") === "link";
   const oauthError = search.get("error") === "oauth";
@@ -38,6 +50,10 @@ function AuthBody() {
     Boolean(session.userId || session.email) &&
     session.interests.length >= 2 &&
     session.role !== "guest";
+
+  function modeHref(nextMode: AuthMode) {
+    return authHref(next, { mode: nextMode === "signin" ? "signin" : "join" });
+  }
 
   async function startSocial(id: SocialProviderId) {
     setSocialHint("");
@@ -79,10 +95,38 @@ function AuthBody() {
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col justify-center px-5 py-12 md:px-8">
-      <h1 className="text-4xl font-extrabold">Join Baiolo</h1>
+      <div className="flex rounded-pill border-2 border-border bg-surface p-1">
+        <Link
+          href={modeHref("join")}
+          className={cn(
+            "flex-1 rounded-pill py-2.5 text-center text-sm font-extrabold transition-colors",
+            !signingIn
+              ? "bg-brand text-on-brand"
+              : "text-ink-muted hover:text-ink",
+          )}
+        >
+          Join
+        </Link>
+        <Link
+          href={modeHref("signin")}
+          className={cn(
+            "flex-1 rounded-pill py-2.5 text-center text-sm font-extrabold transition-colors",
+            signingIn
+              ? "bg-brand text-on-brand"
+              : "text-ink-muted hover:text-ink",
+          )}
+        >
+          Sign in
+        </Link>
+      </div>
+
+      <h1 className="mt-8 text-4xl font-extrabold">
+        {signingIn ? "Welcome back" : "Join Baiolo"}
+      </h1>
       <p className="mt-3 text-lg text-ink-muted">
-        Free account to play projects, leave reactions, and save favorites.
-        WhatsApp, Google, Discord — or a magic email link.
+        {signingIn
+          ? "Sign in with the same WhatsApp, Google, Discord, or email you used before."
+          : "Free account to play projects, leave reactions, and save favorites. WhatsApp, Google, Discord — or a magic email link."}
       </p>
       {(linkError || oauthError) && (
         <p className="mt-4 rounded-lg bg-warning/20 px-4 py-3 text-sm font-semibold">
@@ -94,7 +138,9 @@ function AuthBody() {
 
       {!sent && waStep !== "done" && (
         <div className="mt-8 rounded-xl bg-mint/40 p-5 shadow-[var(--shadow-1)]">
-          <p className="text-lg font-extrabold">Continue with WhatsApp</p>
+          <p className="text-lg font-extrabold">
+            {signingIn ? "Sign in with WhatsApp" : "Continue with WhatsApp"}
+          </p>
           <p className="mt-1 text-sm text-ink-muted">
             We’ll send a one-time code to your WhatsApp.
           </p>
@@ -151,7 +197,11 @@ function AuthBody() {
                 size="l"
                 disabled={busy}
               >
-                {busy ? "Checking…" : "Verify & join"}
+                {busy
+                  ? "Checking…"
+                  : signingIn
+                    ? "Verify & sign in"
+                    : "Verify & join"}
               </Button>
               <button
                 type="button"
@@ -213,7 +263,11 @@ function AuthBody() {
               disabled={Boolean(oauthBusy)}
               onClick={() => void startSocial(p.id)}
             >
-              {oauthBusy === p.id ? "Opening…" : p.hint}
+              {oauthBusy === p.id
+                ? "Opening…"
+                : signingIn
+                  ? `Sign in with ${p.label}`
+                  : p.hint}
             </Button>
           ))}
           {socialHint && (
@@ -291,11 +345,39 @@ function AuthBody() {
             {busy
               ? "Sending…"
               : cloud
-                ? "Send magic link"
+                ? signingIn
+                  ? "Email me a sign-in link"
+                  : "Send magic link"
                 : "Continue (demo)"}
           </Button>
         </form>
       ) : null}
+
+      {!sent && waStep !== "done" && (
+        <p className="mt-8 text-center text-sm text-ink-muted">
+          {signingIn ? (
+            <>
+              New here?{" "}
+              <Link
+                href={modeHref("join")}
+                className="font-bold text-brand-strong underline"
+              >
+                Create a free account
+              </Link>
+            </>
+          ) : (
+            <>
+              Already have an account?{" "}
+              <Link
+                href={modeHref("signin")}
+                className="font-bold text-brand-strong underline"
+              >
+                Sign in
+              </Link>
+            </>
+          )}
+        </p>
+      )}
     </main>
   );
 }

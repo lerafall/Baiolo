@@ -26,14 +26,18 @@ export function AuthGateCard({
         <Button href={authHref(nextPath)} size="l">
           {actionLabel}
         </Button>
-        <Button href="/explore" variant="secondary" size="l">
-          Browse without playing
+        <Button
+          href={authHref(nextPath, { mode: "signin" })}
+          variant="secondary"
+          size="l"
+        >
+          Sign in
         </Button>
       </div>
       <p className="mt-4 text-sm text-ink-muted">
-        Already have an account?{" "}
-        <Link href={authHref(nextPath)} className="font-bold text-brand-strong underline">
-          Sign in
+        Prefer to browse first?{" "}
+        <Link href="/explore" className="font-bold text-brand-strong underline">
+          Explore without playing
         </Link>
       </p>
     </div>
