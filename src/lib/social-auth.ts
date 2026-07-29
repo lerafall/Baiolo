@@ -1,13 +1,26 @@
 /** Social login providers Baiolo exposes via Supabase Auth. */
 export const SOCIAL_PROVIDERS = [
-  { id: "google", label: "Google", hint: "Continue with Google" },
-  { id: "facebook", label: "Facebook", hint: "Continue with Facebook" },
-  { id: "apple", label: "Apple", hint: "Continue with Apple" },
-  { id: "discord", label: "Discord", hint: "Continue with Discord" },
-  { id: "slack", label: "Slack", hint: "Continue with Slack" },
+  { id: "google", label: "Google", hint: "Continue with Google", visible: true },
+  {
+    id: "facebook",
+    label: "Facebook",
+    hint: "Continue with Facebook",
+    visible: false,
+  },
+  { id: "apple", label: "Apple", hint: "Continue with Apple", visible: false },
+  {
+    id: "discord",
+    label: "Discord",
+    hint: "Continue with Discord",
+    visible: true,
+  },
+  { id: "slack", label: "Slack", hint: "Continue with Slack", visible: false },
 ] as const;
 
 export type SocialProviderId = (typeof SOCIAL_PROVIDERS)[number]["id"];
+
+/** Providers shown on the Join / sign-in screen. */
+export const VISIBLE_SOCIAL_PROVIDERS = SOCIAL_PROVIDERS.filter((p) => p.visible);
 
 export function isSocialProvider(value: string): value is SocialProviderId {
   return SOCIAL_PROVIDERS.some((p) => p.id === value);

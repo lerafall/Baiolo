@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
 import { safeNextPath } from "@/lib/next-path";
-import { SOCIAL_PROVIDERS } from "@/lib/social-auth";
+import { VISIBLE_SOCIAL_PROVIDERS, type SocialProviderId } from "@/lib/social-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { useSession } from "@/lib/session";
 
@@ -39,7 +39,7 @@ function AuthBody() {
     session.interests.length >= 2 &&
     session.role !== "guest";
 
-  async function startSocial(id: (typeof SOCIAL_PROVIDERS)[number]["id"]) {
+  async function startSocial(id: SocialProviderId) {
     setSocialHint("");
     setOauthBusy(id);
     const message = await signInWithOAuth(id);
@@ -82,7 +82,7 @@ function AuthBody() {
       <h1 className="text-4xl font-extrabold">Join Baiolo</h1>
       <p className="mt-3 text-lg text-ink-muted">
         Free account to play projects, leave reactions, and save favorites.
-        WhatsApp, Google, Apple, and more — or a magic email link.
+        WhatsApp, Google, Discord — or a magic email link.
       </p>
       {(linkError || oauthError) && (
         <p className="mt-4 rounded-lg bg-warning/20 px-4 py-3 text-sm font-semibold">
@@ -203,7 +203,7 @@ function AuthBody() {
             or continue with
             <span className="h-px flex-1 bg-border" />
           </div>
-          {SOCIAL_PROVIDERS.map((p) => (
+          {VISIBLE_SOCIAL_PROVIDERS.map((p) => (
             <Button
               key={p.id}
               type="button"
