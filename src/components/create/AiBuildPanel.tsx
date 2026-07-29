@@ -148,7 +148,7 @@ export function AiBuildPanel({
         setError(
           res.status === 504 || res.status === 408
             ? t("workshop.aiTimeout")
-            : t("workshop.aiFailed"),
+            : t("workshop.aiHttpError", { status: String(res.status || "?") }),
         );
         return;
       }

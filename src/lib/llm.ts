@@ -31,6 +31,12 @@ export function pickBuildTier(prompt: string): LlmTier {
   return "quality";
 }
 
+function envTrim(name: string) {
+  // Dynamic access keeps secrets readable at container runtime (not build-time empty).
+  const value = process.env[name];
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function openRouterHeaders(): Record<string, string> {
   return {
     "HTTP-Referer": getPublicSiteOrigin(),
@@ -44,12 +50,12 @@ function resolveAuth(): {
   provider: LlmProvider;
   extraHeaders: Record<string, string>;
 } | null {
-  const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+  const openRouterKey = envTrim("OPENROUTER_API_KEY");
   if (openRouterKey) {
     return {
       apiKey: openRouterKey,
       baseUrl: (
-        process.env.OPENROUTER_BASE_URL?.trim() ||
+        envTrim("OPENROUTER_BASE_URL") ||
         "https://openrouter.ai/api/v1"
       ).replace(/\/$/, ""),
       provider: "openrouter",
@@ -57,10 +63,10 @@ function resolveAuth(): {
     };
   }
 
-  const openAiKey = process.env.OPENAI_API_KEY?.trim();
+  const openAiKey = envTrim("OPENAI_API_KEY");
   if (openAiKey) {
     const base = (
-      process.env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1"
+      envTrim("OPENAI_BASE_URL") || "https://api.openai.com/v1"
     ).replace(/\/$/, "");
     const viaRouter = base.includes("openrouter.ai");
     return {
@@ -81,32 +87,32 @@ function modelForTier(
   if (provider === "openrouter") {
     if (tier === "fast") {
       return (
-        process.env.OPENROUTER_MODEL_FAST?.trim() ||
-        process.env.OPENAI_MODEL_FAST?.trim() ||
-        process.env.OPENROUTER_MODEL?.trim() ||
-        process.env.OPENAI_MODEL?.trim() ||
+        envTrim("OPENROUTER_MODEL_FAST") ||
+        envTrim("OPENAI_MODEL_FAST") ||
+        envTrim("OPENROUTER_MODEL") ||
+        envTrim("OPENAI_MODEL") ||
         "openai/gpt-4o-mini"
       );
     }
     return (
-      process.env.OPENROUTER_MODEL_QUALITY?.trim() ||
-      process.env.OPENAI_MODEL_QUALITY?.trim() ||
-      process.env.OPENROUTER_MODEL?.trim() ||
-      process.env.OPENAI_MODEL?.trim() ||
+      envTrim("OPENROUTER_MODEL_QUALITY") ||
+      envTrim("OPENAI_MODEL_QUALITY") ||
+      envTrim("OPENROUTER_MODEL") ||
+      envTrim("OPENAI_MODEL") ||
       "openai/gpt-4o-mini"
     );
   }
 
   if (tier === "fast") {
     return (
-      process.env.OPENAI_MODEL_FAST?.trim() ||
-      process.env.OPENAI_MODEL?.trim() ||
+      envTrim("OPENAI_MODEL_FAST") ||
+      envTrim("OPENAI_MODEL") ||
       "gpt-4o-mini"
     );
   }
   return (
-    process.env.OPENAI_MODEL_QUALITY?.trim() ||
-    process.env.OPENAI_MODEL?.trim() ||
+    envTrim("OPENAI_MODEL_QUALITY") ||
+    envTrim("OPENAI_MODEL") ||
     "gpt-4o-mini"
   );
 }
@@ -126,9 +132,9 @@ export function resolveLlmChatConfig(
 
 export function isLlmConfigured() {
   return Boolean(
-    process.env.OPENROUTER_API_KEY?.trim() ||
-      process.env.OPENAI_API_KEY?.trim() ||
-      process.env.BUILDER_API_URL?.trim(),
+    envTrim("OPENROUTER_API_KEY") ||
+      envTrim("OPENAI_API_KEY") ||
+      envTrim("BUILDER_API_URL"),
   );
 }
 

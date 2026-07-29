@@ -769,6 +769,7 @@ export const pl: Messages = {
     aiUnavailable:
       "Budowanie AI jest chwilowo niedostępne — spróbuj ponownie za chwilę.",
     aiTimeout: "To trwało zbyt długo. Spróbuj za chwilę ponownie.",
+    aiHttpError: "Żądanie AI nieudane (HTTP {status}). Spróbuj za chwilę.",
     aiQuota: "Zostało {remaining} z {limit} generowań AI w tym miesiącu ({plan}).",
     aiQuotaPaid: "płatny",
     aiQuotaPro: "pro",

@@ -766,6 +766,7 @@ export const en = {
     aiUnavailable:
       "AI building is temporarily unavailable. Please try again in a moment.",
     aiTimeout: "That took too long. Try again in a moment.",
+    aiHttpError: "AI request failed (HTTP {status}). Try again in a moment.",
     aiQuota: "{remaining} of {limit} AI generations left this month ({plan}).",
     aiQuotaPaid: "paid",
     aiQuotaPro: "pro",
