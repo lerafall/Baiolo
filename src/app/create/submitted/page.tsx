@@ -8,96 +8,9 @@ import { Button } from "@/components/ui/Button";
 import { StatusBadge, StatusMessage } from "@/components/ui/StatusBadge";
 import { cn } from "@/lib/cn";
 import { type PipelineStageView } from "@/lib/status-progress";
+import { stagesForStatus } from "@/lib/submission-timeline";
 import { useSubmissions } from "@/lib/submissions";
 import { useT } from "@/lib/i18n/LocaleProvider";
-
-function liveStages(
-  snapshot: PipelineStageView[],
-  status: string | undefined,
-): PipelineStageView[] {
-  const base =
-    snapshot.length > 0
-      ? snapshot
-      : [
-          {
-            name: "private_storage",
-            ok: true,
-            detail: "Stored privately for checking.",
-          },
-          {
-            name: "technical_validation",
-            ok: true,
-            detail: "Package looks complete enough to check.",
-          },
-          {
-            name: "ai_moderation",
-            ok: true,
-            detail: "Friendly safety check finished.",
-          },
-          {
-            name: "admin_queue",
-            ok: true,
-            detail: "Queued for human review.",
-          },
-        ];
-
-  if (!status || status === "checking" || status === "submitted") {
-    return [
-      ...base,
-      {
-        name: "live_checking",
-        ok: true,
-        detail: "Still checking — this usually takes a moment.",
-      },
-    ];
-  }
-
-  if (status === "in_review") {
-    return [
-      ...base.filter((s) => s.name !== "live_checking"),
-      {
-        name: "human_review",
-        ok: true,
-        detail: "A Baiolo teammate is reviewing it now.",
-      },
-    ];
-  }
-
-  if (status === "needs_changes") {
-    return [
-      ...base,
-      {
-        name: "needs_changes",
-        ok: false,
-        detail: "A small fix is needed before it can go live.",
-      },
-    ];
-  }
-
-  if (status === "published" || status === "approved") {
-    return [
-      ...base,
-      {
-        name: "published",
-        ok: true,
-        detail: "Approved — it’s ready for people to try.",
-      },
-    ];
-  }
-
-  if (status === "rejected") {
-    return [
-      ...base,
-      {
-        name: "rejected",
-        ok: false,
-        detail: "This project can’t go public right now.",
-      },
-    ];
-  }
-
-  return base;
-}
 
 function SubmittedBody() {
   const t = useT();
@@ -118,7 +31,7 @@ function SubmittedBody() {
   }, []);
 
   const displayStages = useMemo(
-    () => liveStages(stages, submission?.status),
+    () => stagesForStatus(submission?.status, stages),
     [stages, submission?.status],
   );
 

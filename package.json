@@ -8,7 +8,8 @@
     "start": "next start",
     "start:hostinger": "next start -p ${PORT:-3000}",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "builder:stub": "node scripts/builder-stub.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

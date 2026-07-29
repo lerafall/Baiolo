@@ -53,6 +53,7 @@ describe("ai-build parsers", () => {
     expect(result).toEqual({
       status: "chat",
       message: "Cool! Pastel or neon colors?",
+      categoryHint: null,
     });
   });
 

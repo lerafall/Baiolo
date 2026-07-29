@@ -158,6 +158,21 @@ a {
   animation: spark 0.35s ease-out;
 }
 
+@keyframes sharePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand, #5b4cff) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--brand, #5b4cff) 0%, transparent);
+  }
+}
+
+.animate-share-pulse {
+  animation: sharePulse 1.8s ease-in-out infinite;
+  border-color: var(--brand, #5b4cff);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -168,6 +183,10 @@ a {
   }
 
   .animate-floaty {
+    animation: none;
+  }
+
+  .animate-share-pulse {
     animation: none;
   }
 }

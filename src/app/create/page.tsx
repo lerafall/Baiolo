@@ -36,6 +36,11 @@ import {
   type StarterId,
 } from "@/lib/html-starters";
 import { zipWorkshopFiles } from "@/lib/workshop-zip";
+import { saveMockPlayFiles } from "@/lib/mock-play";
+import {
+  summarizeLocalAiUsage,
+  type AiUsageSummary,
+} from "@/lib/ai-usage";
 
 const HtmlWorkshop = dynamic(
   () =>
@@ -75,6 +80,8 @@ function CreateWizard() {
   const [dragOver, setDragOver] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [shareIntent, setShareIntent] = useState<"private" | "public">("private");
+  const [aiUsage, setAiUsage] = useState<AiUsageSummary | null>(null);
   const steps = [
     t("create.stepChooseType"), t("create.stepAddContent"), t("create.stepTitleDesc"),
     t("create.stepCategoryTags"), t("create.stepThumbnail"), t("create.stepReview"),
@@ -86,6 +93,33 @@ function CreateWizard() {
     { id: "html", title: t("create.htmlTitle"), body: t("create.htmlBody") },
     { id: "ai", title: t("create.aiTitle"), body: t("create.aiBody") },
   ];
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    if (!session.userId && !session.email) return;
+
+    const localSummary = summarizeLocalAiUsage(
+      session.plan,
+      items.filter((item) => item.ownerId === session.userId || !session.userId),
+    );
+    setAiUsage(localSummary);
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/account/ai-usage");
+        if (!res.ok) return;
+        const data = (await res.json()) as { summary?: AiUsageSummary };
+        if (data.summary) setAiUsage(data.summary);
+      } catch {
+        /* keep local fallback */
+      }
+    })();
+  }, [items, session.email, session.plan, session.userId, sessionReady]);
+
+  const aiLocked = aiUsage
+    ? aiUsage.generationsRemaining <= 0 ||
+      aiUsage.activeAiCount >= aiUsage.activeAiLimit
+    : false;
   const categories: Array<{ id: ProjectCategory; label: string }> = [
     { id: "game", label: t("explore.game") }, { id: "tool", label: t("explore.tool") },
     { id: "experiment", label: t("explore.experiment") }, { id: "demo", label: t("explore.demo") },
@@ -403,6 +437,12 @@ function CreateWizard() {
             storagePath = upData.storagePath ?? null;
           }
 
+          const mockPreviewUrl =
+            (uploadType === "html" || uploadType === "ai") &&
+            draft.workshopFiles?.["index.html"]
+              ? saveMockPlayFiles(draft.id, draft.workshopFiles)
+              : null;
+
           const payload = {
             id: draft.id,
             uploadType,
@@ -414,6 +454,8 @@ function CreateWizard() {
             thumbnail: draft.thumb,
             ownerId: session.userId,
             storagePath,
+            shareIntent,
+            mockPreviewUrl,
             playUrl:
               uploadType === "link" ? sourceLabel.trim() : null,
           };
@@ -526,7 +568,57 @@ function CreateWizard() {
               <p className="text-ink-muted">
                 {t("create.chooseWay")}
               </p>
-              {uploadOptions.map((opt) => (
+              {uploadOptions.map((opt) => {
+                const locked = opt.id === "ai" && aiLocked;
+                if (locked && aiUsage) {
+                  return (
+                    <div
+                      key={opt.id}
+                      className="w-full rounded-xl border-2 border-border bg-canvas p-5 text-left opacity-90"
+                      title={t("create.aiLockedHint", {
+                        date: aiUsage.nextPeriodStart,
+                      })}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xl font-extrabold">
+                            {opt.title} 🔒
+                          </p>
+                          <p className="mt-1 text-ink-muted">{opt.body}</p>
+                        </div>
+                        <span className="rounded-pill bg-brand/10 px-3 py-1 text-sm font-bold text-brand-strong">
+                          {t("create.aiUsageBadge", {
+                            remaining: aiUsage.generationsRemaining,
+                            limit: aiUsage.generationsLimit,
+                          })}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm text-ink-muted">
+                        {t("create.aiUsageMeta", {
+                          used: aiUsage.generationsUsed,
+                          limit: aiUsage.generationsLimit,
+                          active: aiUsage.activeAiCount,
+                          activeLimit:
+                            aiUsage.activeAiLimit === Number.POSITIVE_INFINITY
+                              ? "∞"
+                              : aiUsage.activeAiLimit,
+                        })}
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <Button href="/pricing" size="l">
+                          {t("create.upgradePlan")}
+                        </Button>
+                        <p className="text-sm text-ink-muted">
+                          {t("create.aiLockedHint", {
+                            date: aiUsage.nextPeriodStart,
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
                 <button
                   key={opt.id}
                   type="button"
@@ -576,10 +668,36 @@ function CreateWizard() {
                       : "border-border hover:border-border-strong",
                   )}
                 >
-                  <p className="text-xl font-extrabold">{opt.title}</p>
-                  <p className="mt-1 text-ink-muted">{opt.body}</p>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xl font-extrabold">{opt.title}</p>
+                      <p className="mt-1 text-ink-muted">{opt.body}</p>
+                    </div>
+                    {opt.id === "ai" && aiUsage && (
+                      <span className="rounded-pill bg-brand/10 px-3 py-1 text-sm font-bold text-brand-strong">
+                        {t("create.aiUsageBadge", {
+                          remaining: aiUsage.generationsRemaining,
+                          limit: aiUsage.generationsLimit,
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  {opt.id === "ai" && aiUsage && (
+                    <p className="mt-3 text-sm text-ink-muted">
+                      {t("create.aiUsageMeta", {
+                        used: aiUsage.generationsUsed,
+                        limit: aiUsage.generationsLimit,
+                        active: aiUsage.activeAiCount,
+                        activeLimit:
+                          aiUsage.activeAiLimit === Number.POSITIVE_INFINITY
+                            ? "∞"
+                            : aiUsage.activeAiLimit,
+                      })}
+                    </p>
+                  )}
                 </button>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -788,6 +906,7 @@ function CreateWizard() {
               }
               userId={session.userId}
               email={session.email}
+              plan={session.plan}
               prompt={draft.sourceLabel}
               files={draft.workshopFiles}
               onPromptChange={(sourceLabel) => patch({ sourceLabel })}
@@ -1056,6 +1175,38 @@ function CreateWizard() {
               <p className="mt-2 text-ink-muted">
                 {t("create.submitBody")}
               </p>
+              <div className="mt-5 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setShareIntent("private")}
+                  className={cn(
+                    "w-full rounded-xl border-2 p-4 text-left",
+                    shareIntent === "private"
+                      ? "border-brand bg-lilac/40"
+                      : "border-border",
+                  )}
+                >
+                  <p className="font-extrabold">{t("create.intentPrivate")}</p>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    {t("create.intentPrivateBody")}
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShareIntent("public")}
+                  className={cn(
+                    "w-full rounded-xl border-2 p-4 text-left",
+                    shareIntent === "public"
+                      ? "border-brand bg-lilac/40"
+                      : "border-border",
+                  )}
+                >
+                  <p className="font-extrabold">{t("create.intentPublic")}</p>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    {t("create.intentPublicBody")}
+                  </p>
+                </button>
+              </div>
               <ul className="mt-5 space-y-2 text-ink-muted">
                 <li>• {t("create.check1")}</li>
                 <li>• {t("create.check2")}</li>

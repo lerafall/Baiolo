@@ -58,6 +58,7 @@ export async function GET(request: Request) {
           avatar?: string;
           role?: string;
           email?: string | null;
+          plan?: string | null;
         }
       | undefined;
     const provider =
@@ -71,6 +72,7 @@ export async function GET(request: Request) {
       avatar: profile?.avatar || "🟣",
       role: profile?.role || "explorer",
       provider: typeof provider === "string" ? provider : null,
+      plan: profile?.plan ?? null,
       createdAt: u.created_at ?? null,
       lastSignInAt: u.last_sign_in_at ?? null,
     };

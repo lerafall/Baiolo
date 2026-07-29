@@ -1,4 +1,5 @@
-import type { ProjectSubmission } from "@/lib/moderation";
+import type { ProjectSubmission, ProjectVisibility } from "@/lib/moderation";
+import { sourceTypeFromUploadType } from "@/lib/ai-usage";
 import { mockAiPrecheck } from "@/lib/ai-precheck";
 
 /**
@@ -15,7 +16,11 @@ export type PipelineSubmitInput = Omit<
   | "plays"
   | "reactions"
   | "tags"
-> & { tags?: string[] };
+> & {
+  tags?: string[];
+  /** private = play yourself only; public = enter admin review for Explore */
+  shareIntent?: "private" | "public";
+};
 
 export type PipelineResult = {
   submission: ProjectSubmission;
@@ -26,15 +31,14 @@ export async function runSubmitPipeline(
   input: PipelineSubmitInput,
 ): Promise<PipelineResult> {
   const stages: PipelineResult["stages"] = [];
+  const shareIntent = input.shareIntent === "public" ? "public" : "private";
 
-  // 1. Private temporary storage (mock)
   stages.push({
     name: "private_storage",
     ok: true,
     detail: `Stored privately as ${input.sourceLabel || input.id}`,
   });
 
-  // 2. Technical validation (mock)
   const hasTitle = Boolean(input.title.trim());
   const hasSource = Boolean(input.sourceLabel.trim());
   stages.push({
@@ -46,7 +50,6 @@ export async function runSubmitPipeline(
         : "Add a title and a file or link.",
   });
 
-  // 3. AI moderation (mock heuristics)
   const ai = mockAiPrecheck({
     title: input.title,
     description: input.description,
@@ -61,22 +64,44 @@ export async function runSubmitPipeline(
         : `Risk ${ai.risk} — no flags`,
   });
 
-  // 4. Route to admin queue
-  const status =
-    ai.risk === "high" || ai.risk === "medium" ? "in_review" : "checking";
-  stages.push({
-    name: "admin_queue",
-    ok: true,
-    detail:
-      status === "checking"
-        ? "Queued for standard review."
-        : "Flagged for special review.",
-  });
+  let status: ProjectSubmission["status"];
+  let visibility: ProjectVisibility;
+  let adminDetail: string;
 
+  if (shareIntent === "private") {
+    // Creator can play immediately; Explore waits for explicit public request.
+    status = "approved";
+    visibility = "private";
+    adminDetail = "Saved as private play — request public share when ready.";
+    stages.push({
+      name: "admin_queue",
+      ok: true,
+      detail: adminDetail,
+    });
+  } else {
+    status =
+      ai.risk === "high" || ai.risk === "medium" ? "in_review" : "checking";
+    visibility = "pending_public";
+    adminDetail =
+      status === "checking"
+        ? "Queued for standard public review."
+        : "Flagged for special public review.";
+    stages.push({
+      name: "admin_queue",
+      ok: true,
+      detail: adminDetail,
+    });
+  }
+
+  const { shareIntent: _omit, ...rest } = input;
   const submission: ProjectSubmission = {
-    ...input,
+    ...rest,
     tags: input.tags ?? [],
     status,
+    sourceType: sourceTypeFromUploadType(input.uploadType),
+    aiSlotActive: input.uploadType === "ai",
+    visibility,
+    sharedWith: input.sharedWith ?? [],
     risk: ai.risk,
     aiFlags: ai.flags,
     changeRequest: null,
@@ -92,6 +117,24 @@ export async function runSubmitPipeline(
   return { submission, stages };
 }
 
+/** Move a private build into the public review queue. */
+export function requestPublicShare(
+  current: ProjectSubmission,
+): ProjectSubmission {
+  if (current.status === "published" || current.visibility === "public") {
+    return current;
+  }
+  return {
+    ...current,
+    visibility: "pending_public",
+    status:
+      current.risk === "high" || current.risk === "medium"
+        ? "in_review"
+        : "checking",
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export const adminActions = [
   "prepare_preview",
   "confirm_play",
@@ -104,7 +147,7 @@ export const adminActions = [
 export type AdminAction = (typeof adminActions)[number];
 
 export function canPublish(project: ProjectSubmission): boolean {
-  if (project.status === "published") return true; // refresh play unpack
+  if (project.status === "published") return true;
   return Boolean(project.codeCheckedAt && project.playCheckedAt);
 }
 
@@ -137,6 +180,7 @@ export function applyAdminAction(
       return {
         ...current,
         status: "published",
+        visibility: "public",
         changeRequest: null,
         updatedAt,
       };
@@ -145,29 +189,32 @@ export function applyAdminAction(
       return {
         ...current,
         status: "rejected",
+        visibility: "private",
         changeRequest:
           note?.trim() || "We can’t publish this project right now.",
         codeCheckedAt: null,
         playCheckedAt: null,
-        previewUrl: null,
+        previewUrl: current.previewUrl,
         updatedAt,
       };
     case "ask_for_changes":
       return {
         ...current,
         status: "needs_changes",
+        visibility: "private",
         changeRequest:
           note?.trim() ||
           "Your project needs a small fix before it can go live.",
         codeCheckedAt: null,
         playCheckedAt: null,
-        previewUrl: null,
+        previewUrl: current.previewUrl,
         updatedAt,
       };
     case "escalate":
       return {
         ...current,
         status: "in_review",
+        visibility: "pending_public",
         changeRequest: note?.trim() || current.changeRequest,
         updatedAt,
       };

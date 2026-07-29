@@ -17,6 +17,7 @@ export function AdminAccountsPanel() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [planBusyId, setPlanBusyId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
@@ -66,6 +67,34 @@ export function AdminAccountsPanel() {
     } finally {
       setBusy(false);
       setDeleteId(null);
+    }
+  }
+
+  function labelPlan(plan: string | null | undefined) {
+    if (plan === "pro" || plan === "paid" || plan === "paid_basic") return "Pro";
+    if (plan === "studio" || plan === "paid_pro") return "Studio";
+    return "Free";
+  }
+
+  async function setAccountPlan(id: string, nextPlan: string) {
+    setError("");
+    setPlanBusyId(id);
+    try {
+      const res = await fetch("/api/admin/accounts/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, plan: nextPlan, adminCode }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        setError(data.error || "Plan update failed.");
+        return;
+      }
+      setItems((prev) => prev.map((a) => (a.id === id ? { ...a, plan: nextPlan } : a)));
+    } catch {
+      setError("Plan update failed.");
+    } finally {
+      setPlanBusyId(null);
     }
   }
 
@@ -139,7 +168,7 @@ export function AdminAccountsPanel() {
                 <p className="truncate font-extrabold">{a.name}</p>
                 <p className="truncate text-sm text-ink-muted">
                   {a.email || "No email"} · {a.provider || "unknown"} ·{" "}
-                  {a.role}
+                  {a.role} · {labelPlan(a.plan)}
                 </p>
                 <p className="text-xs text-ink-muted">
                   Joined{" "}
@@ -149,6 +178,32 @@ export function AdminAccountsPanel() {
                     : ""}
                 </p>
               </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="l"
+                disabled={busy || planBusyId === a.id}
+                variant={(a.plan ?? "free") === "free" ? undefined : "secondary"}
+                onClick={() => void setAccountPlan(a.id, "free")}
+              >
+                Free
+              </Button>
+              <Button
+                size="l"
+                disabled={busy || planBusyId === a.id}
+                variant={(a.plan ?? "free") === "pro" ? undefined : "secondary"}
+                onClick={() => void setAccountPlan(a.id, "pro")}
+              >
+                Pro
+              </Button>
+              <Button
+                size="l"
+                disabled={busy || planBusyId === a.id}
+                variant={(a.plan ?? "free") === "studio" ? undefined : "secondary"}
+                onClick={() => void setAccountPlan(a.id, "studio")}
+              >
+                Studio
+              </Button>
             </div>
             <Button
               variant="destructive"

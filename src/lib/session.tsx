@@ -20,12 +20,14 @@ import {
 import { DEFAULT_AVATAR } from "@/lib/avatars";
 
 export type SessionRole = "guest" | "explorer" | "creator" | "admin";
+export type SessionPlan = "free" | "pro" | "studio";
 
 export type BaioloSession = {
   userId: string | null;
   email: string | null;
   name: string;
   role: SessionRole;
+  plan: SessionPlan;
   avatar: string;
   interests: string[];
   authMode: "mock" | "supabase";
@@ -38,6 +40,7 @@ const defaultSession: BaioloSession = {
   email: null,
   name: "Guest",
   role: "guest",
+  plan: "free",
   avatar: DEFAULT_AVATAR,
   interests: [],
   authMode: "mock",
@@ -57,6 +60,7 @@ type SessionContextValue = {
     interests: string[];
   }) => Promise<void>;
   unlockAdmin: (code: string) => boolean;
+  setPlan: (plan: SessionPlan) => void;
   signOut: () => Promise<void>;
 };
 
@@ -176,6 +180,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             "Friend",
           avatar: profile?.avatar || cur.avatar || DEFAULT_AVATAR,
           interests: profile?.interests || cur.interests || [],
+          plan:
+            profile?.plan === "free"
+              ? "free"
+              : profile?.plan === "pro" ||
+                  profile?.plan === "paid" ||
+                  profile?.plan === "paid_basic"
+                ? "pro"
+                : profile?.plan === "studio" || profile?.plan === "paid_pro"
+                  ? "studio"
+                  : cur.plan || "free",
           role:
             meta === "admin"
               ? ("admin" as const)
@@ -191,6 +205,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             name: nextSession.name,
             avatar: nextSession.avatar,
             role: nextSession.role,
+            plan: nextSession.plan,
             interests: nextSession.interests,
             updated_at: new Date().toISOString(),
           });
@@ -471,6 +486,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           name: next.name,
           avatar: next.avatar,
           role: next.role,
+          plan: next.plan,
           interests: next.interests,
           updated_at: new Date().toISOString(),
         });
@@ -486,6 +502,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (code.trim() !== expected) return false;
       persist({ ...readLocal(), role: "admin" });
       return true;
+    },
+    [persist],
+  );
+
+  const setPlan = useCallback(
+    (plan: SessionPlan) => {
+      persist({ ...readLocal(), plan });
     },
     [persist],
   );
@@ -512,6 +535,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       verifyWhatsAppOtp,
       completeOnboarding,
       unlockAdmin,
+      setPlan,
       signOut,
     }),
     [
@@ -523,6 +547,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       verifyWhatsAppOtp,
       completeOnboarding,
       unlockAdmin,
+      setPlan,
       signOut,
     ],
   );

@@ -15,7 +15,7 @@ export function useSyncedEngagement(projectId: string) {
   const bumpSubmission = useCallback(
     (playsDelta = 0, reactionsDelta = 0) => {
       const sub = items.find((s) => s.id === projectId);
-      if (!sub || sub.status !== "published") return;
+      if (!sub || sub.status === "draft") return;
       upsert({
         ...sub,
         plays: Math.max(0, sub.plays + playsDelta),

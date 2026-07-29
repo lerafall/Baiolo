@@ -18,8 +18,8 @@ export type ChatMessage = {
 };
 
 export type ChatTurnResult =
-  | { status: "ready"; message: string }
-  | { status: "chat"; message: string };
+  | { status: "ready"; message: string; categoryHint?: ProjectCategory | null }
+  | { status: "chat"; message: string; categoryHint?: ProjectCategory | null };
 
 const ALLOWED_FILES = new Set([
   "index.html",
@@ -36,7 +36,7 @@ const CATEGORIES: ProjectCategory[] = [
   "demo",
 ];
 
-export const MAX_CHAT_ASSISTANT_TURNS = 3;
+export const MAX_CHAT_ASSISTANT_TURNS = 5;
 
 export function normalizeAiBuildFiles(
   raw: Record<string, unknown> | null | undefined,
@@ -98,7 +98,12 @@ export function parseAiBuildPayload(
 }
 
 export function parseChatTurnPayload(raw: string): ChatTurnResult {
-  let parsed: { ready?: unknown; message?: unknown };
+  let parsed: {
+    ready?: unknown;
+    message?: unknown;
+    category?: unknown;
+    categoryHint?: unknown;
+  };
   try {
     parsed = JSON.parse(raw) as typeof parsed;
   } catch {
@@ -113,10 +118,19 @@ export function parseChatTurnPayload(raw: string): ChatTurnResult {
       ? parsed.message.trim().slice(0, 400)
       : "";
 
+  const catRaw =
+    (typeof parsed.categoryHint === "string" && parsed.categoryHint) ||
+    (typeof parsed.category === "string" && parsed.category) ||
+    "";
+  const categoryHint = CATEGORIES.includes(catRaw as ProjectCategory)
+    ? (catRaw as ProjectCategory)
+    : null;
+
   if (parsed.ready === true) {
     return {
       status: "ready",
       message: message || "Perfect — I’ll build that now.",
+      categoryHint,
     };
   }
 
@@ -124,10 +138,11 @@ export function parseChatTurnPayload(raw: string): ChatTurnResult {
     return {
       status: "ready",
       message: "Got it — building now.",
+      categoryHint,
     };
   }
 
-  return { status: "chat", message };
+  return { status: "chat", message, categoryHint };
 }
 
 export function normalizeChatMessages(raw: unknown): ChatMessage[] {
@@ -173,17 +188,18 @@ function chatSystemPrompt(locale: string) {
 ${language}
 
 Reply with JSON only:
-{"ready":true,"message":"..."}
+{"ready":true,"message":"...","category":"game|tool|experiment|demo"}
 or
-{"ready":false,"message":"..."}
+{"ready":false,"message":"...","category":"game|tool|experiment|demo"}
 
 How to talk:
 - Sound human, kind, and simple — not like a form or a survey.
 - Ask at most ONE easy thing at a time.
-- Prefer choices people can answer in a few words (“pastel or neon?”, “tap or swipe?”, “catch 5 or 10?”).
+- Prefer choices people can answer in a few words (“pastel or neon?”, “tap or swipe?”, “catch 5 or 10?”, “more game or more tool?”).
+- You may gently learn the category (game/tool/experiment/demo) and include it in JSON when clear.
 - Short messages (1–2 sentences). No jargon, no tech talk.
 - If the idea is already clear enough for a small MVP, set ready:true with a warm confirmation.
-- After a couple of replies, prefer ready:true instead of more questions.
+- After a few replies, prefer ready:true instead of more questions.
 - Never ask about accounts, money, hosting, frameworks, or code.`;
 }
 
@@ -248,38 +264,37 @@ export async function continueBuildChat(options: {
 export async function buildFromDescription(
   prompt: string,
   messages?: ChatMessage[],
+  options?: { categoryHint?: ProjectCategory | null; locale?: string },
 ): Promise<AiBuildResult> {
   const brief = composeBuildBrief(prompt, messages);
+  const withCategory = options?.categoryHint
+    ? `${brief}\n\nPreferred category: ${options.categoryHint}`
+    : brief;
   const builderUrl = process.env.BUILDER_API_URL?.trim();
   if (builderUrl) {
-    return buildViaExternal(builderUrl, brief, messages);
+    return buildViaExternal(builderUrl, withCategory, messages, options);
   }
-  return buildViaLlm(brief);
+  return buildViaLlm(withCategory);
 }
 
 async function buildViaExternal(
   url: string,
   prompt: string,
   messages?: ChatMessage[],
+  options?: { categoryHint?: ProjectCategory | null; locale?: string },
 ): Promise<AiBuildResult> {
+  const { callExternalBuilder } = await import("@/lib/builder-client");
   const secret = process.env.BUILDER_API_SECRET?.trim();
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+  const data = await callExternalBuilder(
+    url,
+    {
+      prompt,
+      messages,
+      locale: options?.locale,
+      categoryHint: options?.categoryHint ?? null,
     },
-    body: JSON.stringify({ prompt, messages }),
-  });
-  if (!res.ok) {
-    throw new Error(`builder_http_${res.status}`);
-  }
-  const data = (await res.json()) as {
-    title?: string;
-    description?: string;
-    category?: string;
-    files?: Record<string, unknown>;
-  };
+    secret,
+  );
   const parsed = parseAiBuildPayload(JSON.stringify(data));
   if (!parsed) throw new Error("builder_bad_payload");
   return { ...parsed, provider: "builder" };
@@ -287,13 +302,33 @@ async function buildViaExternal(
 
 async function buildViaLlm(brief: string): Promise<AiBuildResult> {
   const tier = pickBuildTier(brief);
-  const { content, provider, model } = await chatCompletionJson({
-    system: SYSTEM_PROMPT,
-    user: `Build this Baiolo project:\n${brief}`,
-    temperature: 0.7,
-    tier,
-  });
-  const parsed = parseAiBuildPayload(content);
+  const run = async () => {
+    const { content, provider, model } = await chatCompletionJson({
+      system: SYSTEM_PROMPT,
+      user: `Build this Baiolo project:\n${brief}`,
+      temperature: 0.7,
+      tier,
+    });
+    return { content, provider, model };
+  };
+
+  let last = await run();
+  let parsed = parseAiBuildPayload(last.content);
+  if (!parsed) {
+    // One retry with a stricter reminder when the model returns bad JSON/files.
+    last = await chatCompletionJson({
+      system: SYSTEM_PROMPT,
+      user: `Your previous reply was invalid. Reply with valid JSON only and include working index.html, style.css, script.js.\n\nBuild this Baiolo project:\n${brief}`,
+      temperature: 0.4,
+      tier,
+    });
+    parsed = parseAiBuildPayload(last.content);
+  }
   if (!parsed) throw new Error("llm_bad_payload");
-  return { ...parsed, provider, model, tier };
+  return {
+    ...parsed,
+    provider: last.provider,
+    model: last.model,
+    tier,
+  };
 }

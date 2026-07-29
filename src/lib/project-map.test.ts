@@ -21,6 +21,7 @@ describe("submissionToProject visuals", () => {
       updatedAt: "2026-01-01T00:00:00.000Z",
       plays: 10,
       reactions: 5,
+      playUrl: "/demos/cloud-hopper/index.html",
     };
     const project = submissionToProject(s);
     expect(project?.thumbnail).toBe("/demos/cloud-hopper/thumb.png");

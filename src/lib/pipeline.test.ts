@@ -42,7 +42,7 @@ describe("packaging helper", () => {
 });
 
 describe("submit pipeline", () => {
-  it("routes low risk to checking", async () => {
+  it("keeps private submits playable without public queue", async () => {
     const { submission, stages } = await runSubmitPipeline({
       id: "t1",
       uploadType: "zip",
@@ -51,9 +51,26 @@ describe("submit pipeline", () => {
       description: "A friendly little experiment.",
       category: "demo",
       thumbnail: "linear-gradient(#fff,#fff)",
+      shareIntent: "private",
     });
-    expect(submission.status).toBe("checking");
+    expect(submission.status).toBe("approved");
+    expect(submission.visibility).toBe("private");
     expect(stages.map((s) => s.name)).toContain("ai_moderation");
+  });
+
+  it("queues public share requests for review", async () => {
+    const { submission } = await runSubmitPipeline({
+      id: "t2",
+      uploadType: "zip",
+      sourceLabel: "demo.zip",
+      title: "Tiny Demo",
+      description: "A friendly little experiment.",
+      category: "demo",
+      thumbnail: "linear-gradient(#fff,#fff)",
+      shareIntent: "public",
+    });
+    expect(submission.visibility).toBe("pending_public");
+    expect(["checking", "in_review"]).toContain(submission.status);
   });
 });
 

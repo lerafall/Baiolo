@@ -13,6 +13,15 @@ export type ProjectStatus =
 export type RiskLevel = "low" | "medium" | "high";
 
 export type UploadType = "zip" | "link" | "template" | "html" | "ai";
+export type ProjectSourceType =
+  | "ai_build"
+  | "zip"
+  | "link"
+  | "html_starter"
+  | "external";
+
+/** Who can see / play beyond the owner before public publish. */
+export type ProjectVisibility = "private" | "pending_public" | "public";
 
 export type ProjectSubmission = {
   id: string;
@@ -33,11 +42,21 @@ export type ProjectSubmission = {
   ownerId?: string | null;
   storagePath?: string | null;
   playUrl?: string | null;
-  /** Admin-only play URL while reviewing (not public Explore). */
+  /** Owner (and shared) play URL while not public. */
   previewUrl?: string | null;
   codeCheckedAt?: string | null;
   playCheckedAt?: string | null;
   reviewNotes?: string | null;
+  sourceType?: ProjectSourceType;
+  aiSlotActive?: boolean;
+  /**
+   * private = creator play only (default after submit)
+   * pending_public = waiting for admin audit to go public
+   * public = published in Explore
+   */
+  visibility?: ProjectVisibility;
+  /** Emails or user ids invited to play the private build. */
+  sharedWith?: string[];
 };
 
 export const statusCopy: Record<
@@ -65,8 +84,8 @@ export const statusCopy: Record<
     message: "A Baiolo team member is reviewing it.",
   },
   approved: {
-    label: "Approved",
-    message: "Checked and play-tested — waiting to go live.",
+    label: "Private ready",
+    message: "You can play it — public Explore waits until you request a share and a teammate approves.",
   },
   published: {
     label: "Published",

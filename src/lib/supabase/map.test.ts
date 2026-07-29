@@ -25,6 +25,10 @@ const sample: ProjectSubmission = {
   codeCheckedAt: null,
   playCheckedAt: null,
   reviewNotes: null,
+  sourceType: "external",
+  aiSlotActive: false,
+  visibility: "private",
+  sharedWith: [],
 };
 
 describe("supabase map", () => {

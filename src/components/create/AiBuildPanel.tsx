@@ -9,13 +9,22 @@ import { authHref } from "@/lib/next-path";
 import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
 import type { StarterFiles } from "@/lib/html-starters";
 import type { ProjectCategory } from "@/lib/types";
+import type { AiPlan } from "@/lib/ai-quota";
 
 type ChatMessage = { role: "assistant" | "user"; content: string };
+
+type QuotaState = {
+  plan: AiPlan;
+  used: number;
+  limit: number;
+  remaining: number;
+};
 
 type AiBuildPanelProps = {
   signedIn: boolean;
   userId: string | null;
   email: string | null;
+  plan?: AiPlan | null;
   prompt: string;
   files: StarterFiles | undefined;
   onPromptChange: (prompt: string) => void;
@@ -32,6 +41,7 @@ export function AiBuildPanel({
   signedIn,
   userId,
   email,
+  plan,
   prompt,
   files,
   onPromptChange,
@@ -46,12 +56,32 @@ export function AiBuildPanel({
   const [revision, setRevision] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [reply, setReply] = useState("");
+  const [categoryHint, setCategoryHint] = useState<ProjectCategory | null>(null);
+  const [quota, setQuota] = useState<QuotaState | null>(null);
+  const activePlan = plan ?? "free";
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!signedIn) return;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/build?plan=${encodeURIComponent(activePlan)}`,
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as { quota?: QuotaState };
+        if (data.quota) setQuota(data.quota);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [signedIn, userId, email, activePlan]);
 
   useEffect(() => {
     setMessages([]);
     setReply("");
     setError("");
+    setCategoryHint(null);
   }, [prompt]);
 
   useEffect(() => {
@@ -93,8 +123,11 @@ export function AiBuildPanel({
           userId,
           email,
           locale,
+          plan: activePlan,
           action: options.action,
           messages: thread,
+          categoryHint,
+          mode: files ? "regenerate" : "new_project",
         }),
       });
       const data = (await res.json()) as {
@@ -104,12 +137,24 @@ export function AiBuildPanel({
         title?: string;
         description?: string;
         category?: ProjectCategory;
+        categoryHint?: ProjectCategory | null;
         files?: StarterFiles;
+        quota?: QuotaState;
       };
 
+      if (data.quota) setQuota(data.quota);
+
       if (!res.ok) {
-        setError(data.error || t("workshop.aiFailed"));
+        if (res.status === 429) {
+          setError(data.error || t("workshop.aiQuotaLimit"));
+        } else {
+          setError(data.error || t("workshop.aiFailed"));
+        }
         return;
+      }
+
+      if (data.categoryHint) {
+        setCategoryHint(data.categoryHint);
       }
 
       if (data.status === "chat" && data.message) {
@@ -186,6 +231,19 @@ export function AiBuildPanel({
           </DictationField>
         </label>
         <div className="mt-3 flex flex-wrap items-center gap-3">
+          <p className="min-w-full text-sm font-semibold text-ink-muted">
+            {t("workshop.currentPlan", {
+              plan:
+                activePlan === "studio"
+                  ? t("workshop.planStudio")
+                  : activePlan === "pro"
+                    ? t("workshop.planPro")
+                    : t("workshop.planFree"),
+            })}{" "}
+            <a href="/pricing" className="text-brand-strong underline">
+              {t("workshop.upgradePlan")}
+            </a>
+          </p>
           <Button
             type="button"
             size="l"
@@ -200,6 +258,20 @@ export function AiBuildPanel({
                   ? t("workshop.aiRestartChat")
                   : t("workshop.aiStartChat")}
           </Button>
+          {quota && (
+            <p className="text-sm font-semibold text-ink-muted">
+              {t("workshop.aiQuota", {
+                remaining: quota.remaining,
+                limit: quota.limit,
+                plan:
+                  quota.plan === "free"
+                    ? t("workshop.aiQuotaFree")
+                    : quota.plan === "pro"
+                      ? t("workshop.aiQuotaPro")
+                      : t("workshop.aiQuotaStudio"),
+              })}
+            </p>
+          )}
           <p className="text-sm text-ink-muted">{t("workshop.aiHintPaid")}</p>
         </div>
         {error && (

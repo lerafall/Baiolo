@@ -47,13 +47,25 @@ export async function GET(
 
   const { data: row, error: rowError } = await supabase
     .from("projects")
-    .select("owner_id")
+    .select("owner_id, shared_with")
     .eq("id", projectId)
     .maybeSingle();
 
-  if (rowError || !row?.owner_id || row.owner_id !== user.id) {
+  if (rowError || !row?.owner_id) {
     return NextResponse.json(
-      { error: "Only the creator can play this private build." },
+      { error: "Project not found." },
+      { status: 404 },
+    );
+  }
+
+  const userEmail = (user.email || "").trim().toLowerCase();
+  const shared = (row.shared_with || []).map((e: string) => e.trim().toLowerCase());
+  const isOwner = row.owner_id === user.id;
+  const isInvited = Boolean(userEmail && shared.includes(userEmail));
+
+  if (!isOwner && !isInvited) {
+    return NextResponse.json(
+      { error: "Only the creator or invited players can play this private build." },
       { status: 403 },
     );
   }

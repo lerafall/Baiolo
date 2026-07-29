@@ -26,10 +26,12 @@ import { DictationField } from "@/components/ui/DictationField";
 import { submissionToOwnerProject, submissionToProject } from "@/lib/project-map";
 import { useSubmissions } from "@/lib/submissions";
 import { useSession } from "@/lib/session";
+import { OwnerShareControls } from "@/components/project/OwnerShareControls";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import type { Project, ReactionKind } from "@/lib/types";
+import type { ProjectSubmission } from "@/lib/moderation";
 
 export default function ProjectPage({
   params,
@@ -37,7 +39,7 @@ export default function ProjectPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { items, ready } = useSubmissions();
+  const { items, ready, upsert } = useSubmissions();
   const { session } = useSession();
   const engagement = useSyncedEngagement(id);
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
@@ -223,6 +225,13 @@ export default function ProjectPage({
           emphasis="hero"
           publicShare={isPublic}
         />
+
+        {isPrivateOwnerView && ownedSubmission && (
+          <OwnerShareControls
+            project={ownedSubmission}
+            onUpdated={(next: ProjectSubmission) => upsert(next)}
+          />
+        )}
 
         <div
           className="relative mt-8 overflow-hidden rounded-xl shadow-[var(--shadow-2)]"

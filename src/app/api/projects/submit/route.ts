@@ -12,6 +12,8 @@ export async function POST(request: Request) {
     ownerId?: string | null;
     storagePath?: string | null;
     playUrl?: string | null;
+    shareIntent?: "private" | "public";
+    mockPreviewUrl?: string | null;
   };
 
   if (!body?.id || !body.title?.trim()) {
@@ -34,6 +36,7 @@ export async function POST(request: Request) {
     ...body,
     ownerId,
     storagePath: body.storagePath ?? null,
+    shareIntent: body.shareIntent === "public" ? "public" : "private",
     playUrl:
       body.playUrl ??
       (body.uploadType === "link" ? body.sourceLabel : null),
@@ -63,6 +66,11 @@ export async function POST(request: Request) {
         submission = { ...submission, previewUrl };
       }
     }
+  } else if (
+    typeof body.mockPreviewUrl === "string" &&
+    body.mockPreviewUrl.startsWith("#mock-play/")
+  ) {
+    submission = { ...submission, previewUrl: body.mockPreviewUrl };
   }
 
   if (isSupabaseConfigured()) {

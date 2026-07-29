@@ -146,6 +146,43 @@ export async function POST(request: Request) {
     });
   }
 
+  // Optional email notify (Resend) + client bell still tracks status diffs.
+  if (
+    body.action === "publish" ||
+    body.action === "ask_for_changes" ||
+    body.action === "reject" ||
+    body.action === "escalate"
+  ) {
+    const { notifyCreatorEmail } = await import("@/lib/notify-email");
+    let to: string | null = null;
+    if (isSupabaseConfigured() && next.ownerId) {
+      const supabase = getSupabaseServerClient();
+      if (supabase) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", next.ownerId)
+          .maybeSingle();
+        to = (profile as { email?: string } | null)?.email ?? null;
+      }
+    }
+    const event =
+      body.action === "publish"
+        ? "published"
+        : body.action === "ask_for_changes"
+          ? "needs_changes"
+          : body.action === "reject"
+            ? "rejected"
+            : "in_review";
+    await notifyCreatorEmail({
+      to,
+      projectTitle: next.title,
+      projectId: next.id,
+      event,
+      note: body.note,
+    });
+  }
+
   return NextResponse.json({
     mode: isSupabaseConfigured() ? "supabase" : "mock",
     project: next,

@@ -17,6 +17,8 @@ import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import { AdminAccountsPanel } from "@/components/admin/AdminAccountsPanel";
 import { DictationField } from "@/components/ui/DictationField";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import type { AdminAccount } from "@/lib/admin-accounts";
+import { PLAN_LIMITS, normalizeUserPlan, reviewQueueRank } from "@/lib/plans.config";
 
 const riskFilters: Array<{ id: "all" | RiskLevel; label: string }> = [
   { id: "all", label: "All risk" },
@@ -56,32 +58,70 @@ export default function AdminModerationPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [seedFlash, setSeedFlash] = useState("");
   const [reviewFlash, setReviewFlash] = useState("");
+  const [ownerPlans, setOwnerPlans] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/admin/accounts?adminCode=${encodeURIComponent(adminCode)}`,
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as { items?: AdminAccount[] };
+        const map: Record<string, string> = {};
+        for (const a of data.items ?? []) {
+          map[a.id] = a.plan || "free";
+        }
+        setOwnerPlans(map);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [isAdmin]);
 
   const queue = useMemo(() => {
-    return items.filter((p) =>
-      [
-        "submitted",
-        "checking",
-        "in_review",
-        "needs_changes",
-        "approved",
-        "published",
-      ].includes(p.status),
-    );
+    return items.filter((p) => {
+      if (p.visibility === "pending_public") return true;
+      if (
+        ["submitted", "checking", "in_review", "needs_changes"].includes(
+          p.status,
+        )
+      ) {
+        return true;
+      }
+      return false;
+    });
   }, [items]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return queue.filter((p) => {
-      const matchRisk = risk === "all" || p.risk === risk;
-      const matchQuery =
-        !q ||
-        p.title.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        (p.aiFlags ?? []).some((f) => f.toLowerCase().includes(q));
-      return matchRisk && matchQuery;
-    });
-  }, [queue, risk, query]);
+    return queue
+      .filter((p) => {
+        const matchRisk = risk === "all" || p.risk === risk;
+        const matchQuery =
+          !q ||
+          p.title.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q) ||
+          (p.aiFlags ?? []).some((f) => f.toLowerCase().includes(q));
+        return matchRisk && matchQuery;
+      })
+      .sort((a, b) => {
+        const aPublic = a.visibility === "pending_public" ? 0 : 1;
+        const bPublic = b.visibility === "pending_public" ? 0 : 1;
+        if (aPublic !== bPublic) return aPublic - bPublic;
+        const aRank = reviewQueueRank(
+          a.ownerId ? ownerPlans[a.ownerId] : "free",
+        );
+        const bRank = reviewQueueRank(
+          b.ownerId ? ownerPlans[b.ownerId] : "free",
+        );
+        if (aRank !== bRank) return bRank - aRank;
+        return (
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
+      });
+  }, [queue, risk, query, ownerPlans]);
 
   const selected =
     filtered.find((p) => p.id === selectedId) ?? filtered[0] ?? null;
@@ -389,6 +429,20 @@ export default function AdminModerationPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-extrabold">{p.title}</p>
                       <StatusBadge status={p.status} />
+                      {(() => {
+                        const plan = normalizeUserPlan(
+                          p.ownerId ? ownerPlans[p.ownerId] : "free",
+                        );
+                        const tier = PLAN_LIMITS[plan].reviewQueue;
+                        if (tier === "standard") return null;
+                        return (
+                          <span className="rounded-pill bg-warning/40 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-ink">
+                            {tier === "dedicated_sla"
+                              ? t("admin.queueSla")
+                              : t("admin.queuePriority")}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <p className="mt-1 text-sm text-ink-muted">
                       Risk: {p.risk ?? "—"} ·{" "}

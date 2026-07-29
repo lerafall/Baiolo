@@ -31,6 +31,10 @@ export type ProjectRow = {
   reactions: number | null;
   updated_at: string | null;
   published_at?: string | null;
+  source_type?: "ai_build" | "zip" | "link" | "html_starter" | "external" | null;
+  ai_slot_active?: boolean | null;
+  visibility?: "private" | "pending_public" | "public" | null;
+  shared_with?: string[] | null;
 };
 
 export function rowToSubmission(row: ProjectRow): ProjectSubmission {
@@ -57,6 +61,24 @@ export function rowToSubmission(row: ProjectRow): ProjectSubmission {
     codeCheckedAt: row.code_checked_at ?? null,
     playCheckedAt: row.play_checked_at ?? null,
     reviewNotes: row.review_notes ?? null,
+    sourceType:
+      row.source_type === "ai_build" ||
+      row.source_type === "zip" ||
+      row.source_type === "link" ||
+      row.source_type === "html_starter" ||
+      row.source_type === "external"
+        ? row.source_type
+        : "external",
+    aiSlotActive: row.ai_slot_active ?? false,
+    visibility:
+      row.visibility === "public" ||
+      row.visibility === "pending_public" ||
+      row.visibility === "private"
+        ? row.visibility
+        : row.status === "published"
+          ? "public"
+          : "private",
+    sharedWith: row.shared_with ?? [],
   };
 }
 
@@ -81,10 +103,16 @@ export function submissionToRow(s: ProjectSubmission) {
     code_checked_at: s.codeCheckedAt ?? null,
     play_checked_at: s.playCheckedAt ?? null,
     review_notes: s.reviewNotes ?? null,
+    source_type: s.sourceType ?? "external",
+    ai_slot_active: s.aiSlotActive ?? false,
     plays: s.plays,
     reactions: s.reactions,
     updated_at: s.updatedAt,
     published_at: s.status === "published" ? s.updatedAt : null,
+    visibility:
+      s.visibility ||
+      (s.status === "published" ? "public" : "private"),
+    shared_with: s.sharedWith ?? [],
   };
 }
 
@@ -96,6 +124,10 @@ export function submissionToRowLegacy(s: ProjectSubmission) {
     code_checked_at: _c,
     play_checked_at: _l,
     review_notes: _n,
+    source_type: _st,
+    ai_slot_active: _sa,
+    visibility: _v,
+    shared_with: _s,
     ...legacy
   } = row;
   return legacy;

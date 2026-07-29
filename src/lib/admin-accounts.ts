@@ -5,6 +5,7 @@ export type AdminAccount = {
   avatar: string;
   role: string;
   provider: string | null;
+  plan: string | null;
   createdAt: string | null;
   lastSignInAt: string | null;
 };
