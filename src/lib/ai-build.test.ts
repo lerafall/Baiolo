@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   composeBuildBrief,
+  ensurePlayableFiles,
   isFixIntent,
   looksIncompletePlayable,
   normalizeAiBuildFiles,
@@ -94,6 +95,23 @@ describe("ai-build parsers", () => {
         "game",
       ),
     ).toBe(true);
+    // Long JS that targets #game but HTML has no canvas → still incomplete.
+    expect(
+      looksIncompletePlayable(
+        {
+          "index.html": "<html><body><p>Score: 0</p></body></html>",
+          "script.js": `
+            const c=document.getElementById('game');
+            const ctx=c.getContext('2d');
+            addEventListener('keydown',()=>{});
+            function loop(){ ctx.fillRect(0,0,10,10); requestAnimationFrame(loop); }
+            loop();
+            ${"/* pad */".repeat(80)}
+          `,
+        },
+        "game",
+      ),
+    ).toBe(true);
     expect(
       looksIncompletePlayable(
         {
@@ -109,6 +127,18 @@ describe("ai-build parsers", () => {
         "game",
       ),
     ).toBe(false);
+  });
+
+  it("ensurePlayableFiles replaces score-only shells", () => {
+    const out = ensurePlayableFiles(
+      {
+        "index.html": "<html><body><p>Score: 0</p></body></html>",
+        "script.js": "x".repeat(50),
+      },
+      { title: "Coin Catcher", brief: "catch coins", category: "game" },
+    );
+    expect(out["index.html"]).toContain("<canvas");
+    expect(out["script.js"]).toContain("requestAnimationFrame");
   });
 
   it("truncates large existing files", () => {

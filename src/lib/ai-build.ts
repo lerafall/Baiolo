@@ -1,5 +1,10 @@
 import type { ProjectCategory } from "@/lib/types";
 import type { StarterFiles } from "@/lib/html-starters";
+import { cloneStarterFiles } from "@/lib/html-starters";
+import {
+  briefLooksLikeCatchGame,
+  coinCatcherFiles,
+} from "@/lib/ai-game-fallbacks";
 import { chatCompletionJson, pickBuildTier, type LlmTier } from "@/lib/llm";
 
 export type AiBuildResult = {
@@ -329,10 +334,10 @@ export function sanitizeAiFiles(files: StarterFiles): StarterFiles {
   };
 }
 
-/** Heuristic: games that look like empty shells should be rebuilt once. */
+/** Heuristic: games that look like empty shells should be rebuilt / replaced. */
 export function looksIncompletePlayable(
   files: StarterFiles,
-  category: ProjectCategory,
+  category: ProjectCategory = "game",
 ): boolean {
   if (category !== "game" && category !== "demo" && category !== "experiment") {
     return false;
@@ -340,13 +345,17 @@ export function looksIncompletePlayable(
   const js = files["script.js"] || "";
   const html = files["index.html"] || "";
   if (js.trim().length < 120) return true;
-  if (
-    /score\s*:\s*0/i.test(html) &&
-    !/<canvas\b/i.test(html) &&
-    js.trim().length < 400
-  ) {
-    return true;
+
+  // Classic Baiolo failure: score label in HTML, no canvas, JS may still look "full".
+  if (!/<canvas\b/i.test(html)) {
+    if (
+      /score\s*:\s*0/i.test(html) ||
+      /getElementById\s*\(\s*['"]game['"]\s*\)/.test(js)
+    ) {
+      return true;
+    }
   }
+
   const hasLoop = /requestAnimationFrame|setInterval\s*\(/.test(js);
   const hasInput =
     /addEventListener\s*\(\s*['"](?:key|pointer|touch|click|mouse)/.test(js) ||
@@ -356,6 +365,40 @@ export function looksIncompletePlayable(
     /createElement\s*\(/.test(js) ||
     /innerHTML\s*=/.test(js);
   return !hasLoop || !hasInput || !drawsSomething;
+}
+
+/**
+ * Last-resort self-heal: replace Score:0 shells with a known-good playable game.
+ * Safe to call from the browser after a build response.
+ */
+export function ensurePlayableFiles(
+  files: StarterFiles,
+  options?: { title?: string; brief?: string; category?: ProjectCategory },
+): StarterFiles {
+  const category = options?.category ?? "game";
+  const sanitized = sanitizeAiFiles(files);
+  if (!looksIncompletePlayable(sanitized, category)) return sanitized;
+
+  const brief = options?.brief ?? "";
+  const title =
+    (options?.title || "").trim().slice(0, 40) ||
+    (briefLooksLikeCatchGame(brief) ? "Coin Catcher" : "Baiolo Game");
+  const blob = `${brief}\n${title}\n${sanitized["index.html"] || ""}`;
+
+  if (
+    briefLooksLikeCatchGame(blob) ||
+    /catcher|coin|monet|koszyk/i.test(blob) ||
+    !/<canvas\b/i.test(sanitized["index.html"] || "")
+  ) {
+    return sanitizeAiFiles(coinCatcherFiles(title));
+  }
+
+  const base = cloneStarterFiles("game");
+  return sanitizeAiFiles({
+    "index.html": base["index.html"]!.replace(/Cloud Tap/g, title),
+    "style.css": base["style.css"]!,
+    "script.js": base["script.js"]!,
+  });
 }
 
 function formatFilesForPrompt(files: StarterFiles): string {
@@ -496,6 +539,31 @@ async function buildViaLlm(
   existingFiles: StarterFiles | null,
 ): Promise<AiBuildResult> {
   const repairing = Boolean(existingFiles?.["index.html"]);
+
+  // Fast path: broken Score:0 / no-canvas shells → ship a working catcher immediately.
+  // Avoids another round of LLM "Jasne, naprawiam" that leaves the preview empty.
+  if (
+    repairing &&
+    existingFiles &&
+    looksIncompletePlayable(existingFiles, "game") &&
+    (isFixIntent(brief) ||
+      briefLooksLikeCatchGame(brief) ||
+      /catcher|coin|monet/i.test(brief + (existingFiles["index.html"] || "")))
+  ) {
+    const titleMatch = existingFiles["index.html"]?.match(/<title>([^<]*)<\/title>/i);
+    const title = (titleMatch?.[1] || "Coin Catcher").trim().slice(0, 40);
+    return {
+      title,
+      description:
+        "Catch falling coins with a basket. Move with arrows or drag.",
+      category: "game",
+      files: sanitizeAiFiles(coinCatcherFiles(title)),
+      provider: "openrouter",
+      model: "baiolo-playable-fallback",
+      tier: "quality",
+    };
+  }
+
   const forceQuality =
     repairing || isFixIntent(brief) || /category:\s*game/i.test(brief);
   const tier: LlmTier = forceQuality ? "quality" : pickBuildTier(brief);
@@ -533,7 +601,11 @@ async function buildViaLlm(
 
   parsed = {
     ...parsed,
-    files: sanitizeAiFiles(parsed.files),
+    files: ensurePlayableFiles(parsed.files, {
+      title: parsed.title,
+      brief,
+      category: parsed.category,
+    }),
   };
 
   if (looksIncompletePlayable(parsed.files, parsed.category)) {
@@ -545,45 +617,24 @@ async function buildViaLlm(
     if (retry) {
       parsed = {
         ...retry,
-        files: sanitizeAiFiles(retry.files),
-      };
-    }
-  }
-
-  // Last resort: ship a known-good playable game so creators are never stuck
-  // on a Score: 0 shell after repair/retry.
-  if (looksIncompletePlayable(parsed.files, parsed.category)) {
-    const { briefLooksLikeCatchGame, coinCatcherFiles } = await import(
-      "@/lib/ai-game-fallbacks"
-    );
-    const { cloneStarterFiles } = await import("@/lib/html-starters");
-    const title = parsed.title || "Baiolo Game";
-    if (
-      briefLooksLikeCatchGame(brief) ||
-      /catcher|monet|koszyk|coin/i.test(`${title} ${brief}`)
-    ) {
-      parsed = {
-        ...parsed,
-        title,
-        description:
-          parsed.description ||
-          "Catch falling coins with a basket. Move with arrows or drag.",
-        category: "game",
-        files: sanitizeAiFiles(coinCatcherFiles(title)),
-      };
-    } else if (parsed.category === "game" || repairing) {
-      const base = cloneStarterFiles("game");
-      parsed = {
-        ...parsed,
-        category: "game",
-        files: sanitizeAiFiles({
-          "index.html": base["index.html"]!.replace(/Cloud Tap/g, title),
-          "style.css": base["style.css"]!,
-          "script.js": base["script.js"]!,
+        files: ensurePlayableFiles(retry.files, {
+          title: retry.title,
+          brief,
+          category: retry.category,
         }),
       };
     }
   }
+
+  // Absolute last resort after retries.
+  parsed = {
+    ...parsed,
+    files: ensurePlayableFiles(parsed.files, {
+      title: parsed.title,
+      brief,
+      category: parsed.category,
+    }),
+  };
 
   return {
     ...parsed,

@@ -10,6 +10,11 @@ import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
 import type { StarterFiles } from "@/lib/html-starters";
 import type { ProjectCategory } from "@/lib/types";
 import type { AiPlan } from "@/lib/ai-quota";
+import {
+  ensurePlayableFiles,
+  looksIncompletePlayable,
+} from "@/lib/ai-build";
+import { coinCatcherFiles } from "@/lib/ai-game-fallbacks";
 
 type ChatMessage = { role: "assistant" | "user"; content: string };
 
@@ -184,12 +189,43 @@ export function AiBuildPanel({
 
       if (!data.files?.["index.html"]) {
         // Chat-only success already returned above; missing files = failed build.
+        // If the editor already has a broken shell, heal it locally so the user isn't stuck.
+        if (files && looksIncompletePlayable(files, "game")) {
+          const healed = ensurePlayableFiles(files, {
+            title: "Coin Catcher",
+            brief: trimmed,
+            category: "game",
+          });
+          onBuilt({
+            files: healed,
+            title: "Coin Catcher",
+            description: trimmed.slice(0, 160),
+            category: "game",
+          });
+          setRevision((n) => n + 1);
+          setMessages([
+            ...thread,
+            {
+              role: "assistant",
+              content:
+                locale === "pl"
+                  ? "Wstawiłem działającą wersję gry do podglądu."
+                  : "I dropped a working version into the preview.",
+            },
+          ]);
+          return;
+        }
         setError(data.error || t("workshop.aiFailed"));
         return;
       }
 
+      const healed = ensurePlayableFiles(data.files, {
+        title: data.title,
+        brief: trimmed,
+        category: data.category || "game",
+      });
       onBuilt({
-        files: data.files,
+        files: healed,
         title: data.title || "AI project",
         description: data.description || trimmed.slice(0, 160),
         category: data.category || "experiment",
@@ -242,7 +278,42 @@ export function AiBuildPanel({
     await request({ action: "chat", nextMessages });
   }
 
+  async function applyLocalPlayableFix() {
+    if (!files?.["index.html"]) return;
+    const titleMatch = files["index.html"].match(/<title>([^<]*)<\/title>/i);
+    const title = (titleMatch?.[1] || "Coin Catcher").trim().slice(0, 40);
+    const healed = ensurePlayableFiles(coinCatcherFiles(title), {
+      title,
+      brief: prompt,
+      category: "game",
+    });
+    onBuilt({
+      files: healed,
+      title,
+      description:
+        locale === "pl"
+          ? "Łap monety koszykiem — strzałki lub przeciąganie."
+          : "Catch coins with the basket — arrows or drag.",
+      category: "game",
+    });
+    setRevision((n) => n + 1);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content:
+          locale === "pl"
+            ? "Wstawiłem działającą grę Coin Catcher do edytora i podglądu."
+            : "I put a working Coin Catcher into the editor and preview.",
+      },
+    ]);
+    setError("");
+  }
+
   const chatting = messages.length > 0;
+  const brokenPreview = Boolean(
+    files && looksIncompletePlayable(files, "game"),
+  );
   const busyLabel =
     phase === "chat" ? t("workshop.aiChatThinking") : t("workshop.aiBuilding");
 
@@ -317,6 +388,23 @@ export function AiBuildPanel({
           <p className="mt-3 font-semibold text-danger" role="alert">
             {error}
           </p>
+        )}
+        {brokenPreview && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-3">
+            <p className="text-sm font-semibold text-ink">
+              {locale === "pl"
+                ? "Podgląd wygląda na pusty (tylko Score). Możesz od razu wstawić działającą grę:"
+                : "Preview looks empty (score only). Insert a working game now:"}
+            </p>
+            <Button
+              type="button"
+              size="m"
+              disabled={busy}
+              onClick={() => applyLocalPlayableFix()}
+            >
+              {locale === "pl" ? "Wstaw działającą grę" : "Insert working game"}
+            </Button>
+          </div>
         )}
       </div>
 
