@@ -640,8 +640,16 @@ export const pl: Messages = {
     aiBuild: "Zbuduj",
     aiRebuild: "Zbuduj ponownie",
     aiBuilding: "Budowanie…",
+    aiChecking: "Sprawdzam pomysł…",
     aiFailed: "Nie udało się tego zbudować. Spróbuj prostszego pomysłu.",
     aiHintPaid: "Funkcja dla członków — później może być płatna.",
+    aiClarifyTitle: "Kilka szybkich pytań",
+    aiClarifySub:
+      "Odpowiedz, na ile możesz — Baiolo zbuduje z Twoimi doprecyzowaniami.",
+    aiClarifyPlaceholder: "Twoja odpowiedź",
+    aiAnswerNeeded: "Odpowiedz na choć jedno pytanie albo pomiń i buduj od razu.",
+    aiBuildWithAnswers: "Zbuduj z odpowiedziami",
+    aiSkipClarify: "Pomiń i buduj",
     aiUseHtml: "Albo wybierz starter HTML",
   },
   dictation: {

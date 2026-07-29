@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  composeBuildBrief,
   normalizeAiBuildFiles,
   parseAiBuildPayload,
+  parseClarifyPayload,
 } from "@/lib/ai-build";
 
 describe("ai-build parsers", () => {
@@ -39,5 +41,36 @@ describe("ai-build parsers", () => {
     expect(parsed?.title).toBe("Star Catch");
     expect(parsed?.category).toBe("game");
     expect(parsed?.files["index.html"]).toContain("DOCTYPE");
+  });
+
+  it("parses clarify questions", () => {
+    const result = parseClarifyPayload(
+      JSON.stringify({
+        ready: false,
+        questions: [
+          "How do you win?",
+          { id: "theme", question: "What theme?" },
+        ],
+      }),
+    );
+    expect(result.status).toBe("clarify");
+    if (result.status === "clarify") {
+      expect(result.questions).toHaveLength(2);
+      expect(result.questions[0].question).toBe("How do you win?");
+    }
+  });
+
+  it("treats ready clarify as ready", () => {
+    expect(parseClarifyPayload(JSON.stringify({ ready: true }))).toEqual({
+      status: "ready",
+    });
+  });
+
+  it("composes brief with answers", () => {
+    const brief = composeBuildBrief("Tap stars", [
+      { question: "Win?", answer: "Catch 10" },
+    ]);
+    expect(brief).toContain("Tap stars");
+    expect(brief).toContain("Catch 10");
   });
 });

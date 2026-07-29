@@ -637,8 +637,16 @@ export const en = {
     aiBuild: "Build it",
     aiRebuild: "Build again",
     aiBuilding: "Building…",
+    aiChecking: "Checking your idea…",
     aiFailed: "Couldn’t build that right now. Try again with a simpler idea.",
     aiHintPaid: "Member feature — may become paid later.",
+    aiClarifyTitle: "A few quick questions",
+    aiClarifySub:
+      "Answer what you can — Baiolo will build with your clarifications.",
+    aiClarifyPlaceholder: "Your answer",
+    aiAnswerNeeded: "Answer at least one question, or skip and build anyway.",
+    aiBuildWithAnswers: "Build with answers",
+    aiSkipClarify: "Skip & build anyway",
     aiUseHtml: "Or pick HTML starter",
   },
   dictation: {

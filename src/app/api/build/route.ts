@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { buildFromDescription } from "@/lib/ai-build";
+import {
+  buildFromDescription,
+  clarifyBuildPrompt,
+  type AiAnswer,
+} from "@/lib/ai-build";
 import { isLlmConfigured } from "@/lib/llm";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServer } from "@/lib/supabase/server-auth";
@@ -12,7 +16,29 @@ type Body = {
   /** Mock-mode identity when Supabase auth isn’t configured. */
   userId?: string | null;
   email?: string | null;
+  /** Answers to prior clarification questions. */
+  answers?: AiAnswer[];
+  /** Skip clarify and build immediately. */
+  skipClarify?: boolean;
 };
+
+function normalizeAnswers(raw: unknown): AiAnswer[] {
+  if (!Array.isArray(raw)) return [];
+  const out: AiAnswer[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as AiAnswer;
+    const question = typeof row.question === "string" ? row.question.trim() : "";
+    const answer = typeof row.answer === "string" ? row.answer.trim() : "";
+    if (!question || !answer) continue;
+    out.push({
+      id: typeof row.id === "string" ? row.id : undefined,
+      question: question.slice(0, 200),
+      answer: answer.slice(0, 400),
+    });
+  }
+  return out.slice(0, 4);
+}
 
 export async function POST(request: Request) {
   let body: Body;
@@ -64,9 +90,23 @@ export async function POST(request: Request) {
     );
   }
 
+  const answers = normalizeAnswers(body.answers);
+  const skipClarify = Boolean(body.skipClarify) || answers.length > 0;
+
   try {
-    const result = await buildFromDescription(prompt);
+    if (!skipClarify) {
+      const clarify = await clarifyBuildPrompt(prompt);
+      if (clarify.status === "clarify") {
+        return NextResponse.json({
+          status: "clarify",
+          questions: clarify.questions,
+        });
+      }
+    }
+
+    const result = await buildFromDescription(prompt, answers);
     return NextResponse.json({
+      status: "built",
       title: result.title,
       description: result.description,
       category: result.category,
