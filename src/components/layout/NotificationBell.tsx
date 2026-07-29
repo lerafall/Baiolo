@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { useNotifications } from "@/lib/notifications";
 import { notificationHref } from "@/lib/notification-href";
 import { useSubmissions } from "@/lib/submissions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 export function NotificationBell() {
+  const t = useT();
   const { items } = useSubmissions();
   const watch = useMemo(
     () =>
@@ -41,7 +43,11 @@ export function NotificationBell() {
     <div className="relative" ref={rootRef}>
       <button
         type="button"
-        aria-label={unread ? `${unread} new updates` : "Notifications"}
+        aria-label={
+          unread
+            ? t("notify.ariaUnread", { count: unread })
+            : t("notify.aria")
+        }
         aria-expanded={open}
         className="relative flex size-11 items-center justify-center rounded-full border-2 border-border bg-surface text-lg font-bold text-ink-muted transition-colors hover:border-border-strong hover:text-ink"
         onClick={() => setOpen((v) => !v)}
@@ -56,11 +62,11 @@ export function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-border bg-surface p-3 shadow-[var(--shadow-2)]">
-          <p className="px-2 text-sm font-extrabold text-ink">Updates</p>
+          <p className="px-2 text-sm font-extrabold text-ink">{t("notify.updates")}</p>
           <ul className="mt-2 max-h-72 space-y-2 overflow-y-auto">
             {notes.length === 0 && (
               <li className="px-2 py-4 text-sm text-ink-muted">
-                No updates yet. Status changes will show up here.
+                {t("notify.emptyBody")}
               </li>
             )}
             {notes.slice(0, 12).map((n) => (

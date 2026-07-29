@@ -1,5 +1,8 @@
+"use client";
+
 import { cn } from "@/lib/cn";
-import { statusCopy, statusTone, type ProjectStatus } from "@/lib/moderation";
+import { statusTone, type ProjectStatus } from "@/lib/moderation";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function StatusBadge({
   status,
@@ -8,7 +11,7 @@ export function StatusBadge({
   status: ProjectStatus;
   className?: string;
 }) {
-  const copy = statusCopy[status];
+  const t = useT();
   return (
     <span
       className={cn(
@@ -17,13 +20,14 @@ export function StatusBadge({
         className,
       )}
     >
-      {copy.label}
+      {t(`status.${status}`)}
     </span>
   );
 }
 
 export function StatusMessage({ status }: { status: ProjectStatus }) {
+  const t = useT();
   return (
-    <p className="text-sm text-ink-muted">{statusCopy[status].message}</p>
+    <p className="text-sm text-ink-muted">{t(`statusMsg.${status}`)}</p>
   );
 }

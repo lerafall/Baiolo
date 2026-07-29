@@ -1,9 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import type { Project } from "@/lib/types";
 
 export function FeaturedStrip({ projects }: { projects: Project[] }) {
+  const t = useT();
   if (projects.length === 0) return null;
 
   return (
@@ -11,14 +15,14 @@ export function FeaturedStrip({ projects }: { projects: Project[] }) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm font-bold uppercase tracking-wide text-brand-strong">
-            Featured
+            {t("featured.title")}
           </p>
           <h2 className="mt-1 text-2xl font-extrabold text-ink">
-            Try these first
+            {t("featured.sub")}
           </h2>
         </div>
         <Button href="/explore" variant="ghost" size="m">
-          See all
+          {t("featured.seeAll")}
         </Button>
       </div>
       <ul className="mt-5 flex gap-4 overflow-x-auto pb-2">
@@ -33,7 +37,7 @@ export function FeaturedStrip({ projects }: { projects: Project[] }) {
                 className="aspect-[4/3] rounded-lg bg-cover bg-center"
                 style={thumbBackgroundStyle(p.thumbnail)}
                 role="img"
-                aria-label={`${p.title} preview`}
+                aria-label={t("landing.previewAria", { title: p.title })}
               />
               <p className="mt-3 font-extrabold text-ink">{p.title}</p>
               <p className="mt-1 line-clamp-2 text-sm text-ink-muted">

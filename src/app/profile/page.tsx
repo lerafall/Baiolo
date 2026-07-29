@@ -3,18 +3,13 @@
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
 import { ProjectCard } from "@/components/ui/ProjectCard";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { submissionToProject } from "@/lib/project-map";
 import { useSession } from "@/lib/session";
 import { useSubmissions } from "@/lib/submissions";
 
-const roleLabel: Record<string, string> = {
-  guest: "Guest",
-  explorer: "Explorer",
-  creator: "Creator",
-  admin: "Admin",
-};
-
 export default function ProfilePage() {
+  const t = useT();
   const { session, ready, signOut } = useSession();
   const { items } = useSubmissions();
 
@@ -24,6 +19,17 @@ export default function ProfilePage() {
 
   const signedIn = Boolean(session.userId || session.email);
   const isGuest = !signedIn || session.role === "guest";
+
+  const roleKey =
+    session.role === "guest"
+      ? "profile.roleGuest"
+      : session.role === "explorer"
+        ? "profile.roleExplorer"
+        : session.role === "creator"
+          ? "profile.roleCreator"
+          : session.role === "admin"
+            ? "profile.roleAdmin"
+            : null;
 
   return (
     <>
@@ -38,16 +44,16 @@ export default function ProfilePage() {
               <h1 className="text-4xl font-extrabold">{session.name}</h1>
               {ready && (
                 <span className="rounded-pill bg-lilac/70 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-strong">
-                  {roleLabel[session.role] ?? session.role}
+                  {roleKey ? t(roleKey) : session.role}
                 </span>
               )}
             </div>
             <p className="mt-2 max-w-xl text-lg text-ink-muted">
               {session.interests.length > 0
-                ? `Into ${session.interests.join(", ")}.`
+                ? t("profile.into", { interests: session.interests.join(", ") })
                 : isGuest
-                  ? "Join to save your profile and projects."
-                  : "Tell us what you like — tap Edit profile."}
+                  ? t("profile.joinSave")
+                  : t("profile.tellUs")}
             </p>
             {session.email && (
               <p className="mt-1 text-sm text-ink-muted">{session.email}</p>
@@ -68,18 +74,18 @@ export default function ProfilePage() {
           <div className="flex flex-wrap gap-2">
             {isGuest ? (
               <Button href="/auth?next=%2Fprofile" size="l">
-                Join Baiolo
+                {t("landing.joinBaiolo")}
               </Button>
             ) : (
               <Button href="/onboarding?edit=1" variant="secondary">
-                Edit profile
+                {t("profile.editProfile")}
               </Button>
             )}
             <Button href="/favorites" variant="secondary">
-              Favorites
+              {t("profile.favorites")}
             </Button>
             <Button href="/create" variant="secondary">
-              New project
+              {t("profile.newProject")}
             </Button>
             {signedIn && (
               <Button
@@ -90,23 +96,23 @@ export default function ProfilePage() {
                   });
                 }}
               >
-                Sign out
+                {t("profile.signOut")}
               </Button>
             )}
           </div>
         </div>
 
-        <h2 className="mt-12 text-2xl font-extrabold">Your projects</h2>
+        <h2 className="mt-12 text-2xl font-extrabold">{t("profile.yourProjects")}</h2>
         {mine.length === 0 ? (
           <div className="mt-6 rounded-xl bg-lilac/40 p-10 text-center">
-            <p className="text-xl font-extrabold">Nothing published yet</p>
+            <p className="text-xl font-extrabold">{t("profile.nothingPublished")}</p>
             <p className="mt-2 text-ink-muted">
-              When a project goes live, it will show up here.
+              {t("profile.nothingPublishedBody")}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Button href="/create">Add your project</Button>
+              <Button href="/create">{t("projects.addProject")}</Button>
               <Button href="/projects" variant="secondary">
-                See drafts
+                {t("profile.seeDrafts")}
               </Button>
             </div>
           </div>

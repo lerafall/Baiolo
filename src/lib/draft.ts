@@ -65,6 +65,26 @@ export function clearDraft() {
   localStorage.removeItem(DRAFT_KEY);
 }
 
+/** Map legacy English hint strings (old drafts) to translation keys. */
+const LEGACY_HINT_KEYS: Record<string, string> = {
+  "This works best as a ZIP. We’ll still try to help.": "create.hintNotZip",
+  "This file is quite big. A smaller pack is easier to share.": "create.hintBig",
+  "Looking good — your project package is ready.": "create.hintLookingGood",
+  "Your project package is ready.": "create.hintPackageReady",
+  "Tip: include a start file next time if you can.": "create.hintTipStart",
+  "Add a file or folder name first.": "create.hintAddName",
+};
+
+/** Resolve a draft hint (key or legacy English) for display. */
+export function resolveDraftHint(
+  hint: string,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): string {
+  if (hint.startsWith("create.")) return t(hint);
+  const key = LEGACY_HINT_KEYS[hint];
+  return key ? t(key) : hint;
+}
+
 /** Friendly packaging helper — never technical jargon. */
 export function buildPackageFromFile(file: File): {
   sourceLabel: string;
@@ -85,10 +105,10 @@ export function buildPackageFromFile(file: File): {
   const isZip = lower.endsWith(".zip");
 
   if (!isZip) {
-    hints.push("This works best as a ZIP. We’ll still try to help.");
+    hints.push("create.hintNotZip");
   }
   if (sizeMb > 80) {
-    hints.push("This file is quite big. A smaller pack is easier to share.");
+    hints.push("create.hintBig");
   }
 
   const base = name.replace(/\.(zip|rar|7z)$/i, "").replace(/[-_]+/g, " ");
@@ -103,10 +123,7 @@ export function buildPackageFromFile(file: File): {
     sourceLabel: name,
     packageReady: true,
     fileSizeLabel,
-    hints:
-      hints.length > 0
-        ? hints
-        : ["Looking good — your project package is ready."],
+    hints: hints.length > 0 ? hints : ["create.hintLookingGood"],
     suggestedTitle: suggestedTitle || "My project",
   };
 }
@@ -121,17 +138,14 @@ export function buildPackageFromLabel(label: string): {
     return {
       sourceLabel: "",
       packageReady: false,
-      hints: ["Add a file or folder name first."],
+      hints: ["create.hintAddName"],
     };
   }
   const hints = [".zip", ".html", "index"].some((p) =>
     trimmed.toLowerCase().includes(p.replace(".", "")),
   )
-    ? ["Your project package is ready."]
-    : [
-        "Your project package is ready.",
-        "Tip: include a start file next time if you can.",
-      ];
+    ? ["create.hintPackageReady"]
+    : ["create.hintPackageReady", "create.hintTipStart"];
 
   return { sourceLabel: trimmed, packageReady: true, hints };
 }

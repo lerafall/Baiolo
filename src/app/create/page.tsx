@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import {
   buildPackageFromFile,
   buildPackageFromLabel,
+  resolveDraftHint,
   clearDraft,
   emptyDraft,
   readDraft,
@@ -26,65 +27,10 @@ import {
   suggestedTags,
 } from "@/lib/data/projects";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
-
-const steps = [
-  "Choose type",
-  "Add content",
-  "Title & description",
-  "Category & tags",
-  "Thumbnail",
-  "Review",
-  "Submit",
-] as const;
-
-const uploadOptions: Array<{
-  id: UploadType;
-  title: string;
-  body: string;
-}> = [
-  {
-    id: "zip",
-    title: "Upload ZIP",
-    body: "Got a project folder zipped up? Drop it here.",
-  },
-  {
-    id: "link",
-    title: "Paste link",
-    body: "Share a link to your live demo or prototype.",
-  },
-  {
-    id: "template",
-    title: "Use simple starter template",
-    body: "Start from a friendly Baiolo starter pack.",
-  },
-];
-
-const categories: Array<{ id: ProjectCategory; label: string }> = [
-  { id: "game", label: "Game" },
-  { id: "tool", label: "Tool" },
-  { id: "experiment", label: "Experiment" },
-  { id: "demo", label: "Demo" },
-];
-
-const templates = [
-  {
-    id: "Starter · Game",
-    label: "Game starter",
-    body: "A tiny playable loop to remix.",
-  },
-  {
-    id: "Starter · Tool",
-    label: "Tool starter",
-    body: "A simple utility shell.",
-  },
-  {
-    id: "Starter · Experiment",
-    label: "Experiment",
-    body: "A blank playful canvas.",
-  },
-] as const;
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 function CreateWizard() {
+  const t = useT();
   const router = useRouter();
   const search = useSearchParams();
   const editId = search.get("edit");
@@ -101,6 +47,25 @@ function CreateWizard() {
   const [dragOver, setDragOver] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const steps = [
+    t("create.stepChooseType"), t("create.stepAddContent"), t("create.stepTitleDesc"),
+    t("create.stepCategoryTags"), t("create.stepThumbnail"), t("create.stepReview"),
+    t("create.stepSubmit"),
+  ];
+  const uploadOptions: Array<{ id: UploadType; title: string; body: string }> = [
+    { id: "zip", title: t("create.zipTitle"), body: t("create.zipBody") },
+    { id: "link", title: t("create.linkTitle"), body: t("create.linkBody") },
+    { id: "template", title: t("create.templateTitle"), body: t("create.templateBody") },
+  ];
+  const categories: Array<{ id: ProjectCategory; label: string }> = [
+    { id: "game", label: t("explore.game") }, { id: "tool", label: t("explore.tool") },
+    { id: "experiment", label: t("explore.experiment") }, { id: "demo", label: t("explore.demo") },
+  ];
+  const templates = [
+    { id: "Starter · Game", label: t("create.starterGame"), body: t("create.starterGameBody") },
+    { id: "Starter · Tool", label: t("create.starterTool"), body: t("create.starterToolBody") },
+    { id: "Starter · Experiment", label: t("create.starterExperiment"), body: t("create.starterExperimentBody") },
+  ] as const;
 
   useEffect(() => {
     if (!submissionsReady || hydratedOnce.current) return;
@@ -160,7 +125,7 @@ function CreateWizard() {
         id: draft.id,
         uploadType: draft.uploadType,
         sourceLabel: draft.sourceLabel,
-        title: draft.title.trim() || "Untitled draft",
+        title: draft.title.trim() || t("create.untitledDraft"),
         description: draft.description,
         category: draft.category,
         tags: draft.tags,
@@ -235,7 +200,7 @@ function CreateWizard() {
   function runPackagingHelper() {
     const result = buildPackageFromLabel(draft.sourceLabel);
     if (!result.packageReady) {
-      setError(result.hints[0] || "Add a file first.");
+      setError(resolveDraftHint(result.hints[0] || "create.errAddFileFirst", t));
       return;
     }
     setError("");
@@ -262,9 +227,9 @@ function CreateWizard() {
   const primaryLabel =
     draft.step === steps.length - 1
       ? submitting
-        ? "Submitting…"
-        : "Submit for checking"
-      : "Continue";
+        ? t("create.submitting")
+        : t("create.submitForChecking")
+      : t("create.continue");
 
   function renderActions(sticky = false) {
     return (
@@ -282,7 +247,7 @@ function CreateWizard() {
             disabled={submitting}
             className={sticky ? "flex-1 sm:flex-none" : undefined}
           >
-            Back
+            {t("create.back")}
           </Button>
         )}
         <Button
@@ -311,39 +276,39 @@ function CreateWizard() {
     } = draft;
 
     if (step === 0 && !uploadType) {
-      setError("Pick how you want to add your project.");
+      setError(t("create.errPickType"));
       return;
     }
     if (step === 1) {
       if (!sourceLabel.trim()) {
         setError(
           uploadType === "link"
-            ? "Paste a link to continue."
-            : "Add a file or starter first.",
+            ? t("create.errPasteLink")
+            : t("create.errAddFile"),
         );
         return;
       }
       if (uploadType === "link" && !/^https?:\/\//i.test(sourceLabel.trim())) {
-        setError("That link needs to start with https://");
+        setError(t("create.errHttps"));
         return;
       }
       if (uploadType === "zip" && !packageReady) {
-        setError("This project needs one more step — make your package ready.");
+        setError(t("create.errPackage"));
         return;
       }
     }
     if (step === 2) {
       if (!title.trim()) {
-        setError("Add a title before you continue.");
+        setError(t("create.errTitle"));
         return;
       }
       if (description.trim().length < 8) {
-        setError("Write a short description so people know what to try.");
+        setError(t("create.errDesc"));
         return;
       }
     }
     if (step === 3 && !category) {
-      setError("Pick a category first.");
+      setError(t("create.errCategory"));
       return;
     }
 
@@ -368,7 +333,7 @@ function CreateWizard() {
               skipped?: boolean;
             };
             if (!up.ok && !upData.skipped) {
-              setError(upData.error || "We couldn’t upload the ZIP yet.");
+              setError(upData.error || t("create.errUpload"));
               return;
             }
             storagePath = upData.storagePath ?? null;
@@ -404,7 +369,7 @@ function CreateWizard() {
           };
           const submission = data.submission ?? data.fallback?.submission;
           if (!submission) {
-            setError(data.error || "We couldn’t submit this yet. Try again.");
+            setError(data.error || t("create.errSubmit"));
             return;
           }
           const stages = data.stages ?? data.fallback?.stages ?? [];
@@ -417,7 +382,7 @@ function CreateWizard() {
           zipFileRef.current = null;
           router.push(`/create/submitted?id=${encodeURIComponent(draft.id)}`);
         } catch {
-          setError("We couldn’t submit this yet. Try again.");
+          setError(t("create.errSubmit"));
         } finally {
           setSubmitting(false);
         }
@@ -441,27 +406,27 @@ function CreateWizard() {
       <main className="mx-auto w-full max-w-2xl px-5 py-10 pb-36 md:px-8 md:pb-10">
         {!signedIn && sessionReady && (
           <div className="mb-6 rounded-xl bg-lilac/50 px-5 py-4 text-sm text-ink">
-            <span className="font-bold">Tip: </span>
-            You can build a draft now.{" "}
+            <span className="font-bold">{t("projects.tip")}: </span>
+            {t("create.tipBody")}{" "}
             <a href="/auth?next=%2Fcreate" className="font-bold text-brand-strong underline">
-              Join
+              {t("nav.join")}
             </a>{" "}
-            before submit so we can save it to your account later.
+            {t("create.tipAfter")}
           </div>
         )}
 
         <div className="mb-6 rounded-xl bg-mint/40 px-5 py-4 text-sm text-ink">
-          <span className="font-bold">New here? </span>
-          Copy a prompt, add your idea, upload a ZIP —{" "}
+          <span className="font-bold">{t("create.newHerePrefix")} </span>
+          {t("create.newHereBody")}{" "}
           <a href="/make" className="font-bold text-brand-strong underline">
-            3 easy steps
+            {t("create.newHereLink")}
           </a>
           .
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-bold uppercase tracking-wide text-ink-muted">
-              Add your project · step {draft.step + 1} of {steps.length}
+              {t("create.stepOf", { current: draft.step + 1, total: steps.length })}
             </p>
             <h1 className="mt-2 text-4xl font-extrabold">
               {steps[draft.step]}
@@ -474,7 +439,7 @@ function CreateWizard() {
             )}
             aria-live="polite"
           >
-            Draft saved
+            {t("create.draftSaved")}
           </p>
         </div>
 
@@ -495,8 +460,7 @@ function CreateWizard() {
           {draft.step === 0 && (
             <div className="space-y-3">
               <p className="text-ink-muted">
-                Choose one simple way to start. You can save and come back
-                later.
+                {t("create.chooseWay")}
               </p>
               {uploadOptions.map((opt) => (
                 <button
@@ -527,9 +491,9 @@ function CreateWizard() {
 
           {draft.step === 1 && draft.uploadType === "zip" && (
             <div>
-              <p className="text-lg font-bold">Add your files</p>
+              <p className="text-lg font-bold">{t("create.addFiles")}</p>
               <p className="mt-1 text-ink-muted">
-                Don’t worry about perfect packaging — Baiolo can help.
+                {t("create.addFilesSub")}
               </p>
 
               <div
@@ -555,7 +519,7 @@ function CreateWizard() {
               >
                 {draft.packageReady && draft.sourceLabel ? (
                   <>
-                    <p className="font-bold text-ink">Package ready</p>
+                    <p className="font-bold text-ink">{t("create.packageReady")}</p>
                     <p className="mt-1 text-sm text-ink-muted">
                       {draft.sourceLabel}
                       {draft.fileSizeLabel ? ` · ${draft.fileSizeLabel}` : ""}
@@ -566,20 +530,20 @@ function CreateWizard() {
                       className="mt-4"
                       onClick={() => fileRef.current?.click()}
                     >
-                      Choose another ZIP
+                      {t("create.chooseAnotherZip")}
                     </Button>
                   </>
                 ) : (
                   <>
-                    <p className="font-bold text-ink">Drop a ZIP here</p>
-                    <p className="mt-1 text-sm text-ink-muted">or choose a file</p>
+                    <p className="font-bold text-ink">{t("create.dropZip")}</p>
+                    <p className="mt-1 text-sm text-ink-muted">{t("create.orChooseFile")}</p>
                     <Button
                       type="button"
                       variant="secondary"
                       className="mt-4"
                       onClick={() => fileRef.current?.click()}
                     >
-                      Choose ZIP
+                      {t("create.chooseZip")}
                     </Button>
                   </>
                 )}
@@ -596,7 +560,7 @@ function CreateWizard() {
               </div>
 
               <p className="mt-4 text-sm font-bold text-ink-muted">
-                Or type a folder / file name
+                {t("create.orTypeName")}
               </p>
               <input
                 value={draft.sourceLabel}
@@ -623,35 +587,34 @@ function CreateWizard() {
                 className="mt-4"
                 onClick={runPackagingHelper}
               >
-                Build my package
+                {t("create.buildPackage")}
               </Button>
               <ul className="mt-4 space-y-1 text-sm text-ink-muted">
-                <li>• ZIP preferred</li>
-                <li>• A start file helps (like index.html)</li>
-                <li>• Keep it light when you can</li>
+                <li>• {t("create.tipZip")}</li>
+                <li>• {t("create.tipStartFile")}</li>
+                <li>• {t("create.tipLight")}</li>
               </ul>
               {draft.fileSizeLabel && (
                 <p className="mt-3 text-sm text-ink-muted">
-                  File size: {draft.fileSizeLabel}
+                  {t("create.fileSize", { size: draft.fileSizeLabel })}
                 </p>
               )}
               {draft.sourceLabel.trim() && !draft.packageReady && (
                 <div className="mt-4 rounded-lg bg-warning/15 px-4 py-3">
-                  <p className="font-bold text-ink">Almost ready</p>
+                  <p className="font-bold text-ink">{t("create.almostReady")}</p>
                   <p className="mt-1 text-sm text-ink-muted">
-                    Press Enter, leave the field, or tap “Build my package” so
-                    we can check it.
+                    {t("create.almostReadyBody")}
                   </p>
                 </div>
               )}
               {draft.packageReady && (
                 <div className="mt-4 space-y-2 rounded-lg bg-mint/50 px-4 py-3">
                   <p className="font-bold text-secondary-strong">
-                    Your project package is ready.
+                    {t("create.packageReadyMsg")}
                   </p>
                   {(draft.hints ?? []).map((h) => (
                     <p key={h} className="text-sm text-ink-muted">
-                      {h}
+                      {resolveDraftHint(h, t)}
                     </p>
                   ))}
                 </div>
@@ -661,9 +624,9 @@ function CreateWizard() {
 
           {draft.step === 1 && draft.uploadType === "link" && (
             <label className="block">
-              <span className="text-lg font-bold">Paste your link</span>
+              <span className="text-lg font-bold">{t("create.pasteLink")}</span>
               <p className="mt-1 text-ink-muted">
-                A demo link people can open and try.
+                {t("create.pasteLinkSub")}
               </p>
               <input
                 value={draft.sourceLabel}
@@ -676,30 +639,30 @@ function CreateWizard() {
 
           {draft.step === 1 && draft.uploadType === "template" && (
             <div>
-              <p className="text-lg font-bold">Pick a starter</p>
+              <p className="text-lg font-bold">{t("create.pickStarter")}</p>
               <p className="mt-1 text-ink-muted">
-                Simple packs you can rename and make your own.
+                {t("create.pickStarterSub")}
               </p>
               <div className="mt-4 space-y-3">
-                {templates.map((t) => (
+                {templates.map((template) => (
                   <button
-                    key={t.id}
+                    key={template.id}
                     type="button"
                     onClick={() =>
                       patch({
-                        sourceLabel: t.id,
+                        sourceLabel: template.id,
                         packageReady: true,
                       })
                     }
                     className={cn(
                       "w-full rounded-xl border-2 bg-surface p-5 text-left transition-all",
-                      draft.sourceLabel === t.id
+                      draft.sourceLabel === template.id
                         ? "border-brand bg-lilac/40 shadow-[var(--shadow-1)]"
                         : "border-border hover:border-border-strong",
                     )}
                   >
-                    <p className="text-xl font-extrabold">{t.label}</p>
-                    <p className="mt-1 text-ink-muted">{t.body}</p>
+                    <p className="text-xl font-extrabold">{template.label}</p>
+                    <p className="mt-1 text-ink-muted">{template.body}</p>
                   </button>
                 ))}
               </div>
@@ -709,7 +672,7 @@ function CreateWizard() {
           {draft.step === 2 && (
             <div className="space-y-5">
               <label className="block">
-                <span className="text-lg font-bold">Title</span>
+                <span className="text-lg font-bold">{t("create.title")}</span>
                 <input
                   value={draft.title}
                   onChange={(e) => patch({ title: e.target.value })}
@@ -718,7 +681,7 @@ function CreateWizard() {
                 />
               </label>
               <label className="block">
-                <span className="text-lg font-bold">Short description</span>
+                <span className="text-lg font-bold">{t("create.shortDesc")}</span>
                 <textarea
                   value={draft.description}
                   onChange={(e) => patch({ description: e.target.value })}
@@ -732,7 +695,7 @@ function CreateWizard() {
 
           {draft.step === 3 && (
             <div>
-              <p className="text-lg font-bold">What kind of project is this?</p>
+              <p className="text-lg font-bold">{t("create.whatKind")}</p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {categories.map((c) => (
                   <FilterPill
@@ -744,9 +707,9 @@ function CreateWizard() {
                 ))}
               </div>
 
-              <p className="mt-8 text-lg font-bold">Add a few tags</p>
+              <p className="mt-8 text-lg font-bold">{t("create.addTags")}</p>
               <p className="mt-1 text-ink-muted">
-                Up to 5 soft labels — they help people find you in Explore.
+                {t("create.addTagsSub")}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {[
@@ -775,7 +738,7 @@ function CreateWizard() {
                       addCustomTag();
                     }
                   }}
-                  placeholder="Your own tag"
+                  placeholder={t("create.ownTag")}
                   maxLength={24}
                   className="min-h-12 flex-1 rounded-pill border-2 border-border bg-surface px-5 text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
                 />
@@ -785,12 +748,12 @@ function CreateWizard() {
                   onClick={addCustomTag}
                   disabled={!tagInput.trim() || draft.tags.length >= 5}
                 >
-                  Add tag
+                  {t("create.addTag")}
                 </Button>
               </div>
               {draft.tags.length > 0 && (
                 <p className="mt-3 text-sm font-semibold text-ink-muted">
-                  Selected: {draft.tags.join(" · ")}
+                  {t("create.selected", { tags: draft.tags.join(" · ") })}
                 </p>
               )}
             </div>
@@ -798,14 +761,13 @@ function CreateWizard() {
 
           {draft.step === 4 && (
             <div>
-              <p className="text-lg font-bold">Add a game screenshot</p>
+              <p className="text-lg font-bold">{t("create.addScreenshot")}</p>
               <p className="mt-1 text-ink-muted">
-                Cards show this image — upload a real screen from your MVP so
-                people know what they’ll play. Gradients are only a fallback.
+                {t("create.addScreenshotSub")}
               </p>
               <label className="mt-5 block">
                 <span className="text-sm font-bold text-ink-muted">
-                  Upload screenshot (best)
+                  {t("create.uploadScreenshot")}
                 </span>
                 <input
                   type="file"
@@ -815,7 +777,7 @@ function CreateWizard() {
                     const file = e.target.files?.[0];
                     if (!file) return;
                     if (file.size > 2_500_000) {
-                      setError("That image is a bit big. Try a smaller one.");
+                      setError(t("create.imageBig"));
                       return;
                     }
                     const reader = new FileReader();
@@ -834,24 +796,24 @@ function CreateWizard() {
                   className="mt-4 aspect-[4/3] rounded-lg border-4 border-brand bg-cover bg-center"
                   style={{ backgroundImage: `url(${draft.thumb})` }}
                   role="img"
-                  aria-label="Screenshot preview"
+                  aria-label={t("create.screenshotPreview")}
                 />
               ) : null}
               <p className="mt-5 text-sm font-bold text-ink-muted">
-                Or pick a color vibe
+                {t("create.orColorVibe")}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-3">
-                {THUMB_OPTIONS.map((t) => (
+                {THUMB_OPTIONS.map((thumb) => (
                   <button
-                    key={t}
+                    key={thumb}
                     type="button"
-                    onClick={() => patch({ thumb: t })}
+                    onClick={() => patch({ thumb })}
                     className={cn(
                       "aspect-[4/3] rounded-lg border-4 transition-transform hover:scale-[1.02]",
-                      draft.thumb === t ? "border-brand" : "border-transparent",
+                      draft.thumb === thumb ? "border-brand" : "border-transparent",
                     )}
-                    style={{ background: t }}
-                    aria-label="Choose thumbnail vibe"
+                    style={{ background: thumb }}
+                    aria-label={t("create.chooseVibe")}
                   />
                 ))}
               </div>
@@ -860,13 +822,13 @@ function CreateWizard() {
 
           {draft.step === 5 && (
             <div>
-              <p className="text-lg font-bold">Does this look right?</p>
+              <p className="text-lg font-bold">{t("create.lookRight")}</p>
               <p className="mt-1 text-ink-muted">
-                Next you send it for checking — not live yet.
+                {t("create.lookRightSub")}
               </p>
               {(draft.hints ?? []).length > 0 && (
                 <div className="mt-4 rounded-lg bg-warning/15 px-4 py-3 text-sm font-semibold">
-                  {draft.hints![0]}
+                  {resolveDraftHint(draft.hints![0], t)}
                 </div>
               )}
               <div className="mt-6 overflow-hidden rounded-xl border border-border shadow-[var(--shadow-1)]">
@@ -876,11 +838,11 @@ function CreateWizard() {
                 />
                 <div className="p-5">
                   <p className="text-xl font-extrabold">
-                    {draft.title || "Untitled idea"}
+                    {draft.title || t("create.untitledIdea")}
                   </p>
                   <p className="mt-1 text-sm capitalize text-ink-muted">
-                    {draft.category || "uncategorized"} ·{" "}
-                    {draft.uploadType || "upload"}
+                    {draft.category ? t(`explore.${draft.category}`) : t("create.uncategorized")} ·{" "}
+                    {draft.uploadType || t("create.zipTitle")}
                   </p>
                   {draft.tags.length > 0 && (
                     <p className="mt-2 text-sm font-semibold text-brand-strong">
@@ -888,7 +850,7 @@ function CreateWizard() {
                     </p>
                   )}
                   <p className="mt-3 text-ink-muted">
-                    {draft.description || "No description yet."}
+                    {draft.description || t("create.noDescription")}
                   </p>
                 </div>
               </div>
@@ -897,15 +859,14 @@ function CreateWizard() {
 
           {draft.step === 6 && (
             <div>
-              <p className="text-lg font-bold">Submit for checking</p>
+              <p className="text-lg font-bold">{t("create.submitTitle")}</p>
               <p className="mt-2 text-ink-muted">
-                We’ll check your project safely. A Baiolo teammate also reviews
-                it before it can go public.
+                {t("create.submitBody")}
               </p>
               <ul className="mt-5 space-y-2 text-ink-muted">
-                <li>• Private storage first</li>
-                <li>• Friendly automated check</li>
-                <li>• Human approval before publish</li>
+                <li>• {t("create.check1")}</li>
+                <li>• {t("create.check2")}</li>
+                <li>• {t("create.check3")}</li>
               </ul>
             </div>
           )}
@@ -935,13 +896,14 @@ function CreateWizard() {
 }
 
 export default function CreatePage() {
+  const t = useT();
   return (
     <Suspense
       fallback={
         <>
           <SiteHeader showJoin={false} />
           <main className="mx-auto max-w-2xl px-5 py-16 text-ink-muted">
-            Loading creator…
+            {t("create.loadingCreator")}
           </main>
         </>
       }

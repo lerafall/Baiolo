@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function ModeBadge({ className }: { className?: string }) {
+  const t = useT();
   const [mode, setMode] = useState<"mock" | "supabase" | null>(null);
 
   useEffect(() => {
@@ -34,12 +36,10 @@ export function ModeBadge({ className }: { className?: string }) {
         className,
       )}
       title={
-        mode === "supabase"
-          ? "Connected to Supabase"
-          : "Running on local mock store"
+        mode === "supabase" ? t("modeBadge.cloudTitle") : t("modeBadge.localTitle")
       }
     >
-      {mode === "supabase" ? "Cloud" : "Local"}
+      {mode === "supabase" ? t("modeBadge.cloud") : t("modeBadge.local")}
     </span>
   );
 }

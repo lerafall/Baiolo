@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 const KEY = "baiolo.install-hint.dismissed";
 
 export function InstallHint() {
+  const t = useT();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -27,11 +29,8 @@ export function InstallHint() {
 
   return (
     <div className="fixed inset-x-0 bottom-[4.5rem] z-30 mx-auto w-[min(100%-1.5rem,28rem)] rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow-2)] md:bottom-6">
-      <p className="font-extrabold text-ink">Install Baiolo?</p>
-      <p className="mt-1 text-sm text-ink-muted">
-        Add it to your home screen for a quicker, app-like feel. Use your
-        browser’s Share / Install menu.
-      </p>
+      <p className="font-extrabold text-ink">{t("install.title")}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t("install.body")}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button
           size="m"
@@ -45,7 +44,7 @@ export function InstallHint() {
             setShow(false);
           }}
         >
-          Got it
+          {t("install.gotIt")}
         </Button>
       </div>
     </div>

@@ -91,17 +91,17 @@ function ExploreBody() {
         <h1 className="text-4xl font-extrabold text-ink">{t("explore.title")}</h1>
         <p className="mt-2 text-lg text-ink-muted">
           {mode === "supabase"
-            ? "Published cloud projects first — catalog demos only if the cloud is empty."
-            : "Only published projects show here — after checking and approval."}
+            ? t("exploreExtra.cloudSub")
+            : t("exploreExtra.mockSub")}
         </p>
       </div>
 
       <label className="mt-8 block animate-rise-delay-1">
-        <span className="sr-only">Search projects</span>
+        <span className="sr-only">{t("exploreExtra.searchSr")}</span>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search projects or tags"
+          placeholder={t("exploreExtra.search")}
           className="min-h-14 w-full rounded-pill border-2 border-border bg-surface px-6 text-lg text-ink shadow-[var(--shadow-1)] placeholder:text-placeholder focus:border-brand focus:outline-none"
         />
       </label>
@@ -122,7 +122,7 @@ function ExploreBody() {
       <div className="-mx-5 mt-3 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:overflow-visible md:px-0">
         <div className="flex w-max min-w-full gap-2 md:flex-wrap md:w-auto">
           <FilterPill
-            label="Any tag"
+            label={t("exploreExtra.anyTag")}
             active={!tag}
             onClick={() => setTag("")}
           />
@@ -158,17 +158,19 @@ function ExploreBody() {
 
       {filtered.length === 0 && (
         <div className="mt-16 rounded-xl bg-lilac/40 p-10 text-center">
-          <p className="text-xl font-extrabold">Nothing here yet</p>
+          <p className="text-xl font-extrabold">{t("exploreExtra.emptyTitle")}</p>
           <p className="mt-2 text-ink-muted">
-            {mode === "supabase"
-              ? "No published cloud projects match this filter — try seeding demos in Admin, or share yours."
-              : "Try another filter, or share your own idea."}
+            {debouncedQuery || filter !== "all" || tag
+              ? t("exploreExtra.empty")
+              : mode === "supabase"
+                ? t("exploreExtra.emptyCloud")
+                : t("exploreExtra.emptyMock")}
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button href="/create">Add your project</Button>
+            <Button href="/create">{t("exploreExtra.addProject")}</Button>
             {mode === "supabase" && (
               <Button href="/admin" variant="secondary">
-                Open admin
+                {t("exploreExtra.openAdmin")}
               </Button>
             )}
           </div>
@@ -178,17 +180,20 @@ function ExploreBody() {
   );
 }
 
+function ExploreFallback() {
+  const t = useT();
+  return (
+    <main className="mx-auto max-w-6xl px-5 py-16 text-ink-muted">
+      {t("exploreExtra.loading")}
+    </main>
+  );
+}
+
 export default function ExplorePage() {
   return (
     <>
       <SiteHeader />
-      <Suspense
-        fallback={
-          <main className="mx-auto max-w-6xl px-5 py-16 text-ink-muted">
-            Loading Explore…
-          </main>
-        }
-      >
+      <Suspense fallback={<ExploreFallback />}>
         <ExploreBody />
       </Suspense>
     </>

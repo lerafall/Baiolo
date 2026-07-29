@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -19,13 +20,16 @@ export function ConfirmDialog({
   open,
   title,
   body,
-  confirmLabel = "Yes, continue",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   tone = "primary",
   children,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const t = useT();
+  const resolvedConfirm = confirmLabel ?? t("confirm.yes");
+  const resolvedCancel = cancelLabel ?? t("confirm.cancel");
   const panelRef = useRef<HTMLDivElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -36,7 +40,7 @@ export function ConfirmDialog({
     if (!open) return;
 
     previouslyFocused.current = document.activeElement as HTMLElement | null;
-    const t = window.setTimeout(() => confirmRef.current?.focus(), 0);
+    const timer = window.setTimeout(() => confirmRef.current?.focus(), 0);
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -63,7 +67,7 @@ export function ConfirmDialog({
 
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      window.clearTimeout(t);
+      window.clearTimeout(timer);
       document.removeEventListener("keydown", onKeyDown);
       previouslyFocused.current?.focus?.();
     };
@@ -100,10 +104,10 @@ export function ConfirmDialog({
             variant={tone === "danger" ? "destructive" : "primary"}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {resolvedConfirm}
           </Button>
           <Button variant="ghost" onClick={onCancel}>
-            {cancelLabel}
+            {resolvedCancel}
           </Button>
         </div>
       </div>

@@ -15,6 +15,7 @@ import { formatDateTime } from "@/lib/format";
 import { useSubmissions } from "@/lib/submissions";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import { AdminAccountsPanel } from "@/components/admin/AdminAccountsPanel";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 const riskFilters: Array<{ id: "all" | RiskLevel; label: string }> = [
   { id: "all", label: "All risk" },
@@ -34,6 +35,7 @@ function previewSrc(url: string | null | undefined) {
 }
 
 export default function AdminModerationPage() {
+  const t = useT();
   const { isAdmin, unlockAdmin, ready: sessionReady } = useSession();
   const { items, ready, upsert, refresh, saveAll } = useSubmissions();
   const { open: openReports, resolve: resolveReport } = useContentReports();
@@ -253,9 +255,9 @@ export default function AdminModerationPage() {
       <>
         <SiteHeader showJoin={false} />
         <main className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col justify-center px-5 py-12">
-          <h1 className="text-4xl font-extrabold">Admin access</h1>
+          <h1 className="text-4xl font-extrabold">{t("admin.accessTitle")}</h1>
           <p className="mt-3 text-ink-muted">
-            Enter the demo admin code to open the moderation queue.
+            {t("admin.accessBody")}
           </p>
           <form
             className="mt-8"
@@ -268,14 +270,14 @@ export default function AdminModerationPage() {
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="Admin code"
+              placeholder={t("admin.codePlaceholder")}
               className="min-h-14 w-full rounded-pill border-2 border-border px-5 text-lg focus:border-brand focus:outline-none"
             />
             {gateError && (
               <p className="mt-3 font-semibold text-danger">{gateError}</p>
             )}
             <Button type="submit" className="mt-6 w-full" size="l">
-              Unlock queue
+              {t("admin.unlock")}
             </Button>
           </form>
         </main>
@@ -289,9 +291,9 @@ export default function AdminModerationPage() {
     <>
       <SiteHeader showJoin={false} />
       <main className="mx-auto w-full max-w-6xl px-5 py-10 md:px-8">
-        <h1 className="text-4xl font-extrabold">Moderation queue</h1>
+        <h1 className="text-4xl font-extrabold">{t("admin.queueTitle")}</h1>
         <p className="mt-2 text-lg text-ink-muted">
-          Check code → play the game → only then publish. No shortcuts.
+          {t("admin.queueSub")}
         </p>
         <p className="mt-2 text-sm text-ink-muted">Keys: j/k move · r reject</p>
         <div className="mt-4 flex flex-wrap gap-3">
@@ -300,7 +302,7 @@ export default function AdminModerationPage() {
             disabled={busy}
             onClick={() => void seedDemos()}
           >
-            Seed demo projects
+            {t("admin.seedDemos")}
           </Button>
           {seedFlash && (
             <p className="self-center text-sm font-bold text-secondary-strong">
@@ -419,14 +421,14 @@ export default function AdminModerationPage() {
                   disabled={busy}
                   onClick={() => void runCodeReview(selected)}
                 >
-                  1 · Check code (AI)
+                  {t("admin.checkCode")}
                 </Button>
                 <Button
                   variant="secondary"
                   disabled={busy}
                   onClick={() => void moderate(selected, "prepare_preview")}
                 >
-                  2 · Prepare play
+                  {t("admin.preparePlay")}
                 </Button>
                 <Button
                   variant="secondary"
@@ -435,15 +437,15 @@ export default function AdminModerationPage() {
                   }
                   onClick={() => void moderate(selected, "confirm_play")}
                 >
-                  I played it — OK
+                  {t("admin.playedOk")}
                 </Button>
                 <Button
                   disabled={busy || !publishReady}
                   onClick={() => void moderate(selected, "publish")}
                 >
                   {selected.status === "published"
-                    ? "Refresh live play"
-                    : "3 · Publish"}
+                    ? t("admin.refreshLive")
+                    : t("admin.publish")}
                 </Button>
               </div>
 
@@ -511,28 +513,28 @@ export default function AdminModerationPage() {
                   disabled={busy}
                   onClick={() => moderate(selected, "ask_for_changes")}
                 >
-                  Ask for changes
+                  {t("admin.askChanges")}
                 </Button>
                 <Button
                   variant="destructive"
                   disabled={busy}
                   onClick={() => setRejectOpen(true)}
                 >
-                  Reject
+                  {t("admin.reject")}
                 </Button>
                 <Button
                   variant="ghost"
                   disabled={busy}
                   onClick={() => moderate(selected, "escalate")}
                 >
-                  Escalate
+                  {t("admin.escalate")}
                 </Button>
                 <Button
                   variant="destructive"
                   disabled={busy}
                   onClick={() => setDeleteOpen(true)}
                 >
-                  Remove
+                  {t("admin.remove")}
                 </Button>
               </div>
             </aside>

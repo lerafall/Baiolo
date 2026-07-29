@@ -6,37 +6,67 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { BAILO_AVATARS, DEFAULT_AVATAR, isBaioloAvatar } from "@/lib/avatars";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { useSession } from "@/lib/session";
 import { safeNextPath } from "@/lib/next-path";
 
-const roles = [
-  { id: "create", title: "I want to create", body: "Share games and experiments." },
-  { id: "explore", title: "I want to explore", body: "Try ideas and react." },
-  { id: "both", title: "I want both", body: "Make things and play things." },
+const ROLE_IDS = ["create", "explore", "both"] as const;
+const INTEREST_IDS = [
+  "Games",
+  "Tools",
+  "Stories",
+  "Art",
+  "Learning",
+  "Experiments",
 ] as const;
 
-const avatars = BAILO_AVATARS;
-const interests = ["Games", "Tools", "Stories", "Art", "Learning", "Experiments"];
+const interestKey: Record<(typeof INTEREST_IDS)[number], string> = {
+  Games: "onboarding.interestGames",
+  Tools: "onboarding.interestTools",
+  Stories: "onboarding.interestStories",
+  Art: "onboarding.interestArt",
+  Learning: "onboarding.interestLearning",
+  Experiments: "onboarding.interestExperiments",
+};
 
 function roleFromSession(
   role: string,
-): (typeof roles)[number]["id"] {
+): (typeof ROLE_IDS)[number] {
   if (role === "creator") return "create";
   if (role === "explorer") return "explore";
   return "both";
 }
 
 function OnboardingBody() {
+  const t = useT();
   const router = useRouter();
   const search = useSearchParams();
   const editing = search.get("edit") === "1";
   const afterOnboarding = safeNextPath(search.get("next"), "/explore");
   const { session, ready, completeOnboarding } = useSession();
   const [step, setStep] = useState(0);
-  const [role, setRole] = useState<(typeof roles)[number]["id"] | null>(null);
+  const [role, setRole] = useState<(typeof ROLE_IDS)[number] | null>(null);
   const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR);
   const [picked, setPicked] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
+
+  const roles = [
+    {
+      id: "create" as const,
+      title: t("onboarding.roleCreateTitle"),
+      body: t("onboarding.roleCreateBody"),
+    },
+    {
+      id: "explore" as const,
+      title: t("onboarding.roleExploreTitle"),
+      body: t("onboarding.roleExploreBody"),
+    },
+    {
+      id: "both" as const,
+      title: t("onboarding.roleBothTitle"),
+      body: t("onboarding.roleBothBody"),
+    },
+  ];
 
   useEffect(() => {
     if (!ready || hydrated) return;
@@ -88,12 +118,13 @@ function OnboardingBody() {
       <SiteHeader showJoin={false} />
       <main className="mx-auto w-full max-w-xl px-5 py-12 md:px-8">
         <p className="text-sm font-bold uppercase tracking-wide text-ink-muted">
-          {editing ? "Edit profile" : "Welcome"} · {step + 1}/3
+          {editing ? t("onboarding.edit") : t("onboarding.welcomeShort")} ·{" "}
+          {t("onboarding.stepOf", { step: step + 1 })}
         </p>
         <h1 className="mt-2 text-4xl font-extrabold">
-          {step === 0 && "What brings you here?"}
-          {step === 1 && "Pick a playful avatar"}
-          {step === 2 && "What do you like?"}
+          {step === 0 && t("onboarding.whatBrings")}
+          {step === 1 && t("onboarding.pickAvatar")}
+          {step === 2 && t("onboarding.whatLike")}
         </h1>
 
         <div className="mt-8 space-y-3">
@@ -117,7 +148,7 @@ function OnboardingBody() {
 
           {step === 1 && (
             <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
-              {avatars.map((a) => (
+              {BAILO_AVATARS.map((a) => (
                 <button
                   key={a}
                   type="button"
@@ -128,7 +159,7 @@ function OnboardingBody() {
                       ? "border-brand ring-2 ring-brand/30"
                       : "border-transparent hover:border-border",
                   )}
-                  aria-label={`Avatar ${a}`}
+                  aria-label={t("onboarding.avatarAria", { avatar: a })}
                   aria-pressed={avatar === a}
                 >
                   <span className="leading-none" aria-hidden>
@@ -141,7 +172,7 @@ function OnboardingBody() {
 
           {step === 2 && (
             <div className="flex flex-wrap gap-2">
-              {interests.map((item) => {
+              {INTEREST_IDS.map((item) => {
                 const on = picked.includes(item);
                 return (
                   <button
@@ -155,12 +186,12 @@ function OnboardingBody() {
                         : "border-border bg-surface text-ink-muted",
                     )}
                   >
-                    {item}
+                    {t(interestKey[item])}
                   </button>
                 );
               })}
               <p className="mt-3 w-full text-sm text-ink-muted">
-                Pick 2 or 3 favorites.
+                {t("onboarding.pickFavorites")}
               </p>
             </div>
           )}
@@ -176,9 +207,9 @@ function OnboardingBody() {
         >
           {step === 2
             ? editing
-              ? "Save profile"
-              : "Enter Baiolo"
-            : "Continue"}
+              ? t("onboarding.save")
+              : t("onboarding.enter")
+            : t("onboarding.continue")}
         </Button>
       </main>
     </>
@@ -186,13 +217,14 @@ function OnboardingBody() {
 }
 
 export default function OnboardingPage() {
+  const t = useT();
   return (
     <Suspense
       fallback={
         <>
           <SiteHeader showJoin={false} />
           <main className="mx-auto max-w-xl px-5 py-16 text-ink-muted">
-            Loading…
+            {t("common.loading")}
           </main>
         </>
       }

@@ -11,7 +11,6 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ProjectCard } from "@/components/ui/ProjectCard";
 import { ReactionChip } from "@/components/ui/ReactionChip";
 import {
-  categoryLabels,
   getProject,
   getSimilarProjects,
   projects as catalog,
@@ -142,7 +141,10 @@ export default function ProjectPage({
       <SiteHeader />
       <main className="mx-auto w-full max-w-6xl px-5 py-10 md:px-8">
         <p className="text-sm font-bold uppercase tracking-wide text-ink-muted">
-          {categoryLabels[live.category]} · by {live.creator}
+          {t("projectMeta.byCreator", {
+            category: t(`explore.${live.category}`),
+            creator: live.creator,
+          })}
         </p>
         <h1 className="mt-2 text-4xl font-extrabold text-ink md:text-5xl">
           {live.title}
@@ -354,7 +356,7 @@ export default function ProjectPage({
                     : "border-border bg-canvas text-ink-muted",
                 )}
               >
-                {r.label}
+                {t(`report.${r.id}`)}
               </button>
             ))}
           </div>

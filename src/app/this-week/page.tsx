@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
-import { projects as catalog, categoryLabels } from "@/lib/data/projects";
+import { projects as catalog } from "@/lib/data/projects";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { submissionToProject } from "@/lib/project-map";
 import { rankProjects } from "@/lib/ranking";
 import { formatCount } from "@/lib/format";
@@ -12,6 +13,7 @@ import { useSubmissions } from "@/lib/submissions";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 
 export default function ThisWeekPage() {
+  const t = useT();
   const { items, ready } = useSubmissions();
 
   const feed = useMemo(() => {
@@ -32,27 +34,23 @@ export default function ThisWeekPage() {
       <SiteHeader />
       <main className="mx-auto w-full max-w-3xl px-5 py-10 md:px-8">
         <p className="text-sm font-bold uppercase tracking-wide text-secondary-strong">
-          This week
+          {t("thisWeek.eyebrow")}
         </p>
-        <h1 className="mt-2 text-4xl font-extrabold">Rising favorites</h1>
-        <p className="mt-2 text-lg text-ink-muted">
-          Soft vibes from plays and reactions — not a heavy leaderboard.
-        </p>
+        <h1 className="mt-2 text-4xl font-extrabold">{t("thisWeek.title")}</h1>
+        <p className="mt-2 text-lg text-ink-muted">{t("thisWeek.sub")}</p>
 
         {!ready && (
-          <p className="mt-10 text-ink-muted">Gathering this week’s favorites…</p>
+          <p className="mt-10 text-ink-muted">{t("thisWeek.loading")}</p>
         )}
 
         {ready && ranked.length === 0 && (
           <div className="mt-12 rounded-xl bg-lilac/40 p-10 text-center">
-            <p className="text-xl font-extrabold">It’s quiet this week</p>
-            <p className="mt-2 text-ink-muted">
-              Try something new on Explore, or share your own tiny idea.
-            </p>
+            <p className="text-xl font-extrabold">{t("thisWeek.quiet")}</p>
+            <p className="mt-2 text-ink-muted">{t("thisWeek.quietBody")}</p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Button href="/explore">Explore</Button>
+              <Button href="/explore">{t("common.explore")}</Button>
               <Button href="/create" variant="secondary">
-                Add your project
+                {t("projects.addProject")}
               </Button>
             </div>
           </div>
@@ -75,11 +73,16 @@ export default function ThisWeekPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-xl font-extrabold">{project.title}</p>
                   <p className="text-sm text-ink-muted">
-                    {categoryLabels[project.category]} · by {project.creator}
+                    {t("thisWeek.byCreator", {
+                      category: t(`explore.${project.category}`),
+                      creator: project.creator,
+                    })}
                   </p>
                   <p className="mt-1 text-xs font-semibold text-ink-muted">
-                    {formatCount(project.plays)} plays ·{" "}
-                    {totalReactions(project)} reactions
+                    {t("thisWeek.playsReactions", {
+                      plays: formatCount(project.plays),
+                      reactions: totalReactions(project),
+                    })}
                   </p>
                   {project.tags.length > 0 && (
                     <p className="mt-1 truncate text-xs font-bold text-brand-strong">
@@ -94,7 +97,7 @@ export default function ThisWeekPage() {
 
         <div className="mt-10 text-center">
           <Button href="/explore" variant="secondary">
-            Back to Explore
+            {t("thisWeek.backExplore")}
           </Button>
         </div>
       </main>

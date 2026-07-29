@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { useRequireAuth } from "@/lib/auth-gate";
-import { categoryLabels } from "@/lib/data/projects";
 import { useFavorites } from "@/lib/favorites";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/cn";
@@ -72,7 +71,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">
-            {categoryLabels[project.category]}
+            {t(`explore.${project.category}`)}
           </p>
           <h3 className="mt-1 text-xl font-extrabold leading-tight text-ink">
             <Link href={`/project/${project.id}`}>{project.title}</Link>

@@ -1,11 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { rankProjects } from "@/lib/ranking";
 import { formatCount } from "@/lib/format";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import type { Project } from "@/lib/types";
 
 export function WeeklyRanking({ projects }: { projects: Project[] }) {
+  const t = useT();
   const ranked = rankProjects(projects, 5);
   if (ranked.length === 0) return null;
 
@@ -14,14 +18,14 @@ export function WeeklyRanking({ projects }: { projects: Project[] }) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm font-bold uppercase tracking-wide text-secondary-strong">
-            This week
+            {t("ranking.thisWeek")}
           </p>
           <h2 className="mt-1 text-2xl font-extrabold text-ink">
-            Rising favorites
+            {t("ranking.rising")}
           </h2>
         </div>
         <Button href="/this-week" variant="ghost" size="m">
-          Full ranking
+          {t("ranking.full")}
         </Button>
       </div>
       <ol className="mt-5 space-y-3">
@@ -43,7 +47,10 @@ export function WeeklyRanking({ projects }: { projects: Project[] }) {
                   {project.title}
                 </p>
                 <p className="truncate text-sm text-ink-muted">
-                  {formatCount(project.plays)} plays · by {project.creator}
+                  {t("ranking.playsBy", {
+                    plays: formatCount(project.plays),
+                    creator: project.creator,
+                  })}
                 </p>
               </div>
             </Link>

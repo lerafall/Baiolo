@@ -7,11 +7,9 @@ import { ShareProjectPanel } from "@/components/share/ShareProjectPanel";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge, StatusMessage } from "@/components/ui/StatusBadge";
 import { cn } from "@/lib/cn";
-import {
-  friendlyStageLabel,
-  type PipelineStageView,
-} from "@/lib/status-progress";
+import { type PipelineStageView } from "@/lib/status-progress";
 import { useSubmissions } from "@/lib/submissions";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 function liveStages(
   snapshot: PipelineStageView[],
@@ -102,6 +100,7 @@ function liveStages(
 }
 
 function SubmittedBody() {
+  const t = useT();
   const params = useSearchParams();
   const id = params.get("id");
   const { items, ready } = useSubmissions();
@@ -125,14 +124,14 @@ function SubmittedBody() {
 
   const headline =
     submission?.status === "published" || submission?.status === "approved"
-      ? "You’re live!"
+      ? t("createSubmitted.live")
       : submission?.status === "needs_changes"
-        ? "A small fix is needed."
+        ? t("createSubmitted.needsFix")
         : submission?.status === "rejected"
-          ? "This one can’t go public yet."
+          ? t("createSubmitted.cantPublic")
           : submission?.status === "in_review"
-            ? "A teammate is reviewing it."
-            : "We’re checking your project now.";
+            ? t("createSubmitted.teammateReview")
+            : t("createSubmitted.checkingNow");
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center px-5 py-16 md:px-8">
@@ -141,7 +140,7 @@ function SubmittedBody() {
         {headline}
       </h1>
       <p className="mt-4 text-center text-lg text-ink-muted">
-        It stays private until a Baiolo teammate approves it.
+        {t("createSubmitted.staysPrivate")}
       </p>
 
       {ready && submission && (
@@ -150,8 +149,7 @@ function SubmittedBody() {
           projectId={submission.id}
           title={submission.title}
           tagline={
-            submission.description ||
-            "Coming soon on Baiolo — I’ll send you the link when it’s live."
+            submission.description || t("createSubmitted.shareTaglineSoon")
           }
           emphasis="hero"
         />
@@ -176,7 +174,10 @@ function SubmittedBody() {
               style={{ animationDelay: `${i * 60}ms` }}
             >
               <p className="font-extrabold text-ink">
-                {stage.ok ? "✓" : "!"} {friendlyStageLabel(stage.name)}
+                {stage.ok ? "✓" : "!"}{" "}
+                {t(`stage.${stage.name}`) !== `stage.${stage.name}`
+                  ? t(`stage.${stage.name}`)
+                  : stage.name}
               </p>
               <p className="mt-1 text-sm text-ink-muted">{stage.detail}</p>
             </li>
@@ -186,10 +187,10 @@ function SubmittedBody() {
 
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button href="/projects" size="l">
-          See submission status
+          {t("createSubmitted.seeStatus")}
         </Button>
         <Button href="/explore" variant="secondary" size="l">
-          Explore meanwhile
+          {t("createSubmitted.exploreMeanwhile")}
         </Button>
       </div>
     </main>
@@ -197,13 +198,14 @@ function SubmittedBody() {
 }
 
 export default function CreateSubmittedPage() {
+  const t = useT();
   return (
     <>
       <SiteHeader showJoin={false} />
       <Suspense
         fallback={
           <main className="mx-auto max-w-xl px-5 py-16 text-ink-muted">
-            Loading…
+            {t("createSubmitted.loading")}
           </main>
         }
       >
