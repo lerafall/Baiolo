@@ -407,21 +407,24 @@ export function sanitizeAiFiles(files: StarterFiles): StarterFiles {
 
 /** Detect background score timers / per-frame score bumps without clear collision gating. */
 export function hasSuspiciousAutoScore(js: string): boolean {
+  const bump =
+    /score\s*(\+\+|\+=\s*[1-9]\d*|=\s*score\s*\+\s*[1-9]\d*)/i;
+
   // setInterval/setTimeout whose nearby body bumps score
   const timerRe = /set(?:Interval|Timeout)\s*\(/gi;
   let match: RegExpExecArray | null;
   while ((match = timerRe.exec(js))) {
-    const slice = js.slice(match.index, match.index + 320);
-    if (/score\s*(\+\+|\+=\s*[1-9]\d*)/i.test(slice)) {
+    const slice = js.slice(match.index, match.index + 360);
+    if (bump.test(slice)) {
       return true;
     }
   }
 
-  // score++ / score += n in an rAF loop without collision/input keywords
+  // score bump every animation frame without collision/input gating keywords
   if (
     /requestAnimationFrame\s*\(/i.test(js) &&
-    /score\s*(\+\+|\+=\s*[1-9]\d*)/i.test(js) &&
-    !/\b(hit|collid|overlap|intersect|catch|collect|onClick|keydown|pointerdown|playerReady|hasInteract)/i.test(
+    bump.test(js) &&
+    !/\b(hit|collid|overlap|intersect|catch|collect|onClick|keydown|pointerdown|playerReady|hasInteract|playing)\b/i.test(
       js,
     )
   ) {

@@ -82,7 +82,14 @@ export function submissionToProject(
   creator = "You",
 ): Project | null {
   if (s.status !== "published" || !s.category) return null;
-  const playUrl = resolvePlayableUrl(s);
+  let playUrl = resolvePlayableUrl(s);
+  // Published rows sometimes still point at owner-only preview URLs — use catalog demo if known.
+  if (!playUrl) {
+    const fromCatalog = catalog.find((p) => p.id === s.id);
+    if (fromCatalog?.playUrl && !fromCatalog.playUrl.startsWith("#")) {
+      playUrl = fromCatalog.playUrl;
+    }
+  }
   if (!playUrl) return null;
   return toProjectModel(s, creator, playUrl);
 }

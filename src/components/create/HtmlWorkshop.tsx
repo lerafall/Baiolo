@@ -19,6 +19,10 @@ import {
   type StarterId,
 } from "@/lib/html-starters";
 import {
+  ensurePlayableFiles,
+  hasSuspiciousAutoScore,
+} from "@/lib/ai-build";
+import {
   capturePreviewInsight,
   type PreviewInsight,
 } from "@/lib/preview-insight";
@@ -64,7 +68,20 @@ export const HtmlWorkshop = forwardRef<HtmlWorkshopHandle, HtmlWorkshopProps>(
       }
     }, [activeFile, fileNames, files]);
 
-    const previewSrcDoc = useMemo(() => buildPreviewHtml(files), [files]);
+    const previewSrcDoc = useMemo(() => {
+      const js = files["script.js"] || files["main.js"] || "";
+      // Last line of defense: never ship idle auto-score into the iframe.
+      if (hasSuspiciousAutoScore(js)) {
+        return buildPreviewHtml(
+          ensurePlayableFiles(files, {
+            category: "game",
+            brief: "catch coins",
+            title: "Coin Catcher",
+          }),
+        );
+      }
+      return buildPreviewHtml(files);
+    }, [files]);
 
     function refreshPreview() {
       setPreviewKey((k) => k + 1);

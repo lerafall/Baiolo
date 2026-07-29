@@ -12,6 +12,7 @@ import type { ProjectCategory } from "@/lib/types";
 import type { AiPlan } from "@/lib/ai-quota";
 import {
   ensurePlayableFiles,
+  hasSuspiciousAutoScore,
   looksIncompletePlayable,
 } from "@/lib/ai-build";
 import { coinCatcherFiles } from "@/lib/ai-game-fallbacks";
@@ -71,11 +72,14 @@ export function AiBuildPanel({
   const workshopRef = useRef<HtmlWorkshopHandle>(null);
   const autoHealKey = useRef<string | null>(null);
 
-  // Broken Score:0 shells → replace with a playable package once (preview can't invent a canvas).
+  // Broken Score:0 shells or idle auto-score → replace with a playable package.
   useEffect(() => {
     if (!files?.["index.html"]) return;
-    if (!looksIncompletePlayable(files, "game")) return;
-    const key = `${files["index.html"]!.length}:${files["script.js"]?.length ?? 0}:${files["index.html"]!.slice(0, 80)}`;
+    const js = files["script.js"] || "";
+    const needsHeal =
+      looksIncompletePlayable(files, "game") || hasSuspiciousAutoScore(js);
+    if (!needsHeal) return;
+    const key = `${files["index.html"]!.length}:${js.length}:${files["index.html"]!.slice(0, 80)}:autoscore`;
     if (autoHealKey.current === key) return;
     autoHealKey.current = key;
     const titleMatch = files["index.html"].match(/<title>([^<]*)<\/title>/i);
@@ -85,7 +89,10 @@ export function AiBuildPanel({
       brief: prompt || title,
       category: "game",
     });
-    if (!looksIncompletePlayable(healed, "game")) {
+    if (
+      !looksIncompletePlayable(healed, "game") &&
+      !hasSuspiciousAutoScore(healed["script.js"] || "")
+    ) {
       onBuilt({
         files: healed,
         title,
@@ -102,13 +109,16 @@ export function AiBuildPanel({
           role: "assistant",
           content:
             locale === "pl"
-              ? "Podgląd był pusty (sama skorupa). Wstawiłem działającą grę."
-              : "The preview was an empty shell — I inserted a working game.",
+              ? hasSuspiciousAutoScore(js)
+                ? "Wynik rósł sam — wstawiłem grę, która punktuje tylko po Twoim ruchu."
+                : "Podgląd był pusty (sama skorupa). Wstawiłem działającą grę."
+              : hasSuspiciousAutoScore(js)
+                ? "Score was climbing by itself — I inserted a game that only scores after you move."
+                : "The preview was an empty shell — I inserted a working game.",
         },
       ]);
     }
   }, [files, prompt, locale, onBuilt]);
-
 
   const loadQuota = useCallback(async () => {
     if (!signedIn) return;

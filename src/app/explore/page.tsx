@@ -71,14 +71,13 @@ function ExploreBody() {
       .map((s) => submissionToProject(s))
       .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
+    // Always include curated demos so Explore matches This week / Favorites.
+    // Cloud published projects overlay the same ids when present.
     const byId = new Map<string, (typeof catalog)[number]>();
-    // In cloud mode show only real published projects — not demo catalog fillers.
-    if (mode !== "supabase") {
-      for (const p of catalog) byId.set(p.id, p);
-    }
+    for (const p of catalog) byId.set(p.id, p);
     for (const p of fromSubs) byId.set(p.id, p);
     return Array.from(byId.values());
-  }, [items, mode]);
+  }, [items]);
 
   const tags = useMemo(() => allTags(feed), [feed]);
 
