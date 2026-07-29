@@ -10,6 +10,12 @@ import {
 } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { normalizePhone } from "@/lib/phone";
+import {
+  friendlyOAuthError,
+  labelForProvider,
+  type SocialProviderId,
+} from "@/lib/social-auth";
 
 import { DEFAULT_AVATAR } from "@/lib/avatars";
 
@@ -42,6 +48,9 @@ type SessionContextValue = {
   ready: boolean;
   isAdmin: boolean;
   signIn: (email: string) => Promise<string | null>;
+  signInWithOAuth: (provider: SocialProviderId) => Promise<string | null>;
+  signInWithWhatsApp: (phone: string) => Promise<string | null>;
+  verifyWhatsAppOtp: (phone: string, token: string) => Promise<string | null>;
   completeOnboarding: (data: {
     role: "create" | "explore" | "both";
     avatar: string;
@@ -66,6 +75,37 @@ function readLocal(): BaioloSession {
 
 function writeLocal(next: BaioloSession) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+}
+
+function identityFromAuthUser(user: {
+  email?: string | null;
+  phone?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+  identities?: Array<{ identity_data?: Record<string, unknown> | null }> | null;
+}) {
+  const meta = user.user_metadata ?? {};
+  const identityData = user.identities?.[0]?.identity_data ?? {};
+  const pick = (...vals: unknown[]) => {
+    for (const v of vals) {
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return null;
+  };
+  return pick(
+    user.email,
+    user.phone,
+    meta.email,
+    meta.full_name,
+    meta.name,
+    meta.preferred_username,
+    meta.custom_claims &&
+      typeof meta.custom_claims === "object" &&
+      (meta.custom_claims as { global_name?: string }).global_name,
+    identityData.email,
+    identityData.full_name,
+    identityData.name,
+    identityData.preferred_username,
+  );
 }
 
 function mapRole(
@@ -110,7 +150,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const applyUser = async (userId: string, email: string | null) => {
+      const applyUser = async (
+        userId: string,
+        identity: string | null,
+      ) => {
         const meta = (
           await supabase.auth.getUser()
         ).data.user?.app_metadata?.role as string | undefined;
@@ -120,18 +163,38 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           .eq("id", userId)
           .maybeSingle();
         const cur = readLocal();
-        persist({
+        const label = identity || cur.email;
+        const nextSession = {
           userId,
-          email,
-          name: profile?.name || email?.split("@")[0] || cur.name || "Friend",
+          email: label,
+          name:
+            profile?.name ||
+            (label?.includes("@") ? label.split("@")[0] : null) ||
+            (label?.startsWith("+") ? `WhatsApp ${label.slice(-4)}` : null) ||
+            label ||
+            cur.name ||
+            "Friend",
           avatar: profile?.avatar || cur.avatar || DEFAULT_AVATAR,
           interests: profile?.interests || cur.interests || [],
           role:
             meta === "admin"
-              ? "admin"
+              ? ("admin" as const)
               : mapRole(profile?.role || cur.role || "explorer"),
-          authMode: "supabase",
-        });
+          authMode: "supabase" as const,
+        };
+        persist(nextSession);
+
+        if (!profile) {
+          void supabase.from("profiles").upsert({
+            id: userId,
+            email: label,
+            name: nextSession.name,
+            avatar: nextSession.avatar,
+            role: nextSession.role,
+            interests: nextSession.interests,
+            updated_at: new Date().toISOString(),
+          });
+        }
       };
 
       const {
@@ -142,7 +205,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (authSession?.user) {
         await applyUser(
           authSession.user.id,
-          authSession.user.email ?? local.email,
+          identityFromAuthUser(authSession.user) ?? local.email,
         );
       } else {
         persist({
@@ -171,7 +234,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           });
           return;
         }
-        await applyUser(next.user.id, next.user.email ?? null);
+        await applyUser(
+          next.user.id,
+          identityFromAuthUser(next.user),
+        );
       });
       unsubscribe = () => data.subscription.unsubscribe();
     })();
@@ -244,6 +310,143 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [persist],
   );
 
+  const signInWithOAuth = useCallback(
+    async (provider: SocialProviderId) => {
+      if (!isSupabaseConfigured()) {
+        return "Social login needs cloud auth. Enable Supabase providers first.";
+      }
+
+      const supabase = createSupabaseBrowser();
+      if (!supabase) {
+        return "Social login isn’t available right now.";
+      }
+
+      const origin = window.location.origin;
+      const next = new URLSearchParams(window.location.search).get("next");
+      const redirectTo = `${origin}/auth/callback${
+        next ? `?next=${encodeURIComponent(next)}` : ""
+      }`;
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo,
+          // Stay on Baiolo until we know the provider is enabled.
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) {
+        return friendlyOAuthError(provider, error.message);
+      }
+      if (!data?.url) {
+        return `Couldn’t start ${labelForProvider(provider)} sign-in.`;
+      }
+
+      // Disabled providers return JSON 400 on /authorize (blank “Pretty-print” page).
+      try {
+        const probe = await fetch("/api/auth/oauth-check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: data.url }),
+        });
+        const result = (await probe.json()) as {
+          ok?: boolean;
+          message?: string;
+        };
+        if (!result.ok) {
+          return friendlyOAuthError(provider, result.message || "");
+        }
+      } catch {
+        // Probe failed — still try the normal redirect.
+      }
+
+      window.location.assign(data.url);
+      return null;
+    },
+    [],
+  );
+
+  const signInWithWhatsApp = useCallback(async (phone: string) => {
+    const normalized = normalizePhone(phone);
+    if (!normalized) {
+      return "Add a phone number with country code, e.g. +48…";
+    }
+
+    if (!isSupabaseConfigured()) {
+      persist({
+        ...readLocal(),
+        email: normalized,
+        name: `WhatsApp ${normalized.slice(-4)}`,
+        role: "explorer",
+        authMode: "mock",
+      });
+      return null;
+    }
+
+    const supabase = createSupabaseBrowser();
+    if (!supabase) {
+      return "WhatsApp login isn’t available right now.";
+    }
+
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: normalized,
+      options: { channel: "whatsapp" },
+    });
+
+    if (error) {
+      return error.message || "Couldn’t send a WhatsApp code.";
+    }
+    return null;
+  }, [persist]);
+
+  const verifyWhatsAppOtp = useCallback(
+    async (phone: string, token: string) => {
+      const normalized = normalizePhone(phone);
+      const code = token.replace(/\s/g, "");
+      if (!normalized) return "Add a valid phone number.";
+      if (code.length < 4) return "Enter the code from WhatsApp.";
+
+      if (!isSupabaseConfigured()) {
+        persist({
+          ...readLocal(),
+          email: normalized,
+          name: `WhatsApp ${normalized.slice(-4)}`,
+          role: "explorer",
+          authMode: "mock",
+        });
+        return null;
+      }
+
+      const supabase = createSupabaseBrowser();
+      if (!supabase) return "WhatsApp login isn’t available right now.";
+
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: normalized,
+        token: code,
+        type: "sms",
+      });
+
+      if (error) {
+        return error.message || "That code didn’t work.";
+      }
+
+      const user = data.user;
+      if (user) {
+        persist({
+          ...readLocal(),
+          userId: user.id,
+          email: user.phone ?? normalized,
+          name: `WhatsApp ${(user.phone ?? normalized).slice(-4)}`,
+          role: "explorer",
+          authMode: "supabase",
+        });
+      }
+      return null;
+    },
+    [persist],
+  );
+
   const completeOnboarding = useCallback(
     async (data: {
       role: "create" | "explore" | "both";
@@ -304,11 +507,24 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       ready,
       isAdmin: session.role === "admin",
       signIn,
+      signInWithOAuth,
+      signInWithWhatsApp,
+      verifyWhatsAppOtp,
       completeOnboarding,
       unlockAdmin,
       signOut,
     }),
-    [session, ready, signIn, completeOnboarding, unlockAdmin, signOut],
+    [
+      session,
+      ready,
+      signIn,
+      signInWithOAuth,
+      signInWithWhatsApp,
+      verifyWhatsAppOtp,
+      completeOnboarding,
+      unlockAdmin,
+      signOut,
+    ],
   );
 
   return (

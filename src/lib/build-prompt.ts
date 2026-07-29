@@ -56,4 +56,4 @@ Also provide:
   upload thumb.png as the Baiolo thumbnail when submitting
 
 My idea:
-[DESCRIBE YOUR IDEA IN 2–5 SENTENCES]`;
+[your idea here]`;

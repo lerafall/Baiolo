@@ -7,15 +7,22 @@
 
 ## 2. Auth
 
-1. Authentication → Providers → Email enabled.
-2. URL configuration:
+1. Authentication → Providers → **Email** enabled (magic link).
+2. Enable each social provider you want under Authentication → Providers (Google, Facebook, Apple, Discord, Slack) and paste client IDs/secrets from that vendor.  
+   If a provider stays off, Baiolo shows a friendly message instead of a blank JSON page.
+3. **WhatsApp** (phone OTP, not OAuth):
+   - Enable **Phone** provider
+   - SMS provider = **Twilio** or **Twilio Verify**
+   - Configure a WhatsApp sender in Twilio (Meta approval required)
+   - Baiolo sends OTP with `channel: "whatsapp"`
+4. URL configuration:
    - Site URL: `http://localhost:3001` (or your deploy URL)
    - Redirect URLs: `http://localhost:3001/auth/callback` (+ production URL)
-3. Optional magic-link email templates.
+5. Optional magic-link email templates.
 
 ## 3. Storage buckets
 
-Create two buckets in Storage:
+Create two buckets in Storage (Dashboard **or** run `supabase/storage.sql`):
 
 | Bucket | Public |
 |--------|--------|
@@ -23,6 +30,13 @@ Create two buckets in Storage:
 | `project-public` | yes |
 
 MIME: allow `application/zip` (and `application/octet-stream` if needed).
+
+**Dashboard path:** Supabase → **Storage** → **New bucket**
+
+1. Name: `project-private` · Public: **off** → Create  
+2. Name: `project-public` · Public: **on** → Create  
+
+If ZIP submit says “Create the project-private bucket?”, these buckets are missing.
 
 ## 4. Env (`.env.local`)
 

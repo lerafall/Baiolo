@@ -433,7 +433,7 @@ function CreateWizard() {
     patch({ step: Math.max(0, draft.step - 1) });
   }
 
-  const signedIn = sessionReady && Boolean(session.email);
+  const signedIn = sessionReady && Boolean(session.userId || session.email);
 
   return (
     <>
@@ -452,9 +452,9 @@ function CreateWizard() {
 
         <div className="mb-6 rounded-xl bg-mint/40 px-5 py-4 text-sm text-ink">
           <span className="font-bold">New here? </span>
-          See the simple guide + ready AI prompt on{" "}
+          Copy a prompt, add your idea, upload a ZIP —{" "}
           <a href="/make" className="font-bold text-brand-strong underline">
-            How to make an MVP
+            3 easy steps
           </a>
           .
         </div>

@@ -83,19 +83,30 @@ export async function runSubmitPipeline(
     updatedAt: new Date().toISOString(),
     plays: 0,
     reactions: 0,
+    codeCheckedAt: null,
+    playCheckedAt: null,
+    reviewNotes: null,
+    previewUrl: null,
   };
 
   return { submission, stages };
 }
 
 export const adminActions = [
-  "approve",
+  "prepare_preview",
+  "confirm_play",
+  "publish",
   "reject",
   "ask_for_changes",
   "escalate",
 ] as const;
 
 export type AdminAction = (typeof adminActions)[number];
+
+export function canPublish(project: ProjectSubmission): boolean {
+  if (project.status === "published") return true; // refresh play unpack
+  return Boolean(project.codeCheckedAt && project.playCheckedAt);
+}
 
 export function applyAdminAction(
   current: ProjectSubmission,
@@ -104,19 +115,41 @@ export function applyAdminAction(
 ): ProjectSubmission {
   const updatedAt = new Date().toISOString();
   switch (action) {
-    case "approve":
+    case "prepare_preview":
+      return {
+        ...current,
+        updatedAt,
+      };
+    case "confirm_play":
+      return {
+        ...current,
+        playCheckedAt: updatedAt,
+        status:
+          current.codeCheckedAt && current.status !== "published"
+            ? "approved"
+            : current.status,
+        updatedAt,
+      };
+    case "publish": {
+      if (!canPublish(current) && current.status !== "published") {
+        return current;
+      }
       return {
         ...current,
         status: "published",
         changeRequest: null,
         updatedAt,
       };
+    }
     case "reject":
       return {
         ...current,
         status: "rejected",
         changeRequest:
           note?.trim() || "We can’t publish this project right now.",
+        codeCheckedAt: null,
+        playCheckedAt: null,
+        previewUrl: null,
         updatedAt,
       };
     case "ask_for_changes":
@@ -126,6 +159,9 @@ export function applyAdminAction(
         changeRequest:
           note?.trim() ||
           "Your project needs a small fix before it can go live.",
+        codeCheckedAt: null,
+        playCheckedAt: null,
+        previewUrl: null,
         updatedAt,
       };
     case "escalate":

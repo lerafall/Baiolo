@@ -22,7 +22,7 @@ export default function ProfilePage() {
     .map((s) => submissionToProject(s, session.name))
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
-  const signedIn = Boolean(session.email);
+  const signedIn = Boolean(session.userId || session.email);
   const isGuest = !signedIn || session.role === "guest";
 
   return (
@@ -82,7 +82,14 @@ export default function ProfilePage() {
               New project
             </Button>
             {signedIn && (
-              <Button variant="ghost" onClick={() => void signOut()}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  void signOut().then(() => {
+                    window.location.href = "/";
+                  });
+                }}
+              >
                 Sign out
               </Button>
             )}

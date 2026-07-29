@@ -11,7 +11,7 @@ export function catalogToSubmission(p: Project): ProjectSubmission {
   return {
     id: p.id,
     uploadType: "link",
-    sourceLabel: p.playUrl.startsWith("http") ? p.playUrl : `#${p.id}`,
+    sourceLabel: p.playUrl,
     title: p.title,
     description: p.description,
     category: p.category,
@@ -24,6 +24,7 @@ export function catalogToSubmission(p: Project): ProjectSubmission {
     updatedAt: new Date().toISOString(),
     plays: p.plays,
     reactions: total,
+    playUrl: p.playUrl.startsWith("#") ? null : p.playUrl,
   };
 }
 

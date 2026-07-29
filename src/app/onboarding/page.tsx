@@ -40,7 +40,7 @@ function OnboardingBody() {
 
   useEffect(() => {
     if (!ready || hydrated) return;
-    if (editing && session.email) {
+    if (editing && (session.userId || session.email)) {
       setRole(roleFromSession(session.role));
       setAvatar(isBaioloAvatar(session.avatar) ? session.avatar : DEFAULT_AVATAR);
       setPicked(session.interests.slice(0, 3));
@@ -51,7 +51,7 @@ function OnboardingBody() {
   useEffect(() => {
     if (!ready || editing) return;
     if (
-      session.email &&
+      (session.userId || session.email) &&
       session.interests.length >= 2 &&
       session.role !== "guest"
     ) {

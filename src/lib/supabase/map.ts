@@ -19,10 +19,14 @@ export type ProjectRow = {
   thumbnail_path: string | null;
   storage_path?: string | null;
   play_url?: string | null;
+  preview_url?: string | null;
   status: ProjectStatus;
   risk: RiskLevel | null;
   ai_flags: string[] | null;
   change_request: string | null;
+  code_checked_at?: string | null;
+  play_checked_at?: string | null;
+  review_notes?: string | null;
   plays: number | null;
   reactions: number | null;
   updated_at: string | null;
@@ -49,6 +53,10 @@ export function rowToSubmission(row: ProjectRow): ProjectSubmission {
     ownerId: row.owner_id ?? null,
     storagePath: row.storage_path ?? null,
     playUrl: row.play_url ?? null,
+    previewUrl: row.preview_url ?? null,
+    codeCheckedAt: row.code_checked_at ?? null,
+    playCheckedAt: row.play_checked_at ?? null,
+    reviewNotes: row.review_notes ?? null,
   };
 }
 
@@ -65,13 +73,30 @@ export function submissionToRow(s: ProjectSubmission) {
     thumbnail_path: s.thumbnail,
     storage_path: s.storagePath ?? null,
     play_url: s.playUrl ?? null,
+    preview_url: s.previewUrl ?? null,
     status: s.status,
     risk: s.risk,
     ai_flags: s.aiFlags ?? [],
     change_request: s.changeRequest,
+    code_checked_at: s.codeCheckedAt ?? null,
+    play_checked_at: s.playCheckedAt ?? null,
+    review_notes: s.reviewNotes ?? null,
     plays: s.plays,
     reactions: s.reactions,
     updated_at: s.updatedAt,
     published_at: s.status === "published" ? s.updatedAt : null,
   };
+}
+
+/** Drop v3 review columns if the database hasn’t migrated yet. */
+export function submissionToRowLegacy(s: ProjectSubmission) {
+  const row = submissionToRow(s);
+  const {
+    preview_url: _p,
+    code_checked_at: _c,
+    play_checked_at: _l,
+    review_notes: _n,
+    ...legacy
+  } = row;
+  return legacy;
 }

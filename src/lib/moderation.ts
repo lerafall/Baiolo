@@ -33,6 +33,11 @@ export type ProjectSubmission = {
   ownerId?: string | null;
   storagePath?: string | null;
   playUrl?: string | null;
+  /** Admin-only play URL while reviewing (not public Explore). */
+  previewUrl?: string | null;
+  codeCheckedAt?: string | null;
+  playCheckedAt?: string | null;
+  reviewNotes?: string | null;
 };
 
 export const statusCopy: Record<
@@ -61,7 +66,7 @@ export const statusCopy: Record<
   },
   approved: {
     label: "Approved",
-    message: "Great news — your project is ready.",
+    message: "Checked and play-tested — waiting to go live.",
   },
   published: {
     label: "Published",

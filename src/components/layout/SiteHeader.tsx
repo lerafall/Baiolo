@@ -19,9 +19,14 @@ const links = [
 
 export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
   const pathname = usePathname();
-  const { session, ready } = useSession();
-  const signedIn = ready && Boolean(session.email);
+  const { session, ready, signOut } = useSession();
+  const signedIn = ready && Boolean(session.userId || session.email);
   const joinHref = authHref(pathname || "/explore");
+
+  async function handleSignOut() {
+    await signOut();
+    window.location.href = "/";
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-canvas/90 backdrop-blur-md">
@@ -56,9 +61,19 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
           <NotificationBell />
           {showJoin &&
             (signedIn ? (
-              <Button href="/profile" size="m" variant="secondary">
-                {session.avatar} Profile
-              </Button>
+              <>
+                <Button href="/profile" size="m" variant="secondary">
+                  {session.avatar} Profile
+                </Button>
+                <Button
+                  type="button"
+                  size="m"
+                  variant="ghost"
+                  onClick={() => void handleSignOut()}
+                >
+                  Sign out
+                </Button>
+              </>
             ) : (
               <Button href={joinHref} size="m">
                 Join
@@ -70,9 +85,19 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
           <NotificationBell />
           {showJoin &&
             (signedIn ? (
-              <Button href="/profile" size="m" variant="secondary">
-                Profile
-              </Button>
+              <>
+                <Button href="/profile" size="m" variant="secondary">
+                  Profile
+                </Button>
+                <Button
+                  type="button"
+                  size="m"
+                  variant="ghost"
+                  onClick={() => void handleSignOut()}
+                >
+                  Out
+                </Button>
+              </>
             ) : (
               <Button href={joinHref} size="m">
                 Join

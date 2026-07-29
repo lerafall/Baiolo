@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { projects as catalog } from "@/lib/data/projects";
 import type { ProjectSubmission } from "@/lib/moderation";
 import { progressCheckingSubmissions } from "@/lib/status-progress";
+import { isImageThumb } from "@/lib/thumb-style";
 
 const STORAGE_KEY = "baiolo.submissions.v1";
 
@@ -15,8 +17,7 @@ const seed: ProjectSubmission[] = [
     description: "Jump soft clouds. Catch sun coins.",
     category: "game",
     tags: ["platformer", "cozy", "mobile"],
-    thumbnail:
-      "linear-gradient(145deg, #a78bfa 0%, #2dd4bf 55%, #fbbf24 100%)",
+    thumbnail: "/demos/cloud-hopper/thumb.png",
     status: "published",
     risk: "low",
     aiFlags: [],
@@ -24,6 +25,7 @@ const seed: ProjectSubmission[] = [
     updatedAt: new Date().toISOString(),
     plays: 1284,
     reactions: 864,
+    playUrl: "/demos/cloud-hopper/index.html",
   },
   {
     id: "petal-puzzle",
@@ -63,6 +65,30 @@ const seed: ProjectSubmission[] = [
   },
 ];
 
+/** Replace stale gradient thumbs with catalog images when available. */
+function refreshCatalogVisuals(items: ProjectSubmission[]) {
+  let changed = false;
+  const next = items.map((s) => {
+    const cat = catalog.find((p) => p.id === s.id);
+    if (!cat || !isImageThumb(cat.thumbnail)) return s;
+    if (isImageThumb(s.thumbnail)) {
+      // Still refresh playUrl for known demos if missing.
+      if (!s.playUrl && cat.playUrl && !cat.playUrl.startsWith("#")) {
+        changed = true;
+        return { ...s, playUrl: cat.playUrl };
+      }
+      return s;
+    }
+    changed = true;
+    return {
+      ...s,
+      thumbnail: cat.thumbnail,
+      playUrl: s.playUrl || (cat.playUrl.startsWith("#") ? s.playUrl : cat.playUrl),
+    };
+  });
+  return { items: next, changed };
+}
+
 function readStore(): ProjectSubmission[] {
   if (typeof window === "undefined") return seed;
   try {
@@ -72,7 +98,10 @@ function readStore(): ProjectSubmission[] {
       return seed;
     }
     const parsed = JSON.parse(raw) as ProjectSubmission[];
-    return parsed.map((s) => ({ ...s, tags: s.tags ?? [] }));
+    const normalized = parsed.map((s) => ({ ...s, tags: s.tags ?? [] }));
+    const { items, changed } = refreshCatalogVisuals(normalized);
+    if (changed) writeStore(items);
+    return items;
   } catch {
     return seed;
   }

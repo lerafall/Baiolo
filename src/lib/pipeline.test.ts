@@ -76,8 +76,28 @@ describe("admin actions", () => {
     reactions: 0,
   };
 
-  it("publishes on approve", () => {
-    expect(applyAdminAction(base, "approve").status).toBe("published");
+  it("does not publish without code + play checks", () => {
+    expect(applyAdminAction(base, "publish").status).toBe("in_review");
+  });
+
+  it("publishes only after code and play checks", () => {
+    const ready = {
+      ...base,
+      codeCheckedAt: "2026-01-01T00:00:00.000Z",
+      playCheckedAt: "2026-01-01T00:01:00.000Z",
+      status: "approved" as const,
+    };
+    expect(applyAdminAction(ready, "publish").status).toBe("published");
+  });
+
+  it("marks play check and moves to approved when code is done", () => {
+    const withCode = {
+      ...base,
+      codeCheckedAt: "2026-01-01T00:00:00.000Z",
+    };
+    const next = applyAdminAction(withCode, "confirm_play");
+    expect(next.playCheckedAt).toBeTruthy();
+    expect(next.status).toBe("approved");
   });
 
   it("asks for changes with friendly copy", () => {

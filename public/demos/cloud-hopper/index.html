@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Cloud Hopper · Baiolo demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame">
+      <canvas id="game" width="360" height="640" aria-label="Cloud Hopper game"></canvas>
+
+      <div class="hud" id="hud" hidden>
+        <div class="pill">Coins <strong id="coins">0</strong></div>
+        <div class="pill">Height <strong id="height">0</strong></div>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <p class="brand">Cloud Hopper</p>
+        <p class="body">Bounce soft clouds. Catch sunny coins.</p>
+        <p class="hint">Hold left or right side to steer</p>
+        <button type="button" id="startBtn" class="start">Play</button>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

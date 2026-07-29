@@ -22,14 +22,18 @@ function sharedRootPrefix(paths: string[]) {
   return paths.every((p) => p.startsWith(prefix)) ? prefix : "";
 }
 
+export type ExtractStage = "review" | "published";
+
 /**
- * Download a private ZIP, extract static files into project-public,
- * and return a public URL to index.html when possible.
+ * Download a private ZIP, extract static files, return a Baiolo proxy URL to index.
+ * - review → project-private review/{id}/site (admin preview only)
+ * - published → project-public published/{id}/site (public play)
  */
-export async function publishZipForPlay(
+export async function extractZipForPlay(
   supabase: SupabaseClient,
   storagePath: string,
   projectId: string,
+  stage: ExtractStage = "published",
 ): Promise<string | null> {
   const { data: file, error: downloadError } = await supabase.storage
     .from("project-private")
@@ -37,29 +41,34 @@ export async function publishZipForPlay(
   if (downloadError || !file) return null;
 
   const bytes = new Uint8Array(await file.arrayBuffer());
+  const bucket = stage === "published" ? "project-public" : "project-private";
+  const root = stage === "published" ? `published/${projectId}` : `review/${projectId}`;
 
-  // Keep raw ZIP as download fallback.
-  const zipPublicPath = `published/${projectId}/package.zip`;
-  await supabase.storage.from("project-public").upload(zipPublicPath, bytes, {
-    contentType: "application/zip",
-    upsert: true,
-  });
+  if (stage === "published") {
+    await supabase.storage.from(bucket).upload(`${root}/package.zip`, bytes, {
+      contentType: "application/zip",
+      upsert: true,
+    });
+  }
 
   let zip: JSZip;
   try {
     zip = await JSZip.loadAsync(bytes);
   } catch {
-    const { data } = supabase.storage
-      .from("project-public")
-      .getPublicUrl(zipPublicPath);
-    return data.publicUrl || null;
+    if (stage === "published") {
+      const { data } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(`${root}/package.zip`);
+      return data.publicUrl || null;
+    }
+    return null;
   }
 
   const entryNames = Object.keys(zip.files).filter(
     (name) => !zip.files[name].dir && !shouldSkipZipEntry(name),
   );
   const prefix = sharedRootPrefix(entryNames);
-  const siteRoot = `published/${projectId}/site`;
+  const siteRoot = `${root}/site`;
 
   let rootIndex: string | null = null;
   let nestedIndex: string | null = null;
@@ -69,7 +78,7 @@ export async function publishZipForPlay(
     if (!relative) continue;
     const data = await zip.files[name].async("uint8array");
     const dest = `${siteRoot}/${relative}`.replace(/\\/g, "/");
-    await supabase.storage.from("project-public").upload(dest, data, {
+    await supabase.storage.from(bucket).upload(dest, data, {
       contentType: contentTypeFor(relative),
       upsert: true,
     });
@@ -87,13 +96,27 @@ export async function publishZipForPlay(
 
   const playPath = rootIndex || nestedIndex;
   if (playPath) {
-    // Serve through Baiolo proxy so HTML/CSS/JS get correct MIME types.
-    const relative = playPath.slice(`published/${projectId}/site/`.length);
+    const relative = playPath.slice(`${siteRoot}/`.length);
+    if (stage === "review") {
+      return `/api/admin/preview-site/${projectId}/${relative}`;
+    }
     return `/api/play-site/${projectId}/${relative}`;
   }
 
-  const { data } = supabase.storage
-    .from("project-public")
-    .getPublicUrl(zipPublicPath);
-  return data.publicUrl || null;
+  if (stage === "published") {
+    const { data } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${root}/package.zip`);
+    return data.publicUrl || null;
+  }
+  return null;
+}
+
+/** @deprecated Prefer extractZipForPlay(..., "published") */
+export async function publishZipForPlay(
+  supabase: SupabaseClient,
+  storagePath: string,
+  projectId: string,
+): Promise<string | null> {
+  return extractZipForPlay(supabase, storagePath, projectId, "published");
 }

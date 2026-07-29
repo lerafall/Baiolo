@@ -3,7 +3,15 @@ import {
   defaultTagsForCategory,
   projects as catalog,
 } from "@/lib/data/projects";
+import { isImageThumb } from "@/lib/thumb-style";
 import type { Project } from "@/lib/types";
+
+/** Prefer a real image URL over a CSS gradient placeholder. */
+function preferVisual(primary: string, fallback?: string) {
+  if (primary && isImageThumb(primary)) return primary;
+  if (fallback && isImageThumb(fallback)) return fallback;
+  return primary || fallback || "";
+}
 
 /** Turn an approved submission into an Explore card model. */
 export function submissionToProject(
@@ -23,8 +31,11 @@ export function submissionToProject(
     tags:
       s.tags?.length > 0 ? s.tags : defaultTagsForCategory[s.category],
     creator: fromCatalog?.creator ?? creator,
-    thumbnail: s.thumbnail,
-    cover: fromCatalog?.cover ?? s.thumbnail,
+    thumbnail: preferVisual(s.thumbnail, fromCatalog?.thumbnail),
+    cover: preferVisual(
+      fromCatalog?.cover ?? "",
+      preferVisual(s.thumbnail, fromCatalog?.thumbnail),
+    ),
     playUrl:
       s.playUrl ||
       (isLink ? s.sourceLabel : (fromCatalog?.playUrl ?? "#play")),

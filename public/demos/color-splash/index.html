@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Color Splash · Baiolo demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame">
+      <header class="hud">
+        <div class="pill">Mood <strong id="moodName">Sunset</strong></div>
+        <div class="pill">Match <strong id="match">0</strong>%</div>
+      </header>
+
+      <section class="target-row" aria-label="Mood target">
+        <p class="label">Match this mood</p>
+        <div class="target" id="target" aria-hidden="true"></div>
+      </section>
+
+      <div class="board-wrap">
+        <div class="board" id="board" role="grid" aria-label="Paint board"></div>
+      </div>
+
+      <section class="palette" aria-label="Paint colors">
+        <p class="label">Paint</p>
+        <div class="swatches" id="swatches"></div>
+      </section>
+
+      <div class="actions">
+        <button type="button" id="clearBtn" class="ghost">Clear</button>
+        <button type="button" id="nextBtn" class="primary">New mood</button>
+      </div>
+
+      <div id="win" class="win" hidden>
+        <p class="win-title">Mood matched!</p>
+        <p class="win-body">That splash feels just right.</p>
+        <button type="button" id="againBtn" class="primary">Next mood</button>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

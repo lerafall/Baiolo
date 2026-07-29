@@ -21,6 +21,10 @@ const sample: ProjectSubmission = {
   ownerId: null,
   storagePath: null,
   playUrl: "https://example.com",
+  previewUrl: null,
+  codeCheckedAt: null,
+  playCheckedAt: null,
+  reviewNotes: null,
 };
 
 describe("supabase map", () => {
@@ -45,6 +49,10 @@ describe("supabase map", () => {
       owner_id: row.owner_id,
       storage_path: row.storage_path,
       play_url: row.play_url,
+      preview_url: row.preview_url,
+      code_checked_at: row.code_checked_at,
+      play_checked_at: row.play_checked_at,
+      review_notes: row.review_notes,
     });
     expect(back).toEqual(sample);
   });

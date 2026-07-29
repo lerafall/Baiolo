@@ -8,11 +8,13 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { cn } from "@/lib/cn";
 import type { RiskLevel } from "@/lib/moderation";
 import type { ProjectSubmission } from "@/lib/moderation";
+import { canPublish } from "@/lib/pipeline";
 import { useSession } from "@/lib/session";
 import { reportReasonLabel, useContentReports } from "@/lib/reports";
 import { formatDateTime } from "@/lib/format";
 import { useSubmissions } from "@/lib/submissions";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
+import { AdminAccountsPanel } from "@/components/admin/AdminAccountsPanel";
 
 const riskFilters: Array<{ id: "all" | RiskLevel; label: string }> = [
   { id: "all", label: "All risk" },
@@ -20,6 +22,16 @@ const riskFilters: Array<{ id: "all" | RiskLevel; label: string }> = [
   { id: "medium", label: "Medium" },
   { id: "high", label: "High" },
 ];
+
+const adminCode =
+  process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin";
+
+function previewSrc(url: string | null | undefined) {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.includes("adminCode=")) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}adminCode=${encodeURIComponent(adminCode)}`;
+}
 
 export default function AdminModerationPage() {
   const { isAdmin, unlockAdmin, ready: sessionReady } = useSession();
@@ -35,6 +47,7 @@ export default function AdminModerationPage() {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [seedFlash, setSeedFlash] = useState("");
+  const [reviewFlash, setReviewFlash] = useState("");
 
   const queue = useMemo(() => {
     return items.filter((p) =>
@@ -43,6 +56,7 @@ export default function AdminModerationPage() {
         "checking",
         "in_review",
         "needs_changes",
+        "approved",
         "published",
       ].includes(p.status),
     );
@@ -66,9 +80,17 @@ export default function AdminModerationPage() {
 
   async function moderate(
     project: ProjectSubmission,
-    action: "approve" | "reject" | "ask_for_changes" | "escalate",
+    action:
+      | "prepare_preview"
+      | "confirm_play"
+      | "publish"
+      | "reject"
+      | "ask_for_changes"
+      | "escalate",
   ) {
     setBusy(true);
+    setGateError("");
+    setReviewFlash("");
     try {
       const res = await fetch("/api/projects/moderate", {
         method: "POST",
@@ -77,8 +99,7 @@ export default function AdminModerationPage() {
           project,
           action,
           note,
-          adminCode:
-            process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin",
+          adminCode,
         }),
       });
       const data = (await res.json()) as {
@@ -96,6 +117,37 @@ export default function AdminModerationPage() {
     }
   }
 
+  async function runCodeReview(project: ProjectSubmission) {
+    setBusy(true);
+    setGateError("");
+    setReviewFlash("");
+    try {
+      const res = await fetch("/api/projects/code-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project, adminCode }),
+      });
+      const data = (await res.json()) as {
+        project?: ProjectSubmission;
+        review?: { summary?: string; ok?: boolean; source?: string };
+        error?: string;
+      };
+      if (!res.ok || !data.project) {
+        setGateError(data.error || "Code check didn’t work.");
+        return;
+      }
+      upsert(data.project);
+      void refresh();
+      setReviewFlash(
+        data.review?.ok
+          ? `${data.review.summary ?? "Code check passed."} (${data.review.source ?? "static"})`
+          : data.review?.summary || "Blocking issues — ask for changes.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function seedDemos() {
     setBusy(true);
     setSeedFlash("");
@@ -103,10 +155,7 @@ export default function AdminModerationPage() {
       const res = await fetch("/api/projects/seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          adminCode:
-            process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin",
-        }),
+        body: JSON.stringify({ adminCode }),
       });
       const data = (await res.json()) as {
         items?: ProjectSubmission[];
@@ -142,8 +191,7 @@ export default function AdminModerationPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: selected.id,
-          adminCode:
-            process.env.NEXT_PUBLIC_BAIOLO_ADMIN_CODE || "baiolo-admin",
+          adminCode,
         }),
       });
       const data = (await res.json()) as { error?: string };
@@ -190,10 +238,6 @@ export default function AdminModerationPage() {
           setNote(prev.changeRequest ?? "");
         }
       }
-      if ((e.key === "a" || e.key === "A") && selected) {
-        e.preventDefault();
-        void moderate(selected, "approve");
-      }
       if ((e.key === "r" || e.key === "R") && selected) {
         e.preventDefault();
         setRejectOpen(true);
@@ -239,17 +283,17 @@ export default function AdminModerationPage() {
     );
   }
 
+  const publishReady = selected ? canPublish(selected) : false;
+
   return (
     <>
       <SiteHeader showJoin={false} />
       <main className="mx-auto w-full max-w-6xl px-5 py-10 md:px-8">
         <h1 className="text-4xl font-extrabold">Moderation queue</h1>
         <p className="mt-2 text-lg text-ink-muted">
-          AI helps flag risk. A human always decides before publish.
+          Check code → play the game → only then publish. No shortcuts.
         </p>
-        <p className="mt-2 text-sm text-ink-muted">
-          Keys: j/k move · a approve · r reject
-        </p>
+        <p className="mt-2 text-sm text-ink-muted">Keys: j/k move · r reject</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button
             variant="secondary"
@@ -294,8 +338,11 @@ export default function AdminModerationPage() {
         </div>
 
         {!ready && <p className="mt-8 text-ink-muted">Loading queue…</p>}
+        {gateError && (
+          <p className="mt-4 font-semibold text-danger">{gateError}</p>
+        )}
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
           <ul className="space-y-3">
             {filtered.map((p) => (
               <li key={p.id}>
@@ -304,6 +351,8 @@ export default function AdminModerationPage() {
                   onClick={() => {
                     setSelectedId(p.id);
                     setNote(p.changeRequest ?? "");
+                    setReviewFlash("");
+                    setGateError("");
                   }}
                   className={cn(
                     "flex w-full gap-4 rounded-xl border-2 bg-surface p-4 text-left shadow-[var(--shadow-1)] transition-all",
@@ -322,7 +371,9 @@ export default function AdminModerationPage() {
                       <StatusBadge status={p.status} />
                     </div>
                     <p className="mt-1 text-sm text-ink-muted">
-                      Risk: {p.risk ?? "—"} · {p.aiFlags[0] ?? "No AI flags"}
+                      Risk: {p.risk ?? "—"} ·{" "}
+                      {p.codeCheckedAt ? "Code ✓" : "Code …"} ·{" "}
+                      {p.playCheckedAt ? "Play ✓" : "Play …"}
                     </p>
                   </div>
                 </button>
@@ -351,14 +402,95 @@ export default function AdminModerationPage() {
                 </span>
               </div>
 
+              <ol className="mt-5 space-y-2 rounded-xl bg-lilac/35 p-4 text-sm">
+                <li className="font-bold">
+                  1. Check code {selected.codeCheckedAt ? "✓" : "← do this"}
+                </li>
+                <li className="font-bold">
+                  2. Play the game {selected.playCheckedAt ? "✓" : "← then this"}
+                </li>
+                <li className="font-bold">
+                  3. Publish {publishReady ? "← ready" : "(locked)"}
+                </li>
+              </ol>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  disabled={busy}
+                  onClick={() => void runCodeReview(selected)}
+                >
+                  1 · Check code (AI)
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => void moderate(selected, "prepare_preview")}
+                >
+                  2 · Prepare play
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={
+                    busy || !selected.codeCheckedAt || !selected.previewUrl
+                  }
+                  onClick={() => void moderate(selected, "confirm_play")}
+                >
+                  I played it — OK
+                </Button>
+                <Button
+                  disabled={busy || !publishReady}
+                  onClick={() => void moderate(selected, "publish")}
+                >
+                  {selected.status === "published"
+                    ? "Refresh live play"
+                    : "3 · Publish"}
+                </Button>
+              </div>
+
+              {reviewFlash && (
+                <p className="mt-3 text-sm font-bold text-secondary-strong">
+                  {reviewFlash}
+                </p>
+              )}
+
+              {selected.reviewNotes && (
+                <pre className="mt-4 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-ink/95 px-3 py-3 text-xs leading-relaxed text-on-brand">
+                  {selected.reviewNotes}
+                </pre>
+              )}
+
               {selected.aiFlags.length > 0 && (
                 <div className="mt-4 rounded-lg bg-warning/15 p-4">
-                  <p className="font-bold">AI flags</p>
+                  <p className="font-bold">Flags</p>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-muted">
                     {selected.aiFlags.map((f) => (
                       <li key={f}>{f}</li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {selected.previewUrl && (
+                <div className="mt-5">
+                  <p className="font-bold">Private play preview</p>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    Try the game here. When it feels fine, tap “I played it —
+                    OK”.
+                  </p>
+                  <iframe
+                    title={`Preview ${selected.title}`}
+                    src={previewSrc(selected.previewUrl)}
+                    className="mt-3 aspect-[9/16] max-h-[28rem] w-full rounded-xl border-2 border-border bg-canvas"
+                    allow="gamepad; fullscreen"
+                  />
+                  <a
+                    href={previewSrc(selected.previewUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-block text-sm font-bold text-brand-strong underline"
+                  >
+                    Open preview fullscreen
+                  </a>
                 </div>
               )}
 
@@ -374,14 +506,6 @@ export default function AdminModerationPage() {
               </label>
 
               <div className="mt-6 flex flex-wrap gap-2">
-                <Button
-                  disabled={busy}
-                  onClick={() => moderate(selected, "approve")}
-                >
-                  {selected.status === "published"
-                    ? "Refresh in-browser play"
-                    : "Approve"}
-                </Button>
                 <Button
                   variant="secondary"
                   disabled={busy}
@@ -440,6 +564,8 @@ export default function AdminModerationPage() {
             void removeSelected();
           }}
         />
+
+        <AdminAccountsPanel />
 
         <section className="mt-14">
           <h2 className="text-2xl font-extrabold">User reports</h2>

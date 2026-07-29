@@ -32,6 +32,8 @@ export async function GET(request: Request) {
       "checking",
       "in_review",
       "needs_changes",
+      "approved",
+      "published",
     ]);
   } else if (scope === "all") {
     // service role — full list for dashboard / hydrate
