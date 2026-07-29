@@ -208,7 +208,7 @@ export function AiBuildPanel({
     setReply("");
     // Vague “fix it” with existing code → repair directly (sends files to the model).
     const wantsFix =
-      /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i.test(
+      /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|nie\s*wida[cć]|bez\s*zmian|pust(y|a|e)|blank|podgl[aą]d|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i.test(
         prompt,
       );
     if (files?.["index.html"] && wantsFix) {
@@ -230,6 +230,15 @@ export function AiBuildPanel({
     ];
     setMessages(nextMessages);
     setReply("");
+    const wantsFix =
+      /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|nie\s*wida[cć]|bez\s*zmian|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working|podgl[aą]d)\b/i.test(
+        `${prompt} ${text}`,
+      );
+    // With existing code + bug report, skip the chat loop and repair for real.
+    if (files?.["index.html"] && wantsFix) {
+      await request({ action: "build", nextMessages });
+      return;
+    }
     await request({ action: "chat", nextMessages });
   }
 
@@ -279,7 +288,7 @@ export function AiBuildPanel({
             {busy && !chatting
               ? busyLabel
               : files
-                ? /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i.test(
+                ? /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|nie\s*wida[cć]|bez\s*zmian|pust(y|a|e)|blank|podgl[aą]d|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i.test(
                     prompt,
                   )
                   ? t("workshop.aiRepair")

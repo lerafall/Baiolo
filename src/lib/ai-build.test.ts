@@ -78,6 +78,8 @@ describe("ai-build parsers", () => {
 
   it("detects fix intent in PL/EN", () => {
     expect(isFixIntent("Nie działa ta gra. popraw ją")).toBe(true);
+    expect(isFixIntent("Na podglądzie nie widać działającej gry")).toBe(true);
+    expect(isFixIntent("Nadal bez zmian")).toBe(true);
     expect(isFixIntent("Still not working")).toBe(true);
     expect(isFixIntent("Catch falling coins with a basket")).toBe(false);
   });

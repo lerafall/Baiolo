@@ -335,29 +335,44 @@ export function cloneStarterFiles(id: StarterId): StarterFiles {
 }
 
 export function buildPreviewHtml(files: StarterFiles): string {
-  let html = files["index.html"] || "<!DOCTYPE html><html><body>Missing index.html</body></html>";
+  let html =
+    files["index.html"] ||
+    "<!DOCTYPE html><html><body>Missing index.html</body></html>";
   const css = files["style.css"] || files["styles.css"] || "";
   const js = files["script.js"] || files["main.js"] || "";
 
+  // srcdoc cannot load relative CSS/JS — always inline. Strip any stylesheet /
+  // script-src tags (including truncated AI output like href="style.").
+  html = html.replace(/<link\b[^>]*rel=["']?stylesheet["']?[^>]*>/gi, "");
+  html = html.replace(
+    /<link\b[^>]*href=["'][^"']*style[^"']*["'][^>]*>/gi,
+    "",
+  );
+  html = html.replace(
+    /<script\b[^>]*\bsrc=["'][^"']*["'][^>]*>\s*<\/script>/gi,
+    "",
+  );
+
   if (css) {
-    html = html.replace(
-      /<link[^>]+href=["']style\.css["'][^>]*>/i,
-      `<style>${css}</style>`,
-    );
-    html = html.replace(
-      /<link[^>]+href=["']styles\.css["'][^>]*>/i,
-      `<style>${css}</style>`,
-    );
+    if (/<\/head>/i.test(html)) {
+      html = html.replace(/<\/head>/i, `<style>\n${css}\n</style>\n</head>`);
+    } else if (/<head\b[^>]*>/i.test(html)) {
+      html = html.replace(/<head\b[^>]*>/i, (m) => `${m}\n<style>\n${css}\n</style>`);
+    } else {
+      html = `<style>\n${css}\n</style>\n${html}`;
+    }
   }
+
   if (js) {
-    html = html.replace(
-      /<script[^>]+src=["']script\.js["'][^>]*><\/script>/i,
-      `<script>${js}<\/script>`,
-    );
-    html = html.replace(
-      /<script[^>]+src=["']main\.js["'][^>]*><\/script>/i,
-      `<script>${js}<\/script>`,
-    );
+    if (/<\/body>/i.test(html)) {
+      html = html.replace(
+        /<\/body>/i,
+        `<script>\n${js}\n<\/script>\n</body>`,
+      );
+    } else {
+      html = `${html}\n<script>\n${js}\n<\/script>`;
+    }
   }
+
   return html;
 }

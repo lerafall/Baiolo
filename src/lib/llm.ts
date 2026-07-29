@@ -20,7 +20,7 @@ const GAME_HINTS =
   /\b(game|gra|gry|catch|łap|łowi|koszyk|basket|paddle|platform|monet|coin|enemy|wrog|player|gracz|canvas|sprite|spadaj|falling|shoot|strzel|jump|skacz|score|punkt)\b/i;
 
 const FIX_HINTS =
-  /\b(fix|repair|broken|bug|debug|nie\s*dzia[łl]a|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i;
+  /\b(fix|repair|broken|bug|debug|nie\s*dzia[łl]a|nie\s*wida[cć]|bez\s*zmian|podgl[aą]d|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i;
 
 const SIMPLE_HINTS =
   /\b(timer|countdown|counter|color|paint|dice|flashcard|todo|checklist|stopwatch|button)\b/i;
@@ -150,6 +150,8 @@ export async function chatCompletionJson(options: {
   system: string;
   user: string;
   temperature?: number;
+  /** Cap completion size — truncated JSON often breaks style.css / script.js links. */
+  maxTokens?: number;
   /** fast = cheaper; quality = stronger. Default quality. */
   tier?: LlmTier;
 }): Promise<{
@@ -172,6 +174,7 @@ export async function chatCompletionJson(options: {
     body: JSON.stringify({
       model: cfg.model,
       temperature: options.temperature ?? 0.7,
+      max_tokens: options.maxTokens ?? 12_000,
       messages: [
         { role: "system", content: options.system },
         { role: "user", content: options.user },

@@ -39,7 +39,7 @@ const CATEGORIES: ProjectCategory[] = [
 export const MAX_CHAT_ASSISTANT_TURNS = 5;
 
 const FIX_INTENT =
-  /\b(fix|repair|broken|bug|debug|nie\s*dzia[łl]a|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working|zepsut)/i;
+  /\b(fix|repair|broken|bug|debug|nie\s*dzia[łl]a|nie\s*wida[cć]|bez\s*zmian|pust(y|a|e)|blank|podgl[aą]d|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working|zepsut)/i;
 
 export function isFixIntent(text: string): boolean {
   return FIX_INTENT.test(text);
@@ -291,6 +291,44 @@ Hard rules:
 - If the creator clearly wants a different idea, rebuild to match the new brief (still fully playable).
 - Output must be a working MVP someone can try in under a minute.`;
 
+/** Fix truncated AI HTML so packaged ZIPs and previews stay consistent. */
+export function sanitizeAiFiles(files: StarterFiles): StarterFiles {
+  let html = files["index.html"] || "";
+  html = html.replace(/href=["']style\.["']/gi, 'href="style.css"');
+  html = html.replace(/href=["']\.\/style\.css["']/gi, 'href="style.css"');
+  html = html.replace(/src=["']\.\/script\.js["']/gi, 'src="script.js"');
+  html = html.replace(/src=["']script\.["']/gi, 'src="script.js"');
+
+  if (
+    files["style.css"]?.trim() &&
+    !/href=["']style\.css["']/i.test(html) &&
+    /<\/head>/i.test(html)
+  ) {
+    html = html.replace(
+      /<\/head>/i,
+      '<link rel="stylesheet" href="style.css" />\n</head>',
+    );
+  }
+  if (
+    files["script.js"]?.trim() &&
+    !/<script[^>]+src=["']script\.js["']/i.test(html)
+  ) {
+    if (/<\/body>/i.test(html)) {
+      html = html.replace(
+        /<\/body>/i,
+        '<script src="script.js"></script>\n</body>',
+      );
+    } else {
+      html = `${html}\n<script src="script.js"></script>`;
+    }
+  }
+
+  return {
+    ...files,
+    "index.html": html,
+  };
+}
+
 /** Heuristic: games that look like empty shells should be rebuilt once. */
 export function looksIncompletePlayable(
   files: StarterFiles,
@@ -302,6 +340,13 @@ export function looksIncompletePlayable(
   const js = files["script.js"] || "";
   const html = files["index.html"] || "";
   if (js.trim().length < 120) return true;
+  if (
+    /score\s*:\s*0/i.test(html) &&
+    !/<canvas\b/i.test(html) &&
+    js.trim().length < 400
+  ) {
+    return true;
+  }
   const hasLoop = /requestAnimationFrame|setInterval\s*\(/.test(js);
   const hasInput =
     /addEventListener\s*\(\s*['"](?:key|pointer|touch|click|mouse)/.test(js) ||
@@ -470,6 +515,7 @@ async function buildViaLlm(
       user: extraReminder ? `${extraReminder}\n\n${userPrompt}` : userPrompt,
       temperature,
       tier,
+      maxTokens: 12_000,
     });
     return { content, provider, model };
   };
@@ -485,13 +531,58 @@ async function buildViaLlm(
   }
   if (!parsed) throw new Error("llm_bad_payload");
 
+  parsed = {
+    ...parsed,
+    files: sanitizeAiFiles(parsed.files),
+  };
+
   if (looksIncompletePlayable(parsed.files, parsed.category)) {
     last = await run(
       0.2,
-      "The previous build looked incomplete (blank playfield / no loop / no input / nothing drawn). Rebuild a COMPLETE playable version with visible entities, a game loop, and working controls.",
+      "The previous build looked incomplete (blank playfield / no loop / no input / nothing drawn). Rebuild a COMPLETE playable version with visible entities, a game loop, and working controls. Include a <canvas> and draw every frame.",
     );
     const retry = parseAiBuildPayload(last.content);
-    if (retry) parsed = retry;
+    if (retry) {
+      parsed = {
+        ...retry,
+        files: sanitizeAiFiles(retry.files),
+      };
+    }
+  }
+
+  // Last resort: ship a known-good playable game so creators are never stuck
+  // on a Score: 0 shell after repair/retry.
+  if (looksIncompletePlayable(parsed.files, parsed.category)) {
+    const { briefLooksLikeCatchGame, coinCatcherFiles } = await import(
+      "@/lib/ai-game-fallbacks"
+    );
+    const { cloneStarterFiles } = await import("@/lib/html-starters");
+    const title = parsed.title || "Baiolo Game";
+    if (
+      briefLooksLikeCatchGame(brief) ||
+      /catcher|monet|koszyk|coin/i.test(`${title} ${brief}`)
+    ) {
+      parsed = {
+        ...parsed,
+        title,
+        description:
+          parsed.description ||
+          "Catch falling coins with a basket. Move with arrows or drag.",
+        category: "game",
+        files: sanitizeAiFiles(coinCatcherFiles(title)),
+      };
+    } else if (parsed.category === "game" || repairing) {
+      const base = cloneStarterFiles("game");
+      parsed = {
+        ...parsed,
+        category: "game",
+        files: sanitizeAiFiles({
+          "index.html": base["index.html"]!.replace(/Cloud Tap/g, title),
+          "style.css": base["style.css"]!,
+          "script.js": base["script.js"]!,
+        }),
+      };
+    }
   }
 
   return {
