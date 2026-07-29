@@ -48,7 +48,7 @@ export const Button = forwardRef<
 ) {
   const classes = cn(
     "inline-flex items-center justify-center gap-2 rounded-pill font-bold transition-all duration-200 ease-out",
-    "disabled:pointer-events-none disabled:opacity-50",
+    "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
     variants[variant],
     sizes[size],
     className,

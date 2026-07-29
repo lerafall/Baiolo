@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { DictationField } from "@/components/ui/DictationField";
 import { HtmlWorkshop, type HtmlWorkshopHandle } from "@/components/create/HtmlWorkshop";
@@ -110,21 +110,39 @@ export function AiBuildPanel({
   }, [files, prompt, locale, onBuilt]);
 
 
-  useEffect(() => {
+  const loadQuota = useCallback(async () => {
     if (!signedIn) return;
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/build?plan=${encodeURIComponent(activePlan)}`,
-        );
-        if (!res.ok) return;
-        const data = (await res.json()) as { quota?: QuotaState };
-        if (data.quota) setQuota(data.quota);
-      } catch {
-        /* ignore */
-      }
-    })();
-  }, [signedIn, userId, email, activePlan]);
+    try {
+      const res = await fetch(
+        `/api/build?plan=${encodeURIComponent(activePlan)}`,
+      );
+      if (!res.ok) return;
+      const data = (await res.json()) as { quota?: QuotaState };
+      if (data.quota) setQuota(data.quota);
+    } catch {
+      /* ignore */
+    }
+  }, [signedIn, activePlan]);
+
+  useEffect(() => {
+    void loadQuota();
+  }, [loadQuota, userId, email]);
+
+  // Re-sync quota when returning to the tab / wizard step (avoid stale “3 of 3”).
+  useEffect(() => {
+    const onFocus = () => {
+      void loadQuota();
+    };
+    const onVis = () => {
+      if (document.visibilityState === "visible") onFocus();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [loadQuota]);
 
   useEffect(() => {
     setMessages([]);
@@ -137,6 +155,8 @@ export function AiBuildPanel({
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages, busy]);
 
+  const quotaExhausted = Boolean(quota && quota.remaining <= 0);
+  const actionsLocked = busy || quotaExhausted;
   if (!signedIn) {
     return (
       <div className="rounded-xl border-2 border-brand/30 bg-lilac/40 p-6 text-center">
@@ -154,6 +174,10 @@ export function AiBuildPanel({
     nextMessages?: ChatMessage[];
   }) {
     setError("");
+    if (quota && quota.remaining <= 0) {
+      setError(t("workshop.aiQuotaLimit"));
+      return;
+    }
     const trimmed = prompt.trim();
     if (trimmed.length < 12) {
       setError(t("workshop.aiPromptShort"));
@@ -300,14 +324,14 @@ export function AiBuildPanel({
   }
 
   async function startOrRebuild() {
+    if (quotaExhausted) {
+      setError(t("workshop.aiQuotaLimit"));
+      return;
+    }
     setMessages([]);
     setReply("");
-    // Vague “fix it” with existing code → repair directly (sends files to the model).
-    const wantsFix =
-      /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|nie\s*wida[cć]|bez\s*zmian|pust(y|a|e)|blank|podgl[aą]d|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i.test(
-        prompt,
-      );
-    if (files?.["index.html"] && wantsFix) {
+    // Existing project → rebuild/edit immediately. New idea → clarify first.
+    if (files?.["index.html"]) {
       await request({ action: "build", nextMessages: [] });
       return;
     }
@@ -315,6 +339,10 @@ export function AiBuildPanel({
   }
 
   async function sendReply() {
+    if (quotaExhausted) {
+      setError(t("workshop.aiQuotaLimit"));
+      return;
+    }
     const text = reply.trim();
     if (!text) {
       setError(t("workshop.aiChatEmpty"));
@@ -326,12 +354,9 @@ export function AiBuildPanel({
     ];
     setMessages(nextMessages);
     setReply("");
-    const wantsFix =
-      /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|nie\s*wida[cć]|bez\s*zmian|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working|podgl[aą]d)\b/i.test(
-        `${prompt} ${text}`,
-      );
-    // With existing code + bug report, skip the chat loop and repair for real.
-    if (files?.["index.html"] && wantsFix) {
+    // With code in the editor, each chat line is an edit instruction → build.
+    // (Don't keep treating a stale top-prompt bug report as “fix forever”.)
+    if (files?.["index.html"]) {
       await request({ action: "build", nextMessages });
       return;
     }
@@ -379,6 +404,41 @@ export function AiBuildPanel({
 
   return (
     <div className="space-y-6">
+      {quota && (
+        <div
+          className={cn(
+            "sticky top-2 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 px-4 py-2.5 shadow-[var(--shadow-1)]",
+            quotaExhausted
+              ? "border-danger/40 bg-danger/10"
+              : "border-brand/25 bg-surface/95 backdrop-blur-sm",
+          )}
+        >
+          <p className="text-sm font-extrabold text-ink">
+            <span className="mr-2 rounded-md bg-brand px-2 py-0.5 text-xs text-on-brand">
+              AI
+            </span>
+            {t("workshop.aiQuota", {
+              remaining: quota.remaining,
+              limit: quota.limit,
+              plan:
+                quota.plan === "free"
+                  ? t("workshop.aiQuotaFree")
+                  : quota.plan === "pro"
+                    ? t("workshop.aiQuotaPro")
+                    : t("workshop.aiQuotaStudio"),
+            })}
+          </p>
+          {quotaExhausted ? (
+            <a
+              href="/pricing"
+              className="text-sm font-bold text-brand-strong underline"
+            >
+              {t("workshop.upgradePlan")}
+            </a>
+          ) : null}
+        </div>
+      )}
+
       <div>
         <p className="text-lg font-bold">{t("workshop.aiTitle")}</p>
         <p className="mt-1 text-ink-muted">{t("workshop.aiPromptSub")}</p>
@@ -390,9 +450,9 @@ export function AiBuildPanel({
               onChange={(e) => onPromptChange(e.target.value)}
               rows={4}
               maxLength={2000}
-              disabled={busy}
+              disabled={actionsLocked}
               placeholder={t("workshop.aiPromptPlaceholder")}
-              className="w-full rounded-xl border-2 border-border p-4 text-lg focus:border-brand focus:outline-none disabled:opacity-60"
+              className="w-full rounded-xl border-2 border-border p-4 text-lg focus:border-brand focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             />
           </DictationField>
         </label>
@@ -413,37 +473,24 @@ export function AiBuildPanel({
           <Button
             type="button"
             size="l"
-            disabled={busy}
+            disabled={actionsLocked}
             onClick={() => void startOrRebuild()}
           >
             {busy && !chatting
               ? busyLabel
               : files
-                ? /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|nie\s*wida[cć]|bez\s*zmian|pust(y|a|e)|blank|podgl[aą]d|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i.test(
-                    prompt,
-                  )
-                  ? t("workshop.aiRepair")
-                  : t("workshop.aiRebuild")
+                ? t("workshop.aiRebuild")
                 : chatting
                   ? t("workshop.aiRestartChat")
                   : t("workshop.aiStartChat")}
           </Button>
-          {quota && (
-            <p className="text-sm font-semibold text-ink-muted">
-              {t("workshop.aiQuota", {
-                remaining: quota.remaining,
-                limit: quota.limit,
-                plan:
-                  quota.plan === "free"
-                    ? t("workshop.aiQuotaFree")
-                    : quota.plan === "pro"
-                      ? t("workshop.aiQuotaPro")
-                      : t("workshop.aiQuotaStudio"),
-              })}
-            </p>
-          )}
           <p className="text-sm text-ink-muted">{t("workshop.aiHintPaid")}</p>
         </div>
+        {quotaExhausted && (
+          <p className="mt-3 font-semibold text-danger" role="status">
+            {t("workshop.aiQuotaLimit")}
+          </p>
+        )}
         {error && (
           <p className="mt-3 font-semibold text-danger" role="alert">
             {error}
@@ -499,10 +546,10 @@ export function AiBuildPanel({
                 </div>
               </div>
             ))}
-            {busy && phase === "chat" && (
+            {busy && (phase === "chat" || phase === "build") && (
               <div className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-md border-2 border-border bg-surface px-4 py-3 text-sm text-ink-muted">
-                  {t("workshop.aiChatThinking")}
+                  {busyLabel}
                 </div>
               </div>
             )}
@@ -517,19 +564,19 @@ export function AiBuildPanel({
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    if (!busy) void sendReply();
+                    if (!actionsLocked) void sendReply();
                   }
                 }}
-                disabled={busy}
+                disabled={actionsLocked}
                 placeholder={t("workshop.aiChatPlaceholder")}
-                className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-base focus:border-brand focus:outline-none disabled:opacity-60"
+                className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-base focus:border-brand focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
               />
             </DictationField>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 size="l"
-                disabled={busy}
+                disabled={actionsLocked}
                 onClick={() => void sendReply()}
               >
                 {t("workshop.aiChatSend")}
@@ -538,7 +585,7 @@ export function AiBuildPanel({
                 type="button"
                 size="l"
                 variant="secondary"
-                disabled={busy}
+                disabled={actionsLocked}
                 onClick={() => void request({ action: "build" })}
               >
                 {busy && phase === "build"

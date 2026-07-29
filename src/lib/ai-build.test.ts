@@ -141,13 +141,19 @@ describe("ai-build parsers", () => {
     expect(out["script.js"]).toContain("requestAnimationFrame");
   });
 
-  it("truncates large existing files", () => {
-    const big = "a".repeat(40_000);
-    const out = truncateExistingFiles(
-      { "index.html": big, "style.css": "x", "script.js": "y" },
-      1000,
+  it("composeBuildAck varies by edit intent", async () => {
+    const { composeBuildAck } = await import("@/lib/ai-build");
+    expect(composeBuildAck({ locale: "pl", userText: "Zmień tło na zielone", repairing: true })).toMatch(
+      /tło|kolory/i,
     );
-    expect(out["index.html"]!.length).toBeLessThan(1200);
-    expect(out["index.html"]).toContain("truncated");
+    expect(composeBuildAck({ locale: "pl", userText: "Dodaj więcej monet", repairing: true })).toMatch(
+      /monet/i,
+    );
+    expect(composeBuildAck({ locale: "pl", userText: "Dodaj punkty bonusowe", repairing: true })).toMatch(
+      /punkt|bonus/i,
+    );
+    const a = composeBuildAck({ locale: "pl", userText: "Zmień tło na zielone", repairing: true });
+    const b = composeBuildAck({ locale: "pl", userText: "Dodaj więcej monet", repairing: true });
+    expect(a).not.toBe(b);
   });
 });

@@ -15,6 +15,8 @@ export type AiBuildResult = {
   provider: "openai" | "openrouter" | "builder";
   model?: string;
   tier?: "fast" | "quality";
+  /** Short chat-facing confirmation of what changed */
+  message?: string;
 };
 
 export type ChatMessage = {
@@ -103,6 +105,7 @@ export function parseAiBuildPayload(
     title?: unknown;
     description?: unknown;
     category?: unknown;
+    message?: unknown;
     files?: Record<string, unknown>;
   };
   try {
@@ -128,8 +131,71 @@ export function parseAiBuildPayload(
     typeof parsed.description === "string" && parsed.description.trim()
       ? parsed.description.trim().slice(0, 280)
       : "Built from a description in Baiolo.";
+  const message =
+    typeof parsed.message === "string" && parsed.message.trim()
+      ? parsed.message.trim().slice(0, 220)
+      : undefined;
 
-  return { title, description, category, files };
+  return { title, description, category, files, message };
+}
+
+/**
+ * Friendly chat line after a build/edit — never a single static “I’m fixing it” string.
+ * Exported for tests and API fallbacks.
+ */
+export function composeBuildAck(options: {
+  locale?: string;
+  userText: string;
+  repairing?: boolean;
+}): string {
+  const pl = options.locale === "pl";
+  const text = options.userText.replace(/\s+/g, " ").trim();
+  const short = text.slice(0, 72);
+  const quote = short ? (pl ? `„${short}”` : `"${short}"`) : "";
+
+  if (/tł[oa]|background|kolor|color|zielon|green|niebies|blue|czerwon|red/i.test(text)) {
+    return pl
+      ? "Zrobione — aktualizuję kolory i tło w podglądzie."
+      : "Done — updating the colors and background in the preview.";
+  }
+  if (/monet|coin|więcej|more\s+coin|spawn/i.test(text)) {
+    return pl
+      ? "Zrobione — dokładam więcej monet do gry."
+      : "Done — adding more coins to the game.";
+  }
+  if (/bonus|punkt|score|points/i.test(text)) {
+    return pl
+      ? "Zrobione — dopisuję punkty / bonusy."
+      : "Done — adding score / bonus points.";
+  }
+  if (/szybciej|slower|faster|speed|trudniej|łatwiej|harder|easier/i.test(text)) {
+    return pl
+      ? "Zrobione — zmieniam tempo / trudność."
+      : "Done — tweaking speed / difficulty.";
+  }
+  if (options.repairing && isFixIntent(text)) {
+    return pl
+      ? `OK — naprawiam to, o czym napisałeś${quote ? `: ${quote}` : ""}.`
+      : `OK — fixing what you described${quote ? `: ${quote}` : ""}.`;
+  }
+  if (options.repairing) {
+    return pl
+      ? `Jasne — wprowadzam zmianę${quote ? `: ${quote}` : ""} i odświeżam podgląd.`
+      : `Got it — applying${quote ? `: ${quote}` : " your edit"} and refreshing the preview.`;
+  }
+  return pl
+    ? `Super — buduję to${quote ? ` z briefu: ${quote}` : ""}.`
+    : `Great — building that${quote ? ` from: ${quote}` : ""} now.`;
+}
+
+export function latestUserText(
+  prompt: string,
+  messages?: ChatMessage[],
+): string {
+  const last = [...(messages ?? [])]
+    .reverse()
+    .find((m) => m.role === "user" && m.content.trim());
+  return (last?.content || prompt).trim();
 }
 
 export function parseChatTurnPayload(raw: string): ChatTurnResult {
@@ -248,13 +314,14 @@ How to talk:
 
 const BUILD_SYSTEM_PROMPT = `You build tiny playable static web apps for Baiolo (kids/creators showcase).
 Reply with JSON only:
-{"title":"...","description":"...","category":"game|tool|experiment|demo","files":{"index.html":"...","style.css":"...","script.js":"..."}}
+{"title":"...","description":"...","category":"game|tool|experiment|demo","message":"...","files":{"index.html":"...","style.css":"...","script.js":"..."}}
 
 Hard rules:
 - Self-contained HTML+CSS+JS only. No frameworks, no npm, no CDNs, no fetch to unknown APIs.
 - index.html must link ./style.css and ./script.js (relative paths). Put visible content in <body>.
 - Mobile-friendly, large tap targets, works in an iframe sandbox.
 - English UI copy inside the generated app.
+- "message" = one short friendly sentence confirming what you built/changed (match the creator’s language when clear: Polish→Polish, else English). Never repeat a generic “I’m fixing the code” line.
 - No violence, hate, adult content, phishing, malware, or collecting personal data.
 - Honor the friendly chat with the creator when provided.
 
@@ -274,13 +341,14 @@ For catch / collect games specifically:
 - On overlap, increase score and remove the item.
 - Show live score text that changes.`;
 
-const REPAIR_SYSTEM_PROMPT = `You are repairing an existing Baiolo HTML+CSS+JS project.
+const REPAIR_SYSTEM_PROMPT = `You are repairing or editing an existing Baiolo HTML+CSS+JS project.
 Reply with JSON only:
-{"title":"...","description":"...","category":"game|tool|experiment|demo","files":{"index.html":"...","style.css":"...","script.js":"..."}}
+{"title":"...","description":"...","category":"game|tool|experiment|demo","message":"...","files":{"index.html":"...","style.css":"...","script.js":"..."}}
 
 Hard rules:
 - Return a COMPLETE fixed set of files (index.html, style.css, script.js) — not a patch/diff.
-- Keep the same game idea and title when possible; fix bugs so it is actually playable.
+- Keep the same game idea and title when possible; apply the creator’s latest request.
+- "message" = one short friendly sentence naming the change you made (e.g. “Zmieniłem tło na zielone.” / “Added more coins.”). Match the creator’s language. Never use a generic static “I’m fixing the code so the game works.”
 - Self-contained only: no frameworks, npm, CDNs, or external APIs.
 - index.html must link ./style.css and ./script.js.
 - English UI copy in the app.
@@ -434,7 +502,8 @@ export async function continueBuildChat(options: {
     };
   }
 
-  // Vague “fix it” with existing code → skip more chat and repair.
+  // Vague “fix it” with existing code → skip more chat and repair,
+  // but acknowledge the *latest* user ask (never one static sentence forever).
   if (
     repairing &&
     (isFixIntent(options.prompt) ||
@@ -447,10 +516,11 @@ export async function continueBuildChat(options: {
       if (assistantTurns >= 1 || isFixIntent(options.prompt)) {
         return {
           status: "ready",
-          message:
-            options.locale === "pl"
-              ? "Jasne — naprawiam kod, żeby gra działała."
-              : "Got it — I’ll repair the code so it actually works.",
+          message: composeBuildAck({
+            locale: options.locale,
+            userText: latestUserText(options.prompt, options.messages),
+            repairing: true,
+          }),
         };
       }
     }
@@ -572,6 +642,11 @@ async function buildViaLlm(
       provider: "openrouter",
       model: "baiolo-playable-fallback",
       tier: "quality",
+      message: composeBuildAck({
+        locale: options?.locale,
+        userText: brief,
+        repairing: true,
+      }),
     };
   }
 
@@ -653,6 +728,13 @@ async function buildViaLlm(
 
   return {
     ...parsed,
+    message:
+      parsed.message ||
+      composeBuildAck({
+        locale: options?.locale,
+        userText: brief,
+        repairing,
+      }),
     provider: last.provider,
     model: last.model,
     tier,

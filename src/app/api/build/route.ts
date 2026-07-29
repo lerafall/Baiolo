@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import {
   buildFromDescription,
+  composeBuildAck,
   continueBuildChat,
+  latestUserText,
   normalizeAiBuildFiles,
   normalizeChatMessages,
   type ChatMessage,
@@ -313,7 +315,14 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({
         status: "built",
-        message: turn.message,
+        message:
+          result.message ||
+          turn.message ||
+          composeBuildAck({
+            locale,
+            userText: latestUserText(prompt, nextMessages),
+            repairing: Boolean(existingFiles),
+          }),
         title: result.title,
         description: result.description,
         category: result.category,
@@ -353,6 +362,13 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({
       status: "built",
+      message:
+        result.message ||
+        composeBuildAck({
+          locale,
+          userText: latestUserText(prompt, messages),
+          repairing: Boolean(existingFiles),
+        }),
       title: result.title,
       description: result.description,
       category: result.category,
