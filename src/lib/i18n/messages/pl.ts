@@ -762,7 +762,7 @@ export const pl: Messages = {
       "Zaloguj się, żeby budować z AI. To będzie funkcja dla członków (później płatna).",
     aiJoin: "Dołącz, żeby odblokować",
     aiPromptSub:
-      "Opisz małą grę lub narzędzie. Baiolo najpierw z Tobą pogada, potem zbuduje HTML do edycji.",
+      "Opisz małą grę lub narzędzie. Baiolo najpierw z Tobą pogada, potem zbuduje HTML do edycji. Jeśli coś nie działa — napisz „popraw” / „nie działa”: model dostanie aktualny kod i go naprawi.",
     aiPromptLabel: "Opis projektu",
     aiPromptPlaceholder:
       "Przykład: delikatna gra w łapanie spadających gwiazd na telefonie",
@@ -770,6 +770,7 @@ export const pl: Messages = {
     aiStartChat: "Zacznij rozmowę",
     aiRestartChat: "Od nowa",
     aiRebuild: "Pogadaj i zbuduj ponownie",
+    aiRepair: "Napraw kod",
     aiBuilding: "Budowanie…",
     aiChatThinking: "Baiolo pisze…",
     aiFailed: "Nie udało się tego zbudować. Spróbuj prostszego pomysłu.",

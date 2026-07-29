@@ -15,19 +15,27 @@ export type LlmChatConfig = {
 const COMPLEX_HINTS =
   /\b(multiplayer|physics|rpg|inventory|levels?|platformer|puzzle\s*chain|pathfind|enemy|ai\s*bot|3d|websocket|save\s*game|quest|crafting|procedural|animation\s*system)\b/i;
 
+/** Interactive games need the stronger model — even short “catch coins” prompts. */
+const GAME_HINTS =
+  /\b(game|gra|gry|catch|łap|łowi|koszyk|basket|paddle|platform|monet|coin|enemy|wrog|player|gracz|canvas|sprite|spadaj|falling|shoot|strzel|jump|skacz|score|punkt)\b/i;
+
+const FIX_HINTS =
+  /\b(fix|repair|broken|bug|debug|nie\s*dzia[łl]a|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i;
+
 const SIMPLE_HINTS =
-  /\b(timer|countdown|click|tap|counter|color|paint|dice|coin|flashcard|todo|checklist|stopwatch|button|score)\b/i;
+  /\b(timer|countdown|counter|color|paint|dice|flashcard|todo|checklist|stopwatch|button)\b/i;
 
 /**
- * Route build prompts: short / simple → cheap (fast); richer ideas → quality.
+ * Route build prompts: short / simple tools → cheap (fast); games & fixes → quality.
  * Exported for tests.
  */
 export function pickBuildTier(prompt: string): LlmTier {
   const text = prompt.trim();
   const len = text.length;
+  if (FIX_HINTS.test(text) || GAME_HINTS.test(text)) return "quality";
   if (COMPLEX_HINTS.test(text) || len >= 280) return "quality";
   if (len <= 140 || SIMPLE_HINTS.test(text)) return "fast";
-  // Medium prompts: prefer quality so games stay playable
+  // Medium prompts: prefer quality so apps stay usable
   return "quality";
 }
 
@@ -99,7 +107,7 @@ function modelForTier(
       envTrim("OPENAI_MODEL_QUALITY") ||
       envTrim("OPENROUTER_MODEL") ||
       envTrim("OPENAI_MODEL") ||
-      "openai/gpt-4o-mini"
+      "openai/gpt-4o"
     );
   }
 
@@ -113,7 +121,7 @@ function modelForTier(
   return (
     envTrim("OPENAI_MODEL_QUALITY") ||
     envTrim("OPENAI_MODEL") ||
-    "gpt-4o-mini"
+    "gpt-4o"
   );
 }
 

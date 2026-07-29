@@ -759,7 +759,7 @@ export const en = {
       "Sign in to use AI building. It will be a member feature (paid later).",
     aiJoin: "Join to unlock",
     aiPromptSub:
-      "Describe a small game or tool. Baiolo chats with you first, then builds HTML you can edit.",
+      "Describe a small game or tool. Baiolo chats with you first, then builds HTML you can edit. If something’s broken, write “fix it” / “doesn’t work” — the model gets your current code and repairs it.",
     aiPromptLabel: "Project description",
     aiPromptPlaceholder:
       "Example: a soft tap game where you catch falling stars on a phone screen",
@@ -767,6 +767,7 @@ export const en = {
     aiStartChat: "Start chatting",
     aiRestartChat: "Start over",
     aiRebuild: "Chat & rebuild",
+    aiRepair: "Repair code",
     aiBuilding: "Building…",
     aiChatThinking: "Baiolo is typing…",
     aiFailed: "Couldn’t build that right now. Try again with a simpler idea.",

@@ -128,6 +128,7 @@ export function AiBuildPanel({
           messages: thread,
           categoryHint,
           mode: files ? "regenerate" : "new_project",
+          files: files ?? undefined,
         }),
       });
       let data: {
@@ -205,6 +206,15 @@ export function AiBuildPanel({
   async function startOrRebuild() {
     setMessages([]);
     setReply("");
+    // Vague “fix it” with existing code → repair directly (sends files to the model).
+    const wantsFix =
+      /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i.test(
+        prompt,
+      );
+    if (files?.["index.html"] && wantsFix) {
+      await request({ action: "build", nextMessages: [] });
+      return;
+    }
     await request({ action: "chat", nextMessages: [] });
   }
 
@@ -269,7 +279,11 @@ export function AiBuildPanel({
             {busy && !chatting
               ? busyLabel
               : files
-                ? t("workshop.aiRebuild")
+                ? /\b(fix|repair|broken|bug|nie\s*dzia[łl]a|popraw|napraw|nadal|still\s*not|doesn'?t\s*work|not\s*working)\b/i.test(
+                    prompt,
+                  )
+                  ? t("workshop.aiRepair")
+                  : t("workshop.aiRebuild")
                 : chatting
                   ? t("workshop.aiRestartChat")
                   : t("workshop.aiStartChat")}

@@ -8,6 +8,7 @@ export type BuilderRequest = {
   messages?: Array<{ role: "assistant" | "user"; content: string }>;
   locale?: string;
   categoryHint?: string | null;
+  existingFiles?: Record<string, string> | null;
 };
 
 export type BuilderResponse = {
@@ -18,7 +19,7 @@ export type BuilderResponse = {
   error?: string;
 };
 
-const DEFAULT_TIMEOUT_MS = 55_000;
+const DEFAULT_TIMEOUT_MS = 85_000;
 
 export async function callExternalBuilder(
   url: string,

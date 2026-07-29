@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   buildFromDescription,
   continueBuildChat,
+  normalizeAiBuildFiles,
   normalizeChatMessages,
   type ChatMessage,
 } from "@/lib/ai-build";
@@ -26,7 +27,7 @@ import { createSupabaseServer } from "@/lib/supabase/server-auth";
 import type { ProjectCategory } from "@/lib/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 async function resolveUserPlan(options: {
   userId: string | null;
@@ -135,6 +136,8 @@ type Body = {
   plan?: AiPlan | null;
   /** new_project = needs free AI slot; regenerate = existing AI build */
   mode?: "new_project" | "regenerate";
+  /** Current editor files — used to repair/refine instead of blind rebuild */
+  files?: Record<string, string> | null;
 };
 
 export async function POST(request: Request) {
@@ -192,6 +195,7 @@ export async function POST(request: Request) {
     }
 
     const messages = normalizeChatMessages(body.messages);
+    const existingFiles = normalizeAiBuildFiles(body.files ?? undefined);
     const action = body.action === "build" ? "build" : "chat";
     const locale = body.locale === "pl" ? "pl" : "en";
     const plan = await resolveUserPlan({
@@ -199,7 +203,10 @@ export async function POST(request: Request) {
       email,
       explicit: body.plan ?? null,
     });
-    const mode = body.mode === "regenerate" ? "regenerate" : "new_project";
+    const mode =
+      body.mode === "regenerate" || existingFiles
+        ? "regenerate"
+        : "new_project";
 
     let usageGate: Awaited<ReturnType<typeof canUseAiGeneration>> | null = null;
     if (userId && isSupabaseConfigured()) {
@@ -244,7 +251,12 @@ export async function POST(request: Request) {
     }
 
     if (action === "chat") {
-      const turn = await continueBuildChat({ prompt, messages, locale });
+      const turn = await continueBuildChat({
+        prompt,
+        messages,
+        locale,
+        existingFiles,
+      });
       if (turn.status === "chat") {
         return NextResponse.json({
           status: "chat",
@@ -261,6 +273,7 @@ export async function POST(request: Request) {
       const result = await buildFromDescription(prompt, nextMessages, {
         categoryHint: turn.categoryHint || body.categoryHint,
         locale,
+        existingFiles,
       });
       const charge = shouldChargeAiGeneration({
         configured: true,
@@ -299,6 +312,7 @@ export async function POST(request: Request) {
     const result = await buildFromDescription(prompt, messages, {
       categoryHint: body.categoryHint,
       locale,
+      existingFiles,
     });
     const charge = shouldChargeAiGeneration({
       configured: true,

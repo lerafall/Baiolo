@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   composeBuildBrief,
+  isFixIntent,
+  looksIncompletePlayable,
   normalizeAiBuildFiles,
   parseAiBuildPayload,
   parseChatTurnPayload,
+  truncateExistingFiles,
 } from "@/lib/ai-build";
 
 describe("ai-build parsers", () => {
@@ -71,5 +74,48 @@ describe("ai-build parsers", () => {
     ]);
     expect(brief).toContain("Tap stars");
     expect(brief).toContain("10 please");
+  });
+
+  it("detects fix intent in PL/EN", () => {
+    expect(isFixIntent("Nie działa ta gra. popraw ją")).toBe(true);
+    expect(isFixIntent("Still not working")).toBe(true);
+    expect(isFixIntent("Catch falling coins with a basket")).toBe(false);
+  });
+
+  it("flags incomplete game shells", () => {
+    expect(
+      looksIncompletePlayable(
+        {
+          "index.html": "<html></html>",
+          "script.js": "document.body.textContent='Score: 0'",
+        },
+        "game",
+      ),
+    ).toBe(true);
+    expect(
+      looksIncompletePlayable(
+        {
+          "index.html": "<canvas id=c></canvas>",
+          "script.js": `
+            const c=document.getElementById('c');
+            const ctx=c.getContext('2d');
+            addEventListener('keydown',()=>{});
+            function loop(){ ctx.fillRect(0,0,10,10); requestAnimationFrame(loop); }
+            loop();
+          `,
+        },
+        "game",
+      ),
+    ).toBe(false);
+  });
+
+  it("truncates large existing files", () => {
+    const big = "a".repeat(40_000);
+    const out = truncateExistingFiles(
+      { "index.html": big, "style.css": "x", "script.js": "y" },
+      1000,
+    );
+    expect(out["index.html"]!.length).toBeLessThan(1200);
+    expect(out["index.html"]).toContain("truncated");
   });
 });
