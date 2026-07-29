@@ -199,6 +199,15 @@ export default function ProjectPage({
           <Button size="m" onClick={startPlay}>
             {signedIn ? t("project.tapToPlay") : t("project.joinToPlay")}
           </Button>
+          {isOwner && (
+            <Button
+              href={`/create?edit=${encodeURIComponent(live.id)}`}
+              size="m"
+              variant="secondary"
+            >
+              {t("project.editAgain")}
+            </Button>
+          )}
           <Button
             size="m"
             variant="ghost"

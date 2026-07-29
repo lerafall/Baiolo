@@ -36,7 +36,7 @@ import {
   type StarterId,
 } from "@/lib/html-starters";
 import { zipWorkshopFiles } from "@/lib/workshop-zip";
-import { saveMockPlayFiles } from "@/lib/mock-play";
+import { readMockPlayFiles, saveMockPlayFiles } from "@/lib/mock-play";
 import {
   summarizeLocalAiUsage,
   type AiUsageSummary,
@@ -137,9 +137,20 @@ function CreateWizard() {
     if (editId) {
       const sub = items.find((s) => s.id === editId);
       if (sub) {
+        const workshopFiles =
+          sub.uploadType === "ai" || sub.uploadType === "html"
+            ? readMockPlayFiles(sub.id)
+            : null;
+        const canEditCode = Boolean(workshopFiles?.["index.html"]);
         const loaded: CreateDraft = {
           id: sub.id,
-          step: sub.status === "needs_changes" ? 5 : 0,
+          // Jump into the content editor so creators can tweak after playtesting.
+          step:
+            canEditCode || sub.status === "needs_changes"
+              ? 1
+              : sub.status === "draft"
+                ? 0
+                : 2,
           uploadType: sub.uploadType,
           sourceLabel: sub.sourceLabel,
           packageReady: true,
@@ -157,6 +168,15 @@ function CreateWizard() {
             sub.status === "needs_changes" && sub.changeRequest
               ? [sub.changeRequest]
               : [],
+          workshopFiles: workshopFiles || undefined,
+          workshopStarterId:
+            sub.uploadType === "html"
+              ? ((sub.category === "tool"
+                  ? "tool"
+                  : sub.category === "experiment"
+                    ? "experiment"
+                    : "game") as "game" | "tool" | "experiment")
+              : undefined,
         };
         setDraft(loaded);
         writeDraft(loaded);
@@ -184,6 +204,14 @@ function CreateWizard() {
       if (!(draft.title.trim() || draft.sourceLabel.trim() || draft.uploadType)) {
         return;
       }
+      // Editing an already-submitted project: keep local draft only until re-submit,
+      // so we don't silently flip approved builds back to draft on every keystroke.
+      const existing = editId
+        ? items.find((s) => s.id === editId)
+        : items.find((s) => s.id === draft.id);
+      if (existing && existing.status !== "draft") {
+        return;
+      }
       upsert({
         id: draft.id,
         uploadType: draft.uploadType,
@@ -200,6 +228,12 @@ function CreateWizard() {
         updatedAt: new Date().toISOString(),
         plays: 0,
         reactions: 0,
+        sourceType:
+          draft.uploadType === "ai"
+            ? "ai_build"
+            : draft.uploadType === "html"
+              ? "html_starter"
+              : undefined,
       });
     }, 500);
 
@@ -207,7 +241,7 @@ function CreateWizard() {
       window.clearTimeout(flashTimer);
       window.clearTimeout(upsertTimer);
     };
-  }, [draft, hydrated, upsert]);
+  }, [draft, hydrated, editId, items, t, upsert]);
 
   const progress = useMemo(
     () => ((draft.step + 1) / steps.length) * 100,
@@ -478,12 +512,21 @@ function CreateWizard() {
             setError(data.error || t("create.errSubmit"));
             return;
           }
+          const prior = items.find((s) => s.id === draft.id);
           const stages = data.stages ?? data.fallback?.stages ?? [];
           sessionStorage.setItem(
             "baiolo.last-pipeline-stages",
             JSON.stringify(stages),
           );
-          upsert(submission);
+          upsert({
+            ...submission,
+            plays: prior?.plays ?? submission.plays,
+            reactions: prior?.reactions ?? submission.reactions,
+            aiSlotActive:
+              submission.sourceType === "ai_build" || submission.uploadType === "ai"
+                ? true
+                : submission.aiSlotActive,
+          });
           clearDraft();
           zipFileRef.current = null;
           router.push(`/create/submitted?id=${encodeURIComponent(draft.id)}`);
@@ -529,6 +572,35 @@ function CreateWizard() {
           </a>
           .
         </div>
+
+        {editId && (
+          <div className="mb-6 rounded-xl border-2 border-brand/25 bg-lilac/40 px-5 py-4 text-sm text-ink">
+            <p className="font-extrabold">{t("create.editingExisting")}</p>
+            <p className="mt-1 text-ink-muted">{t("create.editingExistingBody")}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="m"
+                onClick={() => {
+                  if (draft.workshopFiles?.["index.html"]) {
+                    saveMockPlayFiles(editId, draft.workshopFiles);
+                  }
+                  window.location.assign(`/play/${encodeURIComponent(editId)}`);
+                }}
+              >
+                {t("create.testPlayAgain")}
+              </Button>
+              <Button
+                href={`/project/${encodeURIComponent(editId)}`}
+                size="m"
+                variant="secondary"
+              >
+                {t("create.openProjectPage")}
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-bold uppercase tracking-wide text-ink-muted">
@@ -895,6 +967,9 @@ function CreateWizard() {
                   packageReady: Boolean(files["index.html"]?.trim()),
                   sourceLabel: `html-starter-${draft.workshopStarterId || "game"}`,
                 });
+                if (editId && files["index.html"]?.trim()) {
+                  saveMockPlayFiles(editId, files);
+                }
               }}
             />
           )}
@@ -920,12 +995,16 @@ function CreateWizard() {
                   category: draft.category || category,
                   hints: [],
                 });
+                if (editId) saveMockPlayFiles(editId, files);
               }}
               onFilesChange={(workshopFiles) => {
                 patch({
                   workshopFiles,
                   packageReady: Boolean(workshopFiles["index.html"]?.trim()),
                 });
+                if (editId && workshopFiles["index.html"]?.trim()) {
+                  saveMockPlayFiles(editId, workshopFiles);
+                }
               }}
             />
           )}

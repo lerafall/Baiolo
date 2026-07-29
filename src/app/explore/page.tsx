@@ -38,7 +38,22 @@ function ExploreBody() {
     filters.some((f) => f.id === initialFilter) ? initialFilter : "all",
   );
   const [tag, setTag] = useState(initialTag);
-  const { items, mode } = useSubmissions();
+  const { items, mode, refresh } = useSubmissions();
+
+  useEffect(() => {
+    const onFocus = () => {
+      void refresh();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") onFocus();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refresh]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -55,9 +70,8 @@ function ExploreBody() {
       .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
     const byId = new Map<string, (typeof catalog)[number]>();
-    const useCatalogFallback =
-      mode !== "supabase" || fromSubs.length === 0;
-    if (useCatalogFallback) {
+    // In cloud mode show only real published projects — not demo catalog fillers.
+    if (mode !== "supabase") {
       for (const p of catalog) byId.set(p.id, p);
     }
     for (const p of fromSubs) byId.set(p.id, p);

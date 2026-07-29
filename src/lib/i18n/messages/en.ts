@@ -189,6 +189,7 @@ export const en = {
     notPublic: "This project isn’t public yet. It’s still being checked or reviewed.",
     privateOwnerNote:
       "This is your private build — you can play it anytime. It appears in Explore and can be shared publicly only after a Baiolo teammate approves it.",
+    editAgain: "Edit again",
     seeStatus: "See submission status",
     exploreInstead: "Explore instead",
     playingLocal: "You are playing!",
@@ -215,6 +216,7 @@ export const en = {
     back: "Back to project",
     privateOwnerNote:
       "Only you can play this until a teammate approves public sharing.",
+    editAgain: "Edit again",
     privatePreparing:
       "Your private play package is still preparing. Try again in a moment, or open My Projects.",
   },
@@ -359,6 +361,11 @@ export const en = {
     submitForChecking: "Submit for checking",
     loadingCreator: "Loading creator…",
     untitledDraft: "Untitled draft",
+    editingExisting: "You’re editing this project",
+    editingExistingBody:
+      "Tweak the code or rebuild with AI, then test play again. When it feels right, continue and re-submit.",
+    testPlayAgain: "Test play",
+    openProjectPage: "Open project page",
     errPickType: "Pick how you want to add your project.",
     errPasteLink: "Paste a link to continue.",
     errAddFile: "Add a file or starter first.",
@@ -391,6 +398,7 @@ export const en = {
       "You can play it now. Public sharing and Explore wait for teammate approval.",
     playNow: "Play now",
     openProject: "Open project",
+    editAgain: "Edit again",
     seeStatus: "See submission status",
     exploreMeanwhile: "Explore meanwhile",
     loading: "Loading…",

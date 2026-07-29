@@ -15,7 +15,22 @@ function preferVisual(primary: string, fallback?: string) {
 
 /** Play URL for the creator (private preview) or the public (after publish). */
 export function resolvePlayableUrl(s: ProjectSubmission): string | null {
-  if (s.status === "published" && s.playUrl) return s.playUrl;
+  const isMock = (url: string | null | undefined) =>
+    Boolean(url && url.startsWith("#mock-play/"));
+  const isOwnerOnly = (url: string | null | undefined) =>
+    Boolean(url && url.includes("/api/owner-play-site/"));
+
+  if (s.status === "published") {
+    if (s.playUrl && !isMock(s.playUrl) && !isOwnerOnly(s.playUrl)) {
+      return s.playUrl;
+    }
+    if (s.uploadType === "link" && /^https?:\/\//i.test(s.sourceLabel)) {
+      return s.sourceLabel;
+    }
+    // Public Explore must not use local mock or owner-only preview URLs.
+    return null;
+  }
+
   if (s.previewUrl) return s.previewUrl;
   if (s.uploadType === "link" && /^https?:\/\//i.test(s.sourceLabel)) {
     return s.sourceLabel;

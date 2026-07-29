@@ -61,6 +61,13 @@ function SubmittedBody() {
           <Button href={`/play/${submission.id}`} size="l">
             {t("createSubmitted.playNow")}
           </Button>
+          <Button
+            href={`/create?edit=${encodeURIComponent(submission.id)}`}
+            size="l"
+            variant="secondary"
+          >
+            {t("createSubmitted.editAgain")}
+          </Button>
           <Button href={`/project/${submission.id}`} size="l" variant="secondary">
             {t("createSubmitted.openProject")}
           </Button>

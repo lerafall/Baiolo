@@ -113,6 +113,9 @@ export async function POST(request: Request) {
   }
 
   if (next.status === "published" && body.action === "publish") {
+    if (!next.category) {
+      next = { ...next, category: "experiment" };
+    }
     if (next.uploadType === "link" && /^https?:\/\//i.test(next.sourceLabel)) {
       next = { ...next, playUrl: next.sourceLabel };
     } else if (next.storagePath && supabase) {
@@ -122,7 +125,37 @@ export async function POST(request: Request) {
         next.id,
         "published",
       );
-      if (url) next = { ...next, playUrl: url };
+      if (!url) {
+        return NextResponse.json(
+          {
+            error:
+              "Couldn’t unpack the package for public play. Check storage buckets and re-prepare preview, then publish again.",
+          },
+          { status: 502 },
+        );
+      }
+      next = { ...next, playUrl: url };
+    } else if (
+      next.previewUrl?.startsWith("#mock-play/") ||
+      !next.storagePath
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "This project has no cloud package yet (only a local preview). Ask the creator to re-submit so the ZIP uploads, then publish.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!next.playUrl) {
+      return NextResponse.json(
+        {
+          error:
+            "Publish needs a public play URL. Prepare play / unpack the package first.",
+        },
+        { status: 400 },
+      );
     }
   }
 

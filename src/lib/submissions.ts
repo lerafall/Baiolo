@@ -229,27 +229,21 @@ export function useSubmissions() {
     })();
 
     const tick = window.setInterval(() => {
+      // In cloud mode, moderation status comes from the server.
+      // Local checking→in_review must not overwrite an admin publish via sync.
+      if (modeRef.current === "supabase") return;
       const current = readStore();
       const next = progressCheckingSubmissions(current);
       if (next === current) return;
       writeStore(next);
       setItems(next);
-
-      if (modeRef.current === "supabase") {
-        for (let i = 0; i < next.length; i += 1) {
-          const before = current.find((c) => c.id === next[i].id);
-          if (before && before.status !== next[i].status) {
-            void pushRemote(next[i]);
-          }
-        }
-      }
     }, 2000);
 
     return () => {
       cancelled = true;
       window.clearInterval(tick);
     };
-  }, []);
+  }, [refresh]);
 
   const upsert = useCallback(
     (submission: ProjectSubmission) => {

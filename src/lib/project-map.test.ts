@@ -1,30 +1,82 @@
 import { describe, expect, it } from "vitest";
-import { submissionToProject } from "@/lib/project-map";
+import {
+  resolvePlayableUrl,
+  submissionToProject,
+} from "@/lib/project-map";
 import type { ProjectSubmission } from "@/lib/moderation";
+
+const base: ProjectSubmission = {
+  id: "p1",
+  uploadType: "zip",
+  sourceLabel: "game.zip",
+  title: "Test Game",
+  description: "A test",
+  category: "game",
+  tags: ["arcade"],
+  thumbnail: "linear-gradient(145deg, #a78bfa 0%, #2dd4bf 100%)",
+  status: "published",
+  risk: "low",
+  aiFlags: [],
+  changeRequest: null,
+  updatedAt: "2026-01-01T00:00:00.000Z",
+  plays: 0,
+  reactions: 0,
+};
 
 describe("submissionToProject visuals", () => {
   it("keeps catalog thumb when submission still has a gradient", () => {
     const s: ProjectSubmission = {
+      ...base,
       id: "cloud-hopper",
-      uploadType: "zip",
-      sourceLabel: "cloud-hopper.zip",
       title: "Cloud Hopper",
       description: "Jump soft clouds. Catch sun coins.",
-      category: "game",
       tags: ["platformer"],
-      thumbnail:
-        "linear-gradient(145deg, #a78bfa 0%, #2dd4bf 55%, #fbbf24 100%)",
-      status: "published",
-      risk: "low",
-      aiFlags: [],
-      changeRequest: null,
-      updatedAt: "2026-01-01T00:00:00.000Z",
-      plays: 10,
-      reactions: 5,
       playUrl: "/demos/cloud-hopper/index.html",
     };
     const project = submissionToProject(s);
     expect(project?.thumbnail).toBe("/demos/cloud-hopper/thumb.png");
     expect(project?.cover).toBe("/demos/cloud-hopper/cover.png");
+  });
+});
+
+describe("resolvePlayableUrl for published", () => {
+  it("rejects mock and owner-only URLs on Explore", () => {
+    expect(
+      resolvePlayableUrl({
+        ...base,
+        playUrl: null,
+        previewUrl: "#mock-play/p1",
+      }),
+    ).toBeNull();
+    expect(
+      resolvePlayableUrl({
+        ...base,
+        playUrl: "/api/owner-play-site/p1/index.html",
+      }),
+    ).toBeNull();
+    expect(
+      submissionToProject({
+        ...base,
+        playUrl: null,
+        previewUrl: "#mock-play/p1",
+      }),
+    ).toBeNull();
+  });
+
+  it("accepts public play-site URL", () => {
+    expect(
+      resolvePlayableUrl({
+        ...base,
+        playUrl: "/api/play-site/p1/index.html",
+      }),
+    ).toBe("/api/play-site/p1/index.html");
+  });
+});
+
+describe("statusRank sync guard", () => {
+  it("ranks published above in_review", async () => {
+    const { statusRank } = await import("@/app/api/projects/sync/route");
+    expect(statusRank("published")).toBeGreaterThan(statusRank("in_review"));
+    expect(statusRank("published")).toBeGreaterThan(statusRank("checking"));
   });
 });

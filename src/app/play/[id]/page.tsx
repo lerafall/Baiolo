@@ -181,6 +181,23 @@ export default function PlayPage({
             {t("play.privateOwnerNote")}
           </p>
         )}
+        {isOwner && (
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button
+              href={`/create?edit=${encodeURIComponent(project.id)}`}
+              size="m"
+            >
+              {t("play.editAgain")}
+            </Button>
+            <Button
+              href={`/project/${project.id}`}
+              size="m"
+              variant="secondary"
+            >
+              {t("play.back")}
+            </Button>
+          </div>
+        )}
 
         {embeddable ? (
           <>

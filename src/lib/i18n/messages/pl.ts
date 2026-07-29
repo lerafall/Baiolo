@@ -192,6 +192,7 @@ export const pl: Messages = {
       "Ten projekt nie jest jeszcze publiczny. Nadal jest sprawdzany lub recenzowany.",
     privateOwnerNote:
       "To Twój prywatny build — możesz grać kiedy chcesz. W Odkrywaj i w publicznym udostępnianiu pojawi się dopiero po akceptacji członka zespołu Baiolo.",
+    editAgain: "Edytuj ponownie",
     seeStatus: "Zobacz status zgłoszenia",
     exploreInstead: "Odkrywaj zamiast tego",
     playingLocal: "Grasz!",
@@ -218,6 +219,7 @@ export const pl: Messages = {
     back: "Wróć do projektu",
     privateOwnerNote:
       "Tylko Ty możesz w to grać, dopóki członek zespołu nie zatwierdzi publicznego udostępniania.",
+    editAgain: "Edytuj ponownie",
     privatePreparing:
       "Prywatna paczka do gry jeszcze się przygotowuje. Spróbuj za chwilę albo otwórz Moje projekty.",
   },
@@ -362,6 +364,11 @@ export const pl: Messages = {
     submitForChecking: "Wyślij do sprawdzenia",
     loadingCreator: "Ładowanie kreatora…",
     untitledDraft: "Szkic bez tytułu",
+    editingExisting: "Edytujesz ten projekt",
+    editingExistingBody:
+      "Popraw kod albo przebuduj z AI, potem przetestuj grę. Gdy będzie OK — idź dalej i wyślij ponownie.",
+    testPlayAgain: "Przetestuj grę",
+    openProjectPage: "Strona projektu",
     errPickType: "Wybierz, jak chcesz dodać projekt.",
     errPasteLink: "Wklej link, żeby iść dalej.",
     errAddFile: "Najpierw dodaj plik lub starter.",
@@ -394,6 +401,7 @@ export const pl: Messages = {
       "Możesz grać od razu. Publiczne udostępnianie i Odkrywaj czekają na akceptację.",
     playNow: "Graj teraz",
     openProject: "Otwórz projekt",
+    editAgain: "Edytuj ponownie",
     seeStatus: "Zobacz status zgłoszenia",
     exploreMeanwhile: "Odkrywaj tymczasem",
     loading: "Ładowanie…",
