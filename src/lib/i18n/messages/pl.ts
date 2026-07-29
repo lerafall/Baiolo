@@ -756,6 +756,8 @@ export const pl: Messages = {
     preview: "Podgląd",
     livePreview: "Podgląd na żywo",
     refresh: "Odśwież podgląd",
+    previewNote:
+      "Podgląd zawsze wkleja CSS/JS (linki względne tu nie działają). Jeśli widzisz samo Score: 0, kod gry jest niekompletny — użyj Napraw / Wstaw działającą grę.",
     hint: "Gdy wygląda dobrze, idź do tytułu i publikacji — Baiolo spakuje Twoje pliki.",
     aiTitle: "Zbuduj z opisu",
     aiNeedAccount:
