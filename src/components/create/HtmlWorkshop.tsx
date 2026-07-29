@@ -14,17 +14,19 @@ import {
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 type HtmlWorkshopProps = {
-  starterId: StarterId;
   files: StarterFiles;
-  onStarterChange: (id: StarterId) => void;
   onFilesChange: (files: StarterFiles) => void;
+  starterId?: StarterId;
+  onStarterChange?: (id: StarterId) => void;
+  showStarterPicker?: boolean;
 };
 
 export function HtmlWorkshop({
-  starterId,
+  starterId = "game",
   files,
   onStarterChange,
   onFilesChange,
+  showStarterPicker = true,
 }: HtmlWorkshopProps) {
   const t = useT();
   const fileNames = useMemo(() => Object.keys(files), [files]);
@@ -45,7 +47,7 @@ export function HtmlWorkshop({
   }
 
   function pickStarter(id: StarterId) {
-    onStarterChange(id);
+    onStarterChange?.(id);
     onFilesChange(cloneStarterFiles(id));
     setActiveFile("index.html");
     setPreviewKey((k) => k + 1);
@@ -60,27 +62,29 @@ export function HtmlWorkshop({
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-lg font-bold">{t("workshop.pickStarter")}</p>
-        <p className="mt-1 text-ink-muted">{t("workshop.pickStarterSub")}</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(Object.keys(HTML_STARTERS) as StarterId[]).map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => pickStarter(id)}
-              className={cn(
-                "min-h-11 rounded-pill border-2 px-4 text-sm font-bold",
-                starterId === id
-                  ? "border-brand bg-brand text-on-brand"
-                  : "border-border bg-canvas text-ink-muted",
-              )}
-            >
-              {t(`workshop.starter.${id}` as "workshop.starter.game")}
-            </button>
-          ))}
+      {showStarterPicker && (
+        <div>
+          <p className="text-lg font-bold">{t("workshop.pickStarter")}</p>
+          <p className="mt-1 text-ink-muted">{t("workshop.pickStarterSub")}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(Object.keys(HTML_STARTERS) as StarterId[]).map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => pickStarter(id)}
+                className={cn(
+                  "min-h-11 rounded-pill border-2 px-4 text-sm font-bold",
+                  starterId === id
+                    ? "border-brand bg-brand text-on-brand"
+                    : "border-border bg-canvas text-ink-muted",
+                )}
+              >
+                {t(`workshop.starter.${id}` as "workshop.starter.game")}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex gap-2 md:hidden">
         <Button

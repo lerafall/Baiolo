@@ -275,7 +275,7 @@ export const en = {
     aiTitle: "Build from a description",
     aiBody: "Describe an idea — Baiolo builds a small game or tool (members).",
     errWorkshop: "Open a starter and keep index.html before you continue.",
-    errAiSoon: "AI building isn’t ready yet — try the HTML starter for now.",
+    errAiBuild: "Build from your description first, then continue.",
     addFiles: "Add your files",
     addFilesSub: "Don’t worry about perfect packaging — Baiolo can help.",
     packageReady: "Package ready",
@@ -628,10 +628,17 @@ export const en = {
     aiNeedAccount:
       "Sign in to use AI building. It will be a member feature (paid later).",
     aiJoin: "Join to unlock",
-    aiComing:
-      "You’re in. AI building inside Baiolo (path A) is next — describe an idea and get a playable package here.",
-    aiMeanwhile:
-      "Meanwhile: use the HTML starter, or copy a prompt on How to make.",
+    aiPromptSub:
+      "Describe a small game or tool. Baiolo builds HTML you can edit and publish.",
+    aiPromptLabel: "Project description",
+    aiPromptPlaceholder:
+      "Example: a soft tap game where you catch falling stars on a phone screen",
+    aiPromptShort: "Add a bit more detail (at least a short sentence).",
+    aiBuild: "Build it",
+    aiRebuild: "Build again",
+    aiBuilding: "Building…",
+    aiFailed: "Couldn’t build that right now. Try again with a simpler idea.",
+    aiHintPaid: "Member feature — may become paid later.",
     aiUseHtml: "Or pick HTML starter",
   },
   dictation: {

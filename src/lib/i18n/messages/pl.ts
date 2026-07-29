@@ -278,7 +278,7 @@ export const pl: Messages = {
     aiTitle: "Zbuduj z opisu",
     aiBody: "Opisz pomysł — Baiolo zbuduje małą grę lub narzędzie (dla członków).",
     errWorkshop: "Otwórz starter i zostaw index.html, zanim pójdziesz dalej.",
-    errAiSoon: "Budowanie z AI jeszcze nie jest gotowe — na razie użyj startera HTML.",
+    errAiBuild: "Najpierw zbuduj projekt z opisu, potem idź dalej.",
     addFiles: "Dodaj pliki",
     addFilesSub: "Nie martw się idealnym pakowaniem — Baiolo pomoże.",
     packageReady: "Paczka gotowa",
@@ -631,10 +631,17 @@ export const pl: Messages = {
     aiNeedAccount:
       "Zaloguj się, żeby budować z AI. To będzie funkcja dla członków (później płatna).",
     aiJoin: "Dołącz, żeby odblokować",
-    aiComing:
-      "Jesteś w środku. Budowanie z AI w Baiolo (ścieżka A) jest następne — opiszesz pomysł i dostaniesz paczkę do gry tutaj.",
-    aiMeanwhile:
-      "Na razie: użyj startera HTML albo skopiuj prompt w Jak zrobić.",
+    aiPromptSub:
+      "Opisz małą grę lub narzędzie. Baiolo zbuduje HTML, który możesz edytować i opublikować.",
+    aiPromptLabel: "Opis projektu",
+    aiPromptPlaceholder:
+      "Przykład: delikatna gra w łapanie spadających gwiazd na telefonie",
+    aiPromptShort: "Dodaj trochę więcej szczegółów (przynajmniej krótkie zdanie).",
+    aiBuild: "Zbuduj",
+    aiRebuild: "Zbuduj ponownie",
+    aiBuilding: "Budowanie…",
+    aiFailed: "Nie udało się tego zbudować. Spróbuj prostszego pomysłu.",
+    aiHintPaid: "Funkcja dla członków — później może być płatna.",
     aiUseHtml: "Albo wybierz starter HTML",
   },
   dictation: {

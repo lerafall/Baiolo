@@ -29,7 +29,6 @@ import {
 } from "@/lib/data/projects";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import { useT } from "@/lib/i18n/LocaleProvider";
-import { AiBuildTeaser } from "@/components/create/AiBuildTeaser";
 import { DictationField } from "@/components/ui/DictationField";
 import {
   cloneStarterFiles,
@@ -46,6 +45,15 @@ const HtmlWorkshop = dynamic(
     loading: () => (
       <p className="text-ink-muted">Loading editor…</p>
     ),
+  },
+);
+
+const AiBuildPanel = dynamic(
+  () =>
+    import("@/components/create/AiBuildPanel").then((m) => m.AiBuildPanel),
+  {
+    ssr: false,
+    loading: () => <p className="text-ink-muted">Loading…</p>,
   },
 );
 
@@ -301,13 +309,13 @@ function CreateWizard() {
       return;
     }
     if (step === 1) {
-      if (uploadType === "ai") {
-        setError(t("create.errAiSoon"));
-        return;
-      }
-      if (uploadType === "html") {
+      if (uploadType === "ai" || uploadType === "html") {
         if (!draft.workshopFiles?.["index.html"]?.trim()) {
-          setError(t("create.errWorkshop"));
+          setError(
+            uploadType === "ai"
+              ? t("create.errAiBuild")
+              : t("create.errWorkshop"),
+          );
           return;
         }
       } else if (!sourceLabel.trim()) {
@@ -367,7 +375,10 @@ function CreateWizard() {
               return;
             }
             storagePath = upData.storagePath ?? null;
-          } else if (uploadType === "html" && draft.workshopFiles) {
+          } else if (
+            (uploadType === "html" || uploadType === "ai") &&
+            draft.workshopFiles
+          ) {
             const blob = await zipWorkshopFiles(draft.workshopFiles);
             const file = new File([blob], `${draft.id}.zip`, {
               type: "application/zip",
@@ -771,10 +782,32 @@ function CreateWizard() {
           )}
 
           {draft.step === 1 && draft.uploadType === "ai" && (
-            <AiBuildTeaser
+            <AiBuildPanel
               signedIn={
                 sessionReady && Boolean(session.userId || session.email)
               }
+              userId={session.userId}
+              email={session.email}
+              prompt={draft.sourceLabel}
+              files={draft.workshopFiles}
+              onPromptChange={(sourceLabel) => patch({ sourceLabel })}
+              onBuilt={({ files, title, description, category }) => {
+                patch({
+                  workshopFiles: files,
+                  packageReady: true,
+                  sourceLabel: draft.sourceLabel.trim() || title,
+                  title: draft.title || title,
+                  description: draft.description || description,
+                  category: draft.category || category,
+                  hints: [],
+                });
+              }}
+              onFilesChange={(workshopFiles) => {
+                patch({
+                  workshopFiles,
+                  packageReady: Boolean(workshopFiles["index.html"]?.trim()),
+                });
+              }}
             />
           )}
 
