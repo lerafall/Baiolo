@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -28,6 +29,24 @@ import {
 } from "@/lib/data/projects";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { AiBuildTeaser } from "@/components/create/AiBuildTeaser";
+import {
+  cloneStarterFiles,
+  HTML_STARTERS,
+  type StarterId,
+} from "@/lib/html-starters";
+import { zipWorkshopFiles } from "@/lib/workshop-zip";
+
+const HtmlWorkshop = dynamic(
+  () =>
+    import("@/components/create/HtmlWorkshop").then((m) => m.HtmlWorkshop),
+  {
+    ssr: false,
+    loading: () => (
+      <p className="text-ink-muted">Loading editor…</p>
+    ),
+  },
+);
 
 function CreateWizard() {
   const t = useT();
@@ -55,13 +74,14 @@ function CreateWizard() {
   const uploadOptions: Array<{ id: UploadType; title: string; body: string }> = [
     { id: "zip", title: t("create.zipTitle"), body: t("create.zipBody") },
     { id: "link", title: t("create.linkTitle"), body: t("create.linkBody") },
-    { id: "template", title: t("create.templateTitle"), body: t("create.templateBody") },
+    { id: "html", title: t("create.htmlTitle"), body: t("create.htmlBody") },
+    { id: "ai", title: t("create.aiTitle"), body: t("create.aiBody") },
   ];
   const categories: Array<{ id: ProjectCategory; label: string }> = [
     { id: "game", label: t("explore.game") }, { id: "tool", label: t("explore.tool") },
     { id: "experiment", label: t("explore.experiment") }, { id: "demo", label: t("explore.demo") },
   ];
-  const templates = [
+  const legacyTemplates = [
     { id: "Starter · Game", label: t("create.starterGame"), body: t("create.starterGameBody") },
     { id: "Starter · Tool", label: t("create.starterTool"), body: t("create.starterToolBody") },
     { id: "Starter · Experiment", label: t("create.starterExperiment"), body: t("create.starterExperimentBody") },
@@ -280,7 +300,16 @@ function CreateWizard() {
       return;
     }
     if (step === 1) {
-      if (!sourceLabel.trim()) {
+      if (uploadType === "ai") {
+        setError(t("create.errAiSoon"));
+        return;
+      }
+      if (uploadType === "html") {
+        if (!draft.workshopFiles?.["index.html"]?.trim()) {
+          setError(t("create.errWorkshop"));
+          return;
+        }
+      } else if (!sourceLabel.trim()) {
         setError(
           uploadType === "link"
             ? t("create.errPasteLink")
@@ -321,6 +350,29 @@ function CreateWizard() {
           if (uploadType === "zip" && zipFileRef.current) {
             const form = new FormData();
             form.append("file", zipFileRef.current);
+            form.append("projectId", draft.id);
+            form.append("ownerId", session.userId || "anon");
+            const up = await fetch("/api/projects/upload", {
+              method: "POST",
+              body: form,
+            });
+            const upData = (await up.json()) as {
+              storagePath?: string;
+              error?: string;
+              skipped?: boolean;
+            };
+            if (!up.ok && !upData.skipped) {
+              setError(upData.error || t("create.errUpload"));
+              return;
+            }
+            storagePath = upData.storagePath ?? null;
+          } else if (uploadType === "html" && draft.workshopFiles) {
+            const blob = await zipWorkshopFiles(draft.workshopFiles);
+            const file = new File([blob], `${draft.id}.zip`, {
+              type: "application/zip",
+            });
+            const form = new FormData();
+            form.append("file", file);
             form.append("projectId", draft.id);
             form.append("ownerId", session.userId || "anon");
             const up = await fetch("/api/projects/upload", {
@@ -466,15 +518,45 @@ function CreateWizard() {
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    if (opt.id === "html") {
+                      const starterId: StarterId = "game";
+                      const starter = HTML_STARTERS[starterId];
+                      patch({
+                        uploadType: "html",
+                        packageReady: true,
+                        sourceLabel: `html-starter-${starterId}`,
+                        workshopStarterId: starterId,
+                        workshopFiles: cloneStarterFiles(starterId),
+                        title: draft.title || starter.suggestedTitle,
+                        description:
+                          draft.description || starter.suggestedDescription,
+                        category: draft.category || starter.category,
+                        hints: [],
+                      });
+                      return;
+                    }
+                    if (opt.id === "ai") {
+                      patch({
+                        uploadType: "ai",
+                        packageReady: false,
+                        sourceLabel: "",
+                        workshopFiles: undefined,
+                        workshopStarterId: undefined,
+                        hints: [],
+                      });
+                      return;
+                    }
                     patch({
                       uploadType: opt.id,
                       packageReady: opt.id !== "zip",
                       sourceLabel:
-                        opt.id === "template" ? templates[0].id : "",
+                        opt.id === "template" ? legacyTemplates[0].id : "",
+                      workshopFiles: undefined,
+                      workshopStarterId: undefined,
                       hints: [],
-                    })
-                  }
+                    });
+                  }}
                   className={cn(
                     "w-full rounded-xl border-2 bg-surface p-5 text-left transition-all",
                     draft.uploadType === opt.id
@@ -637,6 +719,44 @@ function CreateWizard() {
             </label>
           )}
 
+          {draft.step === 1 && draft.uploadType === "html" && (
+            <HtmlWorkshop
+              starterId={draft.workshopStarterId || "game"}
+              files={
+                draft.workshopFiles ||
+                cloneStarterFiles(draft.workshopStarterId || "game")
+              }
+              onStarterChange={(id) => {
+                const starter = HTML_STARTERS[id];
+                patch({
+                  workshopStarterId: id,
+                  workshopFiles: cloneStarterFiles(id),
+                  sourceLabel: `html-starter-${id}`,
+                  packageReady: true,
+                  title: draft.title || starter.suggestedTitle,
+                  description:
+                    draft.description || starter.suggestedDescription,
+                  category: draft.category || starter.category,
+                });
+              }}
+              onFilesChange={(files) => {
+                patch({
+                  workshopFiles: files,
+                  packageReady: Boolean(files["index.html"]?.trim()),
+                  sourceLabel: `html-starter-${draft.workshopStarterId || "game"}`,
+                });
+              }}
+            />
+          )}
+
+          {draft.step === 1 && draft.uploadType === "ai" && (
+            <AiBuildTeaser
+              signedIn={
+                sessionReady && Boolean(session.userId || session.email)
+              }
+            />
+          )}
+
           {draft.step === 1 && draft.uploadType === "template" && (
             <div>
               <p className="text-lg font-bold">{t("create.pickStarter")}</p>
@@ -644,7 +764,7 @@ function CreateWizard() {
                 {t("create.pickStarterSub")}
               </p>
               <div className="mt-4 space-y-3">
-                {templates.map((template) => (
+                {legacyTemplates.map((template) => (
                   <button
                     key={template.id}
                     type="button"

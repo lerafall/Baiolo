@@ -271,8 +271,14 @@ export const pl: Messages = {
     zipBody: "Masz spakowany folder projektu? Upuść go tutaj.",
     linkTitle: "Wklej link",
     linkBody: "Podaj link do live demo lub prototypu.",
-    templateTitle: "Użyj prostego szablonu",
-    templateBody: "Zacznij od przyjaznego startera Baiolo.",
+    templateTitle: "Prosty starter HTML",
+    templateBody: "Otwórz mini-projekt w Baiolo i edytuj go z podglądem na żywo.",
+    htmlTitle: "Prosty starter HTML",
+    htmlBody: "Otwórz mini-projekt w Baiolo i edytuj go z podglądem na żywo.",
+    aiTitle: "Zbuduj z opisu",
+    aiBody: "Opisz pomysł — Baiolo zbuduje małą grę lub narzędzie (dla członków).",
+    errWorkshop: "Otwórz starter i zostaw index.html, zanim pójdziesz dalej.",
+    errAiSoon: "Budowanie z AI jeszcze nie jest gotowe — na razie użyj startera HTML.",
     addFiles: "Dodaj pliki",
     addFilesSub: "Nie martw się idealnym pakowaniem — Baiolo pomoże.",
     packageReady: "Paczka gotowa",
@@ -606,5 +612,29 @@ export const pl: Messages = {
   },
   projectMeta: {
     byCreator: "{category} · autor {creator}",
+  },
+  workshop: {
+    pickStarter: "Wybierz starter",
+    pickStarterSub:
+      "Otwórz w edytorze, zmień kod, oglądaj podgląd na żywo.",
+    starter: {
+      game: "Gra",
+      tool: "Narzędzie",
+      experiment: "Eksperyment",
+    },
+    code: "Kod",
+    preview: "Podgląd",
+    livePreview: "Podgląd na żywo",
+    refresh: "Odśwież podgląd",
+    hint: "Gdy wygląda dobrze, idź do tytułu i publikacji — Baiolo spakuje Twoje pliki.",
+    aiTitle: "Zbuduj z opisu",
+    aiNeedAccount:
+      "Zaloguj się, żeby budować z AI. To będzie funkcja dla członków (później płatna).",
+    aiJoin: "Dołącz, żeby odblokować",
+    aiComing:
+      "Jesteś w środku. Budowanie z AI w Baiolo (ścieżka A) jest następne — opiszesz pomysł i dostaniesz paczkę do gry tutaj.",
+    aiMeanwhile:
+      "Na razie: użyj startera HTML albo skopiuj prompt w Jak zrobić.",
+    aiUseHtml: "Albo wybierz starter HTML",
   },
 };

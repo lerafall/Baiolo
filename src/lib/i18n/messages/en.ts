@@ -268,8 +268,14 @@ export const en = {
     zipBody: "Got a project folder zipped up? Drop it here.",
     linkTitle: "Paste link",
     linkBody: "Share a link to your live demo or prototype.",
-    templateTitle: "Use simple starter template",
-    templateBody: "Start from a friendly Baiolo starter pack.",
+    templateTitle: "Simple HTML starter",
+    templateBody: "Open a mini project in Baiolo and edit it with a live preview.",
+    htmlTitle: "Simple HTML starter",
+    htmlBody: "Open a mini project in Baiolo and edit it with a live preview.",
+    aiTitle: "Build from a description",
+    aiBody: "Describe an idea — Baiolo builds a small game or tool (members).",
+    errWorkshop: "Open a starter and keep index.html before you continue.",
+    errAiSoon: "AI building isn’t ready yet — try the HTML starter for now.",
     addFiles: "Add your files",
     addFilesSub: "Don’t worry about perfect packaging — Baiolo can help.",
     packageReady: "Package ready",
@@ -603,6 +609,30 @@ export const en = {
   },
   projectMeta: {
     byCreator: "{category} · by {creator}",
+  },
+  workshop: {
+    pickStarter: "Pick a starter",
+    pickStarterSub:
+      "Open it in the editor, remix the code, watch the live preview.",
+    starter: {
+      game: "Game",
+      tool: "Tool",
+      experiment: "Experiment",
+    },
+    code: "Code",
+    preview: "Preview",
+    livePreview: "Live preview",
+    refresh: "Refresh preview",
+    hint: "When it feels right, continue to title and publish — Baiolo will package your files.",
+    aiTitle: "Build from a description",
+    aiNeedAccount:
+      "Sign in to use AI building. It will be a member feature (paid later).",
+    aiJoin: "Join to unlock",
+    aiComing:
+      "You’re in. AI building inside Baiolo (path A) is next — describe an idea and get a playable package here.",
+    aiMeanwhile:
+      "Meanwhile: use the HTML starter, or copy a prompt on How to make.",
+    aiUseHtml: "Or pick HTML starter",
   },
 } as const;
 

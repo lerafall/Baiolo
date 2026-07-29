@@ -16,6 +16,9 @@ export type CreateDraft = {
   thumb: string;
   fileSizeLabel?: string;
   hints?: string[];
+  /** In-browser HTML workshop files (path → source). */
+  workshopFiles?: Record<string, string>;
+  workshopStarterId?: "game" | "tool" | "experiment";
 };
 
 export const THUMB_OPTIONS = [

@@ -12,7 +12,7 @@ export type ProjectStatus =
 
 export type RiskLevel = "low" | "medium" | "high";
 
-export type UploadType = "zip" | "link" | "template";
+export type UploadType = "zip" | "link" | "template" | "html" | "ai";
 
 export type ProjectSubmission = {
   id: string;
