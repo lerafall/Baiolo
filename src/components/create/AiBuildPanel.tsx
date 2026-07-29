@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { DictationField } from "@/components/ui/DictationField";
 import { HtmlWorkshop } from "@/components/create/HtmlWorkshop";
+import { cn } from "@/lib/cn";
 import { authHref } from "@/lib/next-path";
-import { useT } from "@/lib/i18n/LocaleProvider";
+import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
 import type { StarterFiles } from "@/lib/html-starters";
 import type { ProjectCategory } from "@/lib/types";
 
-type ClarifyQuestion = { id: string; question: string };
+type ChatMessage = { role: "assistant" | "user"; content: string };
 
 type AiBuildPanelProps = {
   signedIn: boolean;
@@ -38,18 +39,24 @@ export function AiBuildPanel({
   onFilesChange,
 }: AiBuildPanelProps) {
   const t = useT();
+  const { locale } = useLocale();
   const [busy, setBusy] = useState(false);
-  const [phase, setPhase] = useState<"idle" | "clarify" | "build">("idle");
+  const [phase, setPhase] = useState<"idle" | "chat" | "build">("idle");
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
-  const [questions, setQuestions] = useState<ClarifyQuestion[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [reply, setReply] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setQuestions([]);
-    setAnswers({});
+    setMessages([]);
+    setReply("");
     setError("");
   }, [prompt]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [messages, busy]);
 
   if (!signedIn) {
     return (
@@ -63,9 +70,9 @@ export function AiBuildPanel({
     );
   }
 
-  async function callBuild(options: {
-    skipClarify?: boolean;
-    withAnswers?: boolean;
+  async function request(options: {
+    action: "chat" | "build";
+    nextMessages?: ChatMessage[];
   }) {
     setError("");
     const trimmed = prompt.trim();
@@ -74,23 +81,9 @@ export function AiBuildPanel({
       return;
     }
 
-    const answerPayload = options.withAnswers
-      ? questions
-          .map((q) => ({
-            id: q.id,
-            question: q.question,
-            answer: (answers[q.id] || "").trim(),
-          }))
-          .filter((a) => a.answer)
-      : [];
-
-    if (options.withAnswers && answerPayload.length === 0) {
-      setError(t("workshop.aiAnswerNeeded"));
-      return;
-    }
-
+    const thread = options.nextMessages ?? messages;
     setBusy(true);
-    setPhase(options.skipClarify || options.withAnswers ? "build" : "clarify");
+    setPhase(options.action === "build" ? "build" : "chat");
     try {
       const res = await fetch("/api/build", {
         method: "POST",
@@ -99,14 +92,15 @@ export function AiBuildPanel({
           prompt: trimmed,
           userId,
           email,
-          skipClarify: options.skipClarify || false,
-          answers: options.withAnswers ? answerPayload : undefined,
+          locale,
+          action: options.action,
+          messages: thread,
         }),
       });
       const data = (await res.json()) as {
         error?: string;
         status?: string;
-        questions?: ClarifyQuestion[];
+        message?: string;
         title?: string;
         description?: string;
         category?: ProjectCategory;
@@ -118,10 +112,13 @@ export function AiBuildPanel({
         return;
       }
 
-      if (data.status === "clarify" && data.questions?.length) {
-        setQuestions(data.questions);
-        setAnswers({});
+      if (data.status === "chat" && data.message) {
+        setMessages([...thread, { role: "assistant", content: data.message }]);
         return;
+      }
+
+      if (data.message) {
+        setMessages([...thread, { role: "assistant", content: data.message }]);
       }
 
       if (!data.files?.["index.html"]) {
@@ -129,8 +126,6 @@ export function AiBuildPanel({
         return;
       }
 
-      setQuestions([]);
-      setAnswers({});
       onBuilt({
         files: data.files,
         title: data.title || "AI project",
@@ -146,12 +141,30 @@ export function AiBuildPanel({
     }
   }
 
+  async function startOrRebuild() {
+    setMessages([]);
+    setReply("");
+    await request({ action: "chat", nextMessages: [] });
+  }
+
+  async function sendReply() {
+    const text = reply.trim();
+    if (!text) {
+      setError(t("workshop.aiChatEmpty"));
+      return;
+    }
+    const nextMessages: ChatMessage[] = [
+      ...messages,
+      { role: "user", content: text },
+    ];
+    setMessages(nextMessages);
+    setReply("");
+    await request({ action: "chat", nextMessages });
+  }
+
+  const chatting = messages.length > 0;
   const busyLabel =
-    phase === "clarify"
-      ? t("workshop.aiChecking")
-      : phase === "build"
-        ? t("workshop.aiBuilding")
-        : t("workshop.aiBuilding");
+    phase === "chat" ? t("workshop.aiChatThinking") : t("workshop.aiBuilding");
 
   return (
     <div className="space-y-6">
@@ -177,13 +190,15 @@ export function AiBuildPanel({
             type="button"
             size="l"
             disabled={busy}
-            onClick={() => void callBuild({})}
+            onClick={() => void startOrRebuild()}
           >
-            {busy
+            {busy && !chatting
               ? busyLabel
               : files
                 ? t("workshop.aiRebuild")
-                : t("workshop.aiBuild")}
+                : chatting
+                  ? t("workshop.aiRestartChat")
+                  : t("workshop.aiStartChat")}
           </Button>
           <p className="text-sm text-ink-muted">{t("workshop.aiHintPaid")}</p>
         </div>
@@ -194,57 +209,85 @@ export function AiBuildPanel({
         )}
       </div>
 
-      {questions.length > 0 && (
-        <div className="rounded-xl border-2 border-brand/25 bg-lilac/30 p-5">
-          <p className="text-lg font-extrabold">{t("workshop.aiClarifyTitle")}</p>
-          <p className="mt-1 text-ink-muted">{t("workshop.aiClarifySub")}</p>
-          <div className="mt-4 space-y-4">
-            {questions.map((q) => (
-              <label key={q.id} className="block">
-                <span className="font-bold">{q.question}</span>
-                <DictationField
-                  className="mt-2"
-                  value={answers[q.id] || ""}
-                  onChange={(value) =>
-                    setAnswers((prev) => ({ ...prev, [q.id]: value }))
-                  }
+      {chatting && (
+        <div className="rounded-xl border-2 border-brand/25 bg-gradient-to-b from-lilac/50 to-mint/20 p-4 md:p-5">
+          <p className="text-sm font-bold text-ink-muted">
+            {t("workshop.aiChatTitle")}
+          </p>
+          <div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
+            {messages.map((m, i) => (
+              <div
+                key={`${m.role}-${i}`}
+                className={cn(
+                  "flex",
+                  m.role === "user" ? "justify-end" : "justify-start",
+                )}
+              >
+                <div
+                  className={cn(
+                    "max-w-[90%] rounded-2xl px-4 py-3 text-[15px] leading-snug md:max-w-[80%]",
+                    m.role === "user"
+                      ? "rounded-br-md bg-brand text-on-brand"
+                      : "rounded-bl-md border-2 border-border bg-surface text-ink shadow-[var(--shadow-1)]",
+                  )}
                 >
-                  <input
-                    value={answers[q.id] || ""}
-                    onChange={(e) =>
-                      setAnswers((prev) => ({
-                        ...prev,
-                        [q.id]: e.target.value,
-                      }))
-                    }
-                    disabled={busy}
-                    placeholder={t("workshop.aiClarifyPlaceholder")}
-                    className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 focus:border-brand focus:outline-none disabled:opacity-60"
-                  />
-                </DictationField>
-              </label>
+                  {m.role === "assistant" && (
+                    <p className="mb-1 text-xs font-extrabold text-brand-strong">
+                      Baiolo
+                    </p>
+                  )}
+                  <p>{m.content}</p>
+                </div>
+              </div>
             ))}
+            {busy && phase === "chat" && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl rounded-bl-md border-2 border-border bg-surface px-4 py-3 text-sm text-ink-muted">
+                  {t("workshop.aiChatThinking")}
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
           </div>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Button
-              type="button"
-              size="l"
-              disabled={busy}
-              onClick={() => void callBuild({ withAnswers: true })}
-            >
-              {busy && phase === "build"
-                ? t("workshop.aiBuilding")
-                : t("workshop.aiBuildWithAnswers")}
-            </Button>
-            <Button
-              type="button"
-              size="l"
-              variant="secondary"
-              disabled={busy}
-              onClick={() => void callBuild({ skipClarify: true })}
-            >
-              {t("workshop.aiSkipClarify")}
-            </Button>
+
+          <div className="mt-4 space-y-3">
+            <DictationField value={reply} onChange={setReply}>
+              <input
+                value={reply}
+                onChange={(e) => setReply(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!busy) void sendReply();
+                  }
+                }}
+                disabled={busy}
+                placeholder={t("workshop.aiChatPlaceholder")}
+                className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-base focus:border-brand focus:outline-none disabled:opacity-60"
+              />
+            </DictationField>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="l"
+                disabled={busy}
+                onClick={() => void sendReply()}
+              >
+                {t("workshop.aiChatSend")}
+              </Button>
+              <Button
+                type="button"
+                size="l"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => void request({ action: "build" })}
+              >
+                {busy && phase === "build"
+                  ? t("workshop.aiBuilding")
+                  : t("workshop.aiBuildNow")}
+              </Button>
+            </div>
+            <p className="text-sm text-ink-muted">{t("workshop.aiChatHint")}</p>
           </div>
         </div>
       )}

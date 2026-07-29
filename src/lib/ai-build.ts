@@ -12,20 +12,14 @@ export type AiBuildResult = {
   tier?: "fast" | "quality";
 };
 
-export type AiClarifyQuestion = {
-  id: string;
-  question: string;
+export type ChatMessage = {
+  role: "assistant" | "user";
+  content: string;
 };
 
-export type AiClarifyResult =
-  | { status: "ready" }
-  | { status: "clarify"; questions: AiClarifyQuestion[] };
-
-export type AiAnswer = {
-  id?: string;
-  question: string;
-  answer: string;
-};
+export type ChatTurnResult =
+  | { status: "ready"; message: string }
+  | { status: "chat"; message: string };
 
 const ALLOWED_FILES = new Set([
   "index.html",
@@ -41,6 +35,8 @@ const CATEGORIES: ProjectCategory[] = [
   "experiment",
   "demo",
 ];
+
+export const MAX_CHAT_ASSISTANT_TURNS = 3;
 
 export function normalizeAiBuildFiles(
   raw: Record<string, unknown> | null | undefined,
@@ -101,83 +97,95 @@ export function parseAiBuildPayload(
   return { title, description, category, files };
 }
 
-export function parseClarifyPayload(raw: string): AiClarifyResult {
-  let parsed: {
-    ready?: unknown;
-    questions?: unknown;
-  };
+export function parseChatTurnPayload(raw: string): ChatTurnResult {
+  let parsed: { ready?: unknown; message?: unknown };
   try {
     parsed = JSON.parse(raw) as typeof parsed;
   } catch {
-    return { status: "ready" };
+    return {
+      status: "ready",
+      message: "Sounds good — I’ll build it now.",
+    };
   }
 
-  if (parsed.ready === true) return { status: "ready" };
+  const message =
+    typeof parsed.message === "string" && parsed.message.trim()
+      ? parsed.message.trim().slice(0, 400)
+      : "";
 
-  const questions: AiClarifyQuestion[] = [];
-  if (Array.isArray(parsed.questions)) {
-    for (let i = 0; i < parsed.questions.length && questions.length < 4; i++) {
-      const item = parsed.questions[i];
-      if (typeof item === "string" && item.trim()) {
-        questions.push({
-          id: `q${i + 1}`,
-          question: item.trim().slice(0, 200),
-        });
-        continue;
-      }
-      if (item && typeof item === "object") {
-        const obj = item as {
-          id?: unknown;
-          question?: unknown;
-          text?: unknown;
-        };
-        const q =
-          (typeof obj.question === "string" && obj.question.trim()) ||
-          (typeof obj.text === "string" && obj.text.trim()) ||
-          "";
-        if (!q) continue;
-        const id =
-          typeof obj.id === "string" && obj.id.trim()
-            ? obj.id.trim().slice(0, 32)
-            : `q${i + 1}`;
-        questions.push({ id, question: q.slice(0, 200) });
-      }
-    }
+  if (parsed.ready === true) {
+    return {
+      status: "ready",
+      message: message || "Perfect — I’ll build that now.",
+    };
   }
 
-  if (questions.length === 0) return { status: "ready" };
-  return { status: "clarify", questions };
+  if (!message) {
+    return {
+      status: "ready",
+      message: "Got it — building now.",
+    };
+  }
+
+  return { status: "chat", message };
+}
+
+export function normalizeChatMessages(raw: unknown): ChatMessage[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ChatMessage[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as ChatMessage;
+    if (row.role !== "assistant" && row.role !== "user") continue;
+    const content = typeof row.content === "string" ? row.content.trim() : "";
+    if (!content) continue;
+    out.push({ role: row.role, content: content.slice(0, 500) });
+    if (out.length >= 12) break;
+  }
+  return out;
 }
 
 export function composeBuildBrief(
   prompt: string,
-  answers?: AiAnswer[],
+  messages?: ChatMessage[],
 ): string {
   const base = prompt.trim().slice(0, 2000);
-  const useful = (answers ?? []).filter((a) => a.answer.trim());
-  if (useful.length === 0) return base;
-  const qa = useful
-    .map(
-      (a, i) =>
-        `Q${i + 1}: ${a.question.trim().slice(0, 200)}\nA${i + 1}: ${a.answer.trim().slice(0, 400)}`,
+  const chat = (messages ?? []).filter((m) => m.content.trim());
+  if (chat.length === 0) return base;
+  const lines = chat
+    .map((m) =>
+      m.role === "assistant"
+        ? `Baiolo: ${m.content.trim()}`
+        : `Creator: ${m.content.trim()}`,
     )
     .join("\n");
-  return `${base}\n\nClarifications from the creator:\n${qa}`.slice(0, 3500);
+  return `${base}\n\nFriendly chat with the creator:\n${lines}`.slice(0, 3500);
 }
 
-const CLARIFY_SYSTEM = `You help Baiolo prepare a tiny HTML/CSS/JS game or tool from a creator’s short idea.
-Decide if the idea is clear enough to build a playable MVP in one sitting.
+function chatSystemPrompt(locale: string) {
+  const language =
+    locale === "pl"
+      ? "Write every message in natural, warm Polish (like texting a friend)."
+      : "Write every message in natural, warm English (like texting a friend).";
+
+  return `You are Baiolo’s friendly helper. You chat with creators before building a tiny HTML game or tool.
+
+${language}
 
 Reply with JSON only:
-{"ready":true}
+{"ready":true,"message":"..."}
 or
-{"ready":false,"questions":["...","..."]}
+{"ready":false,"message":"..."}
 
-Rules:
-- Ask only when something important is missing or ambiguous (goal, win condition, main interaction, theme).
-- Max 3 short questions. Plain English. No jargon.
-- If the idea is already clear enough for a simple MVP, set ready:true — do not over-ask.
-- Never ask about tech stack, hosting, accounts, or monetization.`;
+How to talk:
+- Sound human, kind, and simple — not like a form or a survey.
+- Ask at most ONE easy thing at a time.
+- Prefer choices people can answer in a few words (“pastel or neon?”, “tap or swipe?”, “catch 5 or 10?”).
+- Short messages (1–2 sentences). No jargon, no tech talk.
+- If the idea is already clear enough for a small MVP, set ready:true with a warm confirmation.
+- After a couple of replies, prefer ready:true instead of more questions.
+- Never ask about accounts, money, hosting, frameworks, or code.`;
+}
 
 const SYSTEM_PROMPT = `You build tiny playable static web apps for Baiolo (kids/creators MVP showcase).
 Reply with JSON only:
@@ -191,33 +199,60 @@ Rules:
 - Keep code short and working. Prefer canvas or simple DOM interactions.
 - No violence, hate, adult content, phishing, malware, or collecting personal data.
 - Max ~200 lines of JS. Make something people can try in under a minute.
-- Honor clarifications from the creator when provided.`;
+- Honor the friendly chat with the creator when provided.`;
 
-export async function clarifyBuildPrompt(
-  prompt: string,
-): Promise<AiClarifyResult> {
+export async function continueBuildChat(options: {
+  prompt: string;
+  messages: ChatMessage[];
+  locale?: string;
+}): Promise<ChatTurnResult> {
+  const assistantTurns = options.messages.filter(
+    (m) => m.role === "assistant",
+  ).length;
+  if (assistantTurns >= MAX_CHAT_ASSISTANT_TURNS) {
+    return {
+      status: "ready",
+      message:
+        options.locale === "pl"
+          ? "Super, mam już wystarczająco — buduję."
+          : "Great, that’s enough — I’ll build it now.",
+    };
+  }
+
   try {
+    const history =
+      options.messages.length === 0
+        ? "(no chat yet — this is your first reply)"
+        : options.messages
+            .map((m) => `${m.role === "assistant" ? "Baiolo" : "Creator"}: ${m.content}`)
+            .join("\n");
+
     const { content } = await chatCompletionJson({
-      system: CLARIFY_SYSTEM,
-      user: `Creator idea:\n${prompt.slice(0, 2000)}`,
-      temperature: 0.2,
+      system: chatSystemPrompt(options.locale || "en"),
+      user: `Creator’s idea:\n${options.prompt.slice(0, 2000)}\n\nChat so far:\n${history}\n\nDecide: ask one easy follow-up, or say you’re ready to build.`,
+      temperature: 0.5,
       tier: "fast",
     });
-    return parseClarifyPayload(content);
+    return parseChatTurnPayload(content);
   } catch {
-    // If clarify fails, proceed to build rather than blocking the user.
-    return { status: "ready" };
+    return {
+      status: "ready",
+      message:
+        options.locale === "pl"
+          ? "Dobra, buduję z tego co mam."
+          : "Alright — I’ll build from what we have.",
+    };
   }
 }
 
 export async function buildFromDescription(
   prompt: string,
-  answers?: AiAnswer[],
+  messages?: ChatMessage[],
 ): Promise<AiBuildResult> {
-  const brief = composeBuildBrief(prompt, answers);
+  const brief = composeBuildBrief(prompt, messages);
   const builderUrl = process.env.BUILDER_API_URL?.trim();
   if (builderUrl) {
-    return buildViaExternal(builderUrl, brief, answers);
+    return buildViaExternal(builderUrl, brief, messages);
   }
   return buildViaLlm(brief);
 }
@@ -225,7 +260,7 @@ export async function buildFromDescription(
 async function buildViaExternal(
   url: string,
   prompt: string,
-  answers?: AiAnswer[],
+  messages?: ChatMessage[],
 ): Promise<AiBuildResult> {
   const secret = process.env.BUILDER_API_SECRET?.trim();
   const res = await fetch(url, {
@@ -234,7 +269,7 @@ async function buildViaExternal(
       "Content-Type": "application/json",
       ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
     },
-    body: JSON.stringify({ prompt, answers }),
+    body: JSON.stringify({ prompt, messages }),
   });
   if (!res.ok) {
     throw new Error(`builder_http_${res.status}`);

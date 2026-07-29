@@ -3,7 +3,7 @@ import {
   composeBuildBrief,
   normalizeAiBuildFiles,
   parseAiBuildPayload,
-  parseClarifyPayload,
+  parseChatTurnPayload,
 } from "@/lib/ai-build";
 
 describe("ai-build parsers", () => {
@@ -43,34 +43,32 @@ describe("ai-build parsers", () => {
     expect(parsed?.files["index.html"]).toContain("DOCTYPE");
   });
 
-  it("parses clarify questions", () => {
-    const result = parseClarifyPayload(
+  it("parses chat turn follow-up", () => {
+    const result = parseChatTurnPayload(
       JSON.stringify({
         ready: false,
-        questions: [
-          "How do you win?",
-          { id: "theme", question: "What theme?" },
-        ],
+        message: "Cool! Pastel or neon colors?",
       }),
     );
-    expect(result.status).toBe("clarify");
-    if (result.status === "clarify") {
-      expect(result.questions).toHaveLength(2);
-      expect(result.questions[0].question).toBe("How do you win?");
-    }
-  });
-
-  it("treats ready clarify as ready", () => {
-    expect(parseClarifyPayload(JSON.stringify({ ready: true }))).toEqual({
-      status: "ready",
+    expect(result).toEqual({
+      status: "chat",
+      message: "Cool! Pastel or neon colors?",
     });
   });
 
-  it("composes brief with answers", () => {
+  it("parses ready chat turn", () => {
+    const result = parseChatTurnPayload(
+      JSON.stringify({ ready: true, message: "Building now!" }),
+    );
+    expect(result.status).toBe("ready");
+  });
+
+  it("composes brief from chat", () => {
     const brief = composeBuildBrief("Tap stars", [
-      { question: "Win?", answer: "Catch 10" },
+      { role: "assistant", content: "Catch 5 or 10?" },
+      { role: "user", content: "10 please" },
     ]);
     expect(brief).toContain("Tap stars");
-    expect(brief).toContain("Catch 10");
+    expect(brief).toContain("10 please");
   });
 });

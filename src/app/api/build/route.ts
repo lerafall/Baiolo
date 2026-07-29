@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import {
   buildFromDescription,
-  clarifyBuildPrompt,
-  type AiAnswer,
+  continueBuildChat,
+  normalizeChatMessages,
+  type ChatMessage,
 } from "@/lib/ai-build";
 import { isLlmConfigured } from "@/lib/llm";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -13,32 +14,14 @@ export const maxDuration = 60;
 
 type Body = {
   prompt?: string;
-  /** Mock-mode identity when Supabase auth isn’t configured. */
   userId?: string | null;
   email?: string | null;
-  /** Answers to prior clarification questions. */
-  answers?: AiAnswer[];
-  /** Skip clarify and build immediately. */
-  skipClarify?: boolean;
+  /** Conversation so far (assistant/user). */
+  messages?: ChatMessage[];
+  /** chat = next friendly turn; build = skip more chat and generate. */
+  action?: "chat" | "build";
+  locale?: string;
 };
-
-function normalizeAnswers(raw: unknown): AiAnswer[] {
-  if (!Array.isArray(raw)) return [];
-  const out: AiAnswer[] = [];
-  for (const item of raw) {
-    if (!item || typeof item !== "object") continue;
-    const row = item as AiAnswer;
-    const question = typeof row.question === "string" ? row.question.trim() : "";
-    const answer = typeof row.answer === "string" ? row.answer.trim() : "";
-    if (!question || !answer) continue;
-    out.push({
-      id: typeof row.id === "string" ? row.id : undefined,
-      question: question.slice(0, 200),
-      answer: answer.slice(0, 400),
-    });
-  }
-  return out.slice(0, 4);
-}
 
 export async function POST(request: Request) {
   let body: Body;
@@ -90,21 +73,39 @@ export async function POST(request: Request) {
     );
   }
 
-  const answers = normalizeAnswers(body.answers);
-  const skipClarify = Boolean(body.skipClarify) || answers.length > 0;
+  const messages = normalizeChatMessages(body.messages);
+  const action = body.action === "build" ? "build" : "chat";
+  const locale = body.locale === "pl" ? "pl" : "en";
 
   try {
-    if (!skipClarify) {
-      const clarify = await clarifyBuildPrompt(prompt);
-      if (clarify.status === "clarify") {
+    if (action === "chat") {
+      const turn = await continueBuildChat({ prompt, messages, locale });
+      if (turn.status === "chat") {
         return NextResponse.json({
-          status: "clarify",
-          questions: clarify.questions,
+          status: "chat",
+          message: turn.message,
         });
       }
+      // Ready — build immediately after a warm confirmation message.
+      const nextMessages: ChatMessage[] = [
+        ...messages,
+        { role: "assistant", content: turn.message },
+      ];
+      const result = await buildFromDescription(prompt, nextMessages);
+      return NextResponse.json({
+        status: "built",
+        message: turn.message,
+        title: result.title,
+        description: result.description,
+        category: result.category,
+        files: result.files,
+        provider: result.provider,
+        model: result.model,
+        tier: result.tier,
+      });
     }
 
-    const result = await buildFromDescription(prompt, answers);
+    const result = await buildFromDescription(prompt, messages);
     return NextResponse.json({
       status: "built",
       title: result.title,
