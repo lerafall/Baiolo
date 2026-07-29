@@ -154,6 +154,8 @@ export async function chatCompletionJson(options: {
   maxTokens?: number;
   /** fast = cheaper; quality = stronger. Default quality. */
   tier?: LlmTier;
+  /** Optional JPEG/PNG data URL so vision models can see the live preview. */
+  imageDataUrl?: string | null;
 }): Promise<{
   content: string;
   provider: LlmProvider;
@@ -163,6 +165,22 @@ export async function chatCompletionJson(options: {
   const tier = options.tier ?? "quality";
   const cfg = resolveLlmChatConfig(tier);
   if (!cfg) throw new Error("missing_llm_key");
+
+  const image =
+    typeof options.imageDataUrl === "string" &&
+    options.imageDataUrl.startsWith("data:image/")
+      ? options.imageDataUrl.slice(0, 400_000)
+      : null;
+
+  const userContent = image
+    ? [
+        { type: "text" as const, text: options.user },
+        {
+          type: "image_url" as const,
+          image_url: { url: image },
+        },
+      ]
+    : options.user;
 
   const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
     method: "POST",
@@ -177,7 +195,7 @@ export async function chatCompletionJson(options: {
       max_tokens: options.maxTokens ?? 12_000,
       messages: [
         { role: "system", content: options.system },
-        { role: "user", content: options.user },
+        { role: "user", content: userContent },
       ],
       response_format: { type: "json_object" },
     }),

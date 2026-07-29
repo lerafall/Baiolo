@@ -138,6 +138,13 @@ type Body = {
   mode?: "new_project" | "regenerate";
   /** Current editor files — used to repair/refine instead of blind rebuild */
   files?: Record<string, string> | null;
+  /** Live preview observation + optional JPEG data URL */
+  previewInsight?: {
+    summary?: string;
+    imageDataUrl?: string;
+    hasCanvas?: boolean;
+    likelyBlank?: boolean;
+  } | null;
 };
 
 export async function POST(request: Request) {
@@ -196,6 +203,19 @@ export async function POST(request: Request) {
 
     const messages = normalizeChatMessages(body.messages);
     const existingFiles = normalizeAiBuildFiles(body.files ?? undefined);
+    const previewInsight =
+      body.previewInsight &&
+      typeof body.previewInsight.summary === "string" &&
+      body.previewInsight.summary.trim()
+        ? {
+            summary: body.previewInsight.summary.trim().slice(0, 2000),
+            imageDataUrl:
+              typeof body.previewInsight.imageDataUrl === "string" &&
+              body.previewInsight.imageDataUrl.startsWith("data:image/")
+                ? body.previewInsight.imageDataUrl.slice(0, 400_000)
+                : undefined,
+          }
+        : null;
     const action = body.action === "build" ? "build" : "chat";
     const locale = body.locale === "pl" ? "pl" : "en";
     const plan = await resolveUserPlan({
@@ -274,6 +294,7 @@ export async function POST(request: Request) {
         categoryHint: turn.categoryHint || body.categoryHint,
         locale,
         existingFiles,
+        previewInsight,
       });
       const charge = shouldChargeAiGeneration({
         configured: true,
@@ -313,6 +334,7 @@ export async function POST(request: Request) {
       categoryHint: body.categoryHint,
       locale,
       existingFiles,
+      previewInsight,
     });
     const charge = shouldChargeAiGeneration({
       configured: true,

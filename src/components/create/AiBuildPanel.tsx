@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { DictationField } from "@/components/ui/DictationField";
-import { HtmlWorkshop } from "@/components/create/HtmlWorkshop";
+import { HtmlWorkshop, type HtmlWorkshopHandle } from "@/components/create/HtmlWorkshop";
 import { cn } from "@/lib/cn";
 import { authHref } from "@/lib/next-path";
 import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
@@ -15,6 +15,9 @@ import {
   looksIncompletePlayable,
 } from "@/lib/ai-build";
 import { coinCatcherFiles } from "@/lib/ai-game-fallbacks";
+import {
+  capturePreviewInsight,
+} from "@/lib/preview-insight";
 
 type ChatMessage = { role: "assistant" | "user"; content: string };
 
@@ -65,6 +68,7 @@ export function AiBuildPanel({
   const [quota, setQuota] = useState<QuotaState | null>(null);
   const activePlan = plan ?? "free";
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const workshopRef = useRef<HtmlWorkshopHandle>(null);
 
   useEffect(() => {
     if (!signedIn) return;
@@ -120,6 +124,14 @@ export function AiBuildPanel({
     setBusy(true);
     setPhase(options.action === "build" ? "build" : "chat");
     try {
+      // Let the preview paint a couple frames before we snapshot it for the model.
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      await new Promise((r) => setTimeout(r, 180));
+      const previewInsight = files
+        ? (workshopRef.current?.capturePreview() ??
+          capturePreviewInsight(null, files))
+        : null;
+
       const res = await fetch("/api/build", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,6 +146,14 @@ export function AiBuildPanel({
           categoryHint,
           mode: files ? "regenerate" : "new_project",
           files: files ?? undefined,
+          previewInsight: previewInsight
+            ? {
+                summary: previewInsight.summary,
+                imageDataUrl: previewInsight.imageDataUrl,
+                hasCanvas: previewInsight.hasCanvas,
+                likelyBlank: previewInsight.likelyBlank,
+              }
+            : undefined,
         }),
       });
       let data: {
@@ -493,6 +513,7 @@ export function AiBuildPanel({
 
       {files && (
         <HtmlWorkshop
+          ref={workshopRef}
           key={revision}
           files={files}
           onFilesChange={onFilesChange}

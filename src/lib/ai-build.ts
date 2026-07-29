@@ -293,6 +293,7 @@ Hard rules:
   • No input wiring → keyboard + pointer/touch
   • Score never changes → collision checks that update DOM text
 - Prefer repairing the provided code over rewriting from scratch, unless the code is an empty stub.
+- If a live preview observation or JPEG is provided, treat it as ground truth for what is broken.
 - If the creator clearly wants a different idea, rebuild to match the new brief (still fully playable).
 - Output must be a working MVP someone can try in under a minute.`;
 
@@ -492,6 +493,8 @@ export type BuildOptions = {
   categoryHint?: ProjectCategory | null;
   locale?: string;
   existingFiles?: StarterFiles | null;
+  /** What the creator currently sees in the live preview. */
+  previewInsight?: { summary: string; imageDataUrl?: string } | null;
 };
 
 export async function buildFromDescription(
@@ -507,7 +510,7 @@ export async function buildFromDescription(
   if (builderUrl) {
     return buildViaExternal(builderUrl, withCategory, messages, options);
   }
-  return buildViaLlm(withCategory, options?.existingFiles ?? null);
+  return buildViaLlm(withCategory, options?.existingFiles ?? null, options);
 }
 
 async function buildViaExternal(
@@ -537,20 +540,28 @@ async function buildViaExternal(
 async function buildViaLlm(
   brief: string,
   existingFiles: StarterFiles | null,
+  options?: BuildOptions,
 ): Promise<AiBuildResult> {
   const repairing = Boolean(existingFiles?.["index.html"]);
+  const preview = options?.previewInsight;
+  const previewBlock = preview?.summary
+    ? `\n\nLive preview observation (what the creator sees right now):\n${preview.summary}\n`
+    : "";
 
   // Fast path: broken Score:0 / no-canvas shells → ship a working catcher immediately.
-  // Avoids another round of LLM "Jasne, naprawiam" that leaves the preview empty.
   if (
     repairing &&
     existingFiles &&
     looksIncompletePlayable(existingFiles, "game") &&
     (isFixIntent(brief) ||
+      preview?.summary?.toLowerCase().includes("no canvas") ||
+      preview?.summary?.toLowerCase().includes("blank") ||
       briefLooksLikeCatchGame(brief) ||
       /catcher|coin|monet/i.test(brief + (existingFiles["index.html"] || "")))
   ) {
-    const titleMatch = existingFiles["index.html"]?.match(/<title>([^<]*)<\/title>/i);
+    const titleMatch = existingFiles["index.html"]?.match(
+      /<title>([^<]*)<\/title>/i,
+    );
     const title = (titleMatch?.[1] || "Coin Catcher").trim().slice(0, 40);
     return {
       title,
@@ -565,7 +576,7 @@ async function buildViaLlm(
   }
 
   const forceQuality =
-    repairing || isFixIntent(brief) || /category:\s*game/i.test(brief);
+    repairing || isFixIntent(brief) || Boolean(preview?.imageDataUrl);
   const tier: LlmTier = forceQuality ? "quality" : pickBuildTier(brief);
   const system = repairing ? REPAIR_SYSTEM_PROMPT : BUILD_SYSTEM_PROMPT;
   const filesBlock =
@@ -573,9 +584,13 @@ async function buildViaLlm(
       ? `\n\nCurrent project files to repair:\n${formatFilesForPrompt(existingFiles)}\n`
       : "";
 
+  const visionHint = preview?.imageDataUrl
+    ? "\nA JPEG of the live preview is attached — use it to see what is broken (blank screen, missing sprites, etc.).\n"
+    : "";
+
   const userPrompt = repairing
-    ? `Repair this Baiolo project so it is fully playable. Fix blank screens, missing sprites, broken loops, and dead controls.\n\nCreator request / brief:\n${brief}${filesBlock}\nReturn complete fixed JSON files.`
-    : `Build this Baiolo project as a complete playable MVP (not a stub):\n${brief}`;
+    ? `Repair this Baiolo project so it is fully playable. Fix blank screens, missing sprites, broken loops, and dead controls.\n\nCreator request / brief:\n${brief}${previewBlock}${visionHint}${filesBlock}\nReturn complete fixed JSON files.`
+    : `Build this Baiolo project as a complete playable MVP (not a stub):\n${brief}${previewBlock}`;
 
   const run = async (temperature: number, extraReminder?: string) => {
     const { content, provider, model } = await chatCompletionJson({
@@ -584,6 +599,7 @@ async function buildViaLlm(
       temperature,
       tier,
       maxTokens: 12_000,
+      imageDataUrl: preview?.imageDataUrl,
     });
     return { content, provider, model };
   };
@@ -626,7 +642,6 @@ async function buildViaLlm(
     }
   }
 
-  // Absolute last resort after retries.
   parsed = {
     ...parsed,
     files: ensurePlayableFiles(parsed.files, {
