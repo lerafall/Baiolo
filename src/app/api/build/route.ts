@@ -72,6 +72,8 @@ export async function POST(request: Request) {
       category: result.category,
       files: result.files,
       provider: result.provider,
+      model: result.model,
+      tier: result.tier,
     });
   } catch (err) {
     const code = err instanceof Error ? err.message : "build_failed";

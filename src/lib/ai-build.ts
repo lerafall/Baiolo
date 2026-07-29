@@ -1,6 +1,6 @@
 import type { ProjectCategory } from "@/lib/types";
 import type { StarterFiles } from "@/lib/html-starters";
-import { chatCompletionJson } from "@/lib/llm";
+import { chatCompletionJson, pickBuildTier } from "@/lib/llm";
 
 export type AiBuildResult = {
   title: string;
@@ -8,6 +8,8 @@ export type AiBuildResult = {
   category: ProjectCategory;
   files: StarterFiles;
   provider: "openai" | "openrouter" | "builder";
+  model?: string;
+  tier?: "fast" | "quality";
 };
 
 const ALLOWED_FILES = new Set([
@@ -133,12 +135,14 @@ async function buildViaExternal(
 }
 
 async function buildViaLlm(prompt: string): Promise<AiBuildResult> {
-  const { content, provider } = await chatCompletionJson({
+  const tier = pickBuildTier(prompt);
+  const { content, provider, model } = await chatCompletionJson({
     system: SYSTEM_PROMPT,
     user: `Build this Baiolo project:\n${prompt.slice(0, 2000)}`,
     temperature: 0.7,
+    tier,
   });
   const parsed = parseAiBuildPayload(content);
   if (!parsed) throw new Error("llm_bad_payload");
-  return { ...parsed, provider };
+  return { ...parsed, provider, model, tier };
 }

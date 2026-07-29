@@ -217,6 +217,7 @@ async function askLlmReview(
       "You review small static HTML/CSS/JS MVPs for Baiolo. Reply with JSON only: {\"findings\":[{\"severity\":\"info|warn|block\",\"message\":\"...\"}]}. Focus on malware, phishing, extreme content, broken play controls, and iframe issues. Max 8 findings. Be concise.",
     user: codeBundle.slice(0, 100_000),
     temperature: 0.2,
+    tier: "fast",
   });
   const parsed = JSON.parse(content || "{}") as {
     findings?: Array<{ severity?: string; message?: string }>;
