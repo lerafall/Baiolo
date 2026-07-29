@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { safeNextPath } from "@/lib/next-path";
+import { getPublicSiteOrigin } from "@/lib/site-url";
 import {
   getSupabasePublicEnv,
   isSupabaseConfigured,
@@ -11,7 +12,8 @@ import {
  * or the browser stays logged out and the header still shows Join.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = getPublicSiteOrigin(request);
   const code = searchParams.get("code");
   const next = safeNextPath(searchParams.get("next"), "/explore");
   const oauthError = searchParams.get("error");

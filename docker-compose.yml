@@ -18,6 +18,9 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
+      BAIOLO_DOMAIN: ${BAIOLO_DOMAIN:-baiolo.com}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://baiolo.com}
+      SITE_URL: ${SITE_URL:-https://baiolo.com}
     networks:
       - traefik
     labels:
