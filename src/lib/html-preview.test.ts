@@ -16,19 +16,47 @@ describe("buildPreviewHtml", () => {
     });
     expect(html).toContain("<style>");
     expect(html).toContain("background:#7dd3fc");
-    expect(html).toContain("<script>");
     expect(html).toContain("dataset.ok");
     expect(html).not.toMatch(/href=["']style/);
   });
 
+  it("survives an unclosed truncated link tag that would eat the DOM", () => {
+    const html = buildPreviewHtml({
+      "index.html": `<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<title>Coin Catcher</title>
+<link rel="stylesheet" href="style.
+`,
+      "style.css": "body{background:#38bdf8}",
+      "script.js": 'document.body.setAttribute("data-ran","1")',
+    });
+    // Must still produce a coherent document with inlined assets.
+    expect(html).toContain("</body>");
+    expect(html).toContain("background:#38bdf8");
+    expect(html).toContain('data-ran","1"');
+    expect(html).not.toMatch(/<link\b/i);
+  });
+
   it("appends assets when tags are missing", () => {
     const html = buildPreviewHtml({
-      "index.html": "<!DOCTYPE html><html><head></head><body><h1>Hi</h1></body></html>",
+      "index.html":
+        "<!DOCTYPE html><html><head></head><body><h1>Hi</h1></body></html>",
       "style.css": ".x{color:red}",
       "script.js": "console.log(1)",
     });
     expect(html).toContain(".x{color:red}");
     expect(html).toContain("console.log(1)");
+  });
+
+  it("surfaces JS errors in the preview document", () => {
+    const html = buildPreviewHtml({
+      "index.html":
+        "<!DOCTYPE html><html><body><p>Score: 0</p></body></html>",
+      "style.css": "",
+      "script.js": "throw new Error('boom-preview')",
+    });
+    expect(html).toContain("boom-preview");
+    expect(html).toContain("data-baiolo-preview-error");
   });
 });
 

@@ -185,17 +185,22 @@ export const HtmlWorkshop = forwardRef<HtmlWorkshopHandle, HtmlWorkshopProps>(
               mobilePane !== "preview" && "hidden md:flex",
             )}
           >
-            <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
               <p className="text-sm font-bold">{t("workshop.livePreview")}</p>
-              <Button
-                type="button"
-                size="m"
-                variant="secondary"
-                onClick={refreshPreview}
-              >
-                {t("workshop.refresh")}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="m"
+                  variant="secondary"
+                  onClick={refreshPreview}
+                >
+                  {t("workshop.refresh")}
+                </Button>
+              </div>
             </div>
+            <p className="border-b border-border bg-lilac/30 px-3 py-1.5 text-xs text-ink-muted">
+              {t("workshop.previewNote")}
+            </p>
             {/*
               allow-same-origin lets Baiolo read the preview for AI repair
               (canvas snapshot + visible text). Content is the creator’s own code.

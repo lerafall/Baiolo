@@ -69,6 +69,46 @@ export function AiBuildPanel({
   const activePlan = plan ?? "free";
   const chatEndRef = useRef<HTMLDivElement>(null);
   const workshopRef = useRef<HtmlWorkshopHandle>(null);
+  const autoHealKey = useRef<string | null>(null);
+
+  // Broken Score:0 shells → replace with a playable package once (preview can't invent a canvas).
+  useEffect(() => {
+    if (!files?.["index.html"]) return;
+    if (!looksIncompletePlayable(files, "game")) return;
+    const key = `${files["index.html"]!.length}:${files["script.js"]?.length ?? 0}:${files["index.html"]!.slice(0, 80)}`;
+    if (autoHealKey.current === key) return;
+    autoHealKey.current = key;
+    const titleMatch = files["index.html"].match(/<title>([^<]*)<\/title>/i);
+    const title = (titleMatch?.[1] || "Coin Catcher").trim().slice(0, 40);
+    const healed = ensurePlayableFiles(files, {
+      title,
+      brief: prompt || title,
+      category: "game",
+    });
+    if (!looksIncompletePlayable(healed, "game")) {
+      onBuilt({
+        files: healed,
+        title,
+        description:
+          locale === "pl"
+            ? "Łap monety koszykiem — strzałki lub przeciąganie."
+            : "Catch coins with the basket — arrows or drag.",
+        category: "game",
+      });
+      setRevision((n) => n + 1);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            locale === "pl"
+              ? "Podgląd był pusty (sama skorupa). Wstawiłem działającą grę."
+              : "The preview was an empty shell — I inserted a working game.",
+        },
+      ]);
+    }
+  }, [files, prompt, locale, onBuilt]);
+
 
   useEffect(() => {
     if (!signedIn) return;

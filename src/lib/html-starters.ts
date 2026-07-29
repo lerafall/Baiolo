@@ -334,45 +334,73 @@ export function cloneStarterFiles(id: StarterId): StarterFiles {
   );
 }
 
+/**
+ * Build a srcdoc document for the live preview.
+ * Never relies on relative CSS/JS URLs (they cannot load inside srcdoc).
+ * Also tolerates truncated AI HTML like `<link href="style.` without a closing `>`.
+ */
 export function buildPreviewHtml(files: StarterFiles): string {
-  let html =
-    files["index.html"] ||
-    "<!DOCTYPE html><html><body>Missing index.html</body></html>";
   const css = files["style.css"] || files["styles.css"] || "";
   const js = files["script.js"] || files["main.js"] || "";
+  const raw =
+    files["index.html"] ||
+    "<!DOCTYPE html><html><body>Missing index.html</body></html>";
 
-  // srcdoc cannot load relative CSS/JS — always inline. Strip any stylesheet /
-  // script-src tags (including truncated AI output like href="style.").
-  html = html.replace(/<link\b[^>]*rel=["']?stylesheet["']?[^>]*>/gi, "");
-  html = html.replace(
-    /<link\b[^>]*href=["'][^"']*style[^"']*["'][^>]*>/gi,
-    "",
-  );
-  html = html.replace(
-    /<script\b[^>]*\bsrc=["'][^"']*["'][^>]*>\s*<\/script>/gi,
-    "",
-  );
+  const titleMatch = raw.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = (titleMatch?.[1] || "Baiolo preview")
+    .replace(/<[^>]+>/g, "")
+    .trim()
+    .slice(0, 80);
 
-  if (css) {
-    if (/<\/head>/i.test(html)) {
-      html = html.replace(/<\/head>/i, `<style>\n${css}\n</style>\n</head>`);
-    } else if (/<head\b[^>]*>/i.test(html)) {
-      html = html.replace(/<head\b[^>]*>/i, (m) => `${m}\n<style>\n${css}\n</style>`);
-    } else {
-      html = `<style>\n${css}\n</style>\n${html}`;
-    }
+  let bodyInner = "";
+  const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) {
+    bodyInner = bodyMatch[1];
+  } else {
+    // Truncated / broken head often eats the real body — fall back to stripping tags.
+    bodyInner = raw
+      .replace(/<!DOCTYPE[^>]*>/i, "")
+      .replace(/<\/?(?:html|head|body)[^>]*>/gi, "");
   }
 
-  if (js) {
-    if (/<\/body>/i.test(html)) {
-      html = html.replace(
-        /<\/body>/i,
-        `<script>\n${js}\n<\/script>\n</body>`,
-      );
-    } else {
-      html = `${html}\n<script>\n${js}\n<\/script>`;
-    }
-  }
+  // Remove any remaining external assets / scripts from body — we inject our own.
+  bodyInner = bodyInner
+    .replace(/<link\b[\s\S]*?(?:>|$)/gi, "")
+    .replace(/<script\b[^>]*\bsrc\b[\s\S]*?(?:<\/script>|$)/gi, "")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
 
-  return html;
+  // If the playfield is clearly a score-only shell, keep it — caller may heal files.
+  // Still always wrap in a clean document so a broken <link> cannot swallow the DOM.
+  const safeCss = css.replace(/<\/style>/gi, "<\\/style>");
+  const safeJs = js.replace(/<\/script>/gi, "<\\/script>");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>${title.replace(/</g, "&lt;")}</title>
+  <style>
+${safeCss}
+  </style>
+</head>
+<body>
+${bodyInner}
+<script>
+(function () {
+  try {
+${safeJs}
+  } catch (err) {
+    var box = document.createElement("pre");
+    box.setAttribute("data-baiolo-preview-error", "1");
+    box.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;max-height:40vh;overflow:auto;margin:0;padding:10px 12px;border-radius:10px;background:#7f1d1d;color:#fff;font:12px/1.4 ui-monospace,monospace;white-space:pre-wrap;";
+    box.textContent = "Preview JS error: " + (err && err.message ? err.message : String(err));
+    document.body.appendChild(box);
+    console.error("[baiolo-preview]", err);
+  }
+})();
+</script>
+</body>
+</html>`;
 }

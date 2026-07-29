@@ -753,6 +753,8 @@ export const en = {
     preview: "Preview",
     livePreview: "Live preview",
     refresh: "Refresh preview",
+    previewNote:
+      "Preview always inlines your CSS/JS (relative links can’t load here). If you only see Score: 0, the game code is incomplete — use Repair / Insert working game.",
     hint: "When it feels right, continue to title and publish — Baiolo will package your files.",
     aiTitle: "Build from a description",
     aiNeedAccount:
