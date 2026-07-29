@@ -1,12 +1,13 @@
 import type { ProjectCategory } from "@/lib/types";
 import type { StarterFiles } from "@/lib/html-starters";
+import { chatCompletionJson } from "@/lib/llm";
 
 export type AiBuildResult = {
   title: string;
   description: string;
   category: ProjectCategory;
   files: StarterFiles;
-  provider: "openai" | "builder";
+  provider: "openai" | "openrouter" | "builder";
 };
 
 const ALLOWED_FILES = new Set([
@@ -101,7 +102,7 @@ export async function buildFromDescription(
   if (builderUrl) {
     return buildViaExternal(builderUrl, prompt);
   }
-  return buildViaOpenAi(prompt);
+  return buildViaLlm(prompt);
 }
 
 async function buildViaExternal(
@@ -131,39 +132,13 @@ async function buildViaExternal(
   return { ...parsed, provider: "builder" };
 }
 
-async function buildViaOpenAi(prompt: string): Promise<AiBuildResult> {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) throw new Error("missing_openai_key");
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      temperature: 0.7,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Build this Baiolo project:\n${prompt.slice(0, 2000)}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-    }),
+async function buildViaLlm(prompt: string): Promise<AiBuildResult> {
+  const { content, provider } = await chatCompletionJson({
+    system: SYSTEM_PROMPT,
+    user: `Build this Baiolo project:\n${prompt.slice(0, 2000)}`,
+    temperature: 0.7,
   });
-
-  if (!res.ok) {
-    throw new Error(`openai_http_${res.status}`);
-  }
-
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  const raw = data.choices?.[0]?.message?.content ?? "";
-  const parsed = parseAiBuildPayload(raw);
-  if (!parsed) throw new Error("openai_bad_payload");
-  return { ...parsed, provider: "openai" };
+  const parsed = parseAiBuildPayload(content);
+  if (!parsed) throw new Error("llm_bad_payload");
+  return { ...parsed, provider };
 }

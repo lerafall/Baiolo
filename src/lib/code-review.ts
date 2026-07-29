@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import type { RiskLevel } from "@/lib/moderation";
+import { chatCompletionJson, resolveLlmChatConfig } from "@/lib/llm";
 
 export type CodeReviewFinding = {
   severity: "info" | "warn" | "block";
@@ -161,10 +162,9 @@ export async function reviewZipBytes(
   }
 
   let source: CodeReviewResult["source"] = "static";
-  const aiKey = process.env.OPENAI_API_KEY?.trim();
-  if (aiKey && snippets.length > 0) {
+  if (resolveLlmChatConfig() && snippets.length > 0) {
     try {
-      const aiFindings = await askOpenAiReview(aiKey, snippets.slice(0, 12).join("\n\n"));
+      const aiFindings = await askLlmReview(snippets.slice(0, 12).join("\n\n"));
       findings.push(...aiFindings);
       source = "static+ai";
     } catch {
@@ -194,7 +194,7 @@ export async function reviewZipBytes(
   const summary = ok
     ? source === "static+ai"
       ? "Static + AI check finished. Review the notes, then play the game."
-      : "Static check finished. Optional: set OPENAI_API_KEY for deeper AI review."
+      : "Static check finished. Optional: set OPENROUTER_API_KEY or OPENAI_API_KEY for deeper AI review."
     : "Blocking issues found — ask for changes before publish.";
 
   return {
@@ -209,39 +209,16 @@ export async function reviewZipBytes(
   };
 }
 
-async function askOpenAiReview(
-  apiKey: string,
+async function askLlmReview(
   codeBundle: string,
 ): Promise<CodeReviewFinding[]> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      temperature: 0.2,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You review small static HTML/CSS/JS MVPs for Baiolo. Reply with JSON only: {\"findings\":[{\"severity\":\"info|warn|block\",\"message\":\"...\"}]}. Focus on malware, phishing, extreme content, broken play controls, and iframe issues. Max 8 findings. Be concise.",
-        },
-        {
-          role: "user",
-          content: codeBundle.slice(0, 100_000),
-        },
-      ],
-      response_format: { type: "json_object" },
-    }),
+  const { content } = await chatCompletionJson({
+    system:
+      "You review small static HTML/CSS/JS MVPs for Baiolo. Reply with JSON only: {\"findings\":[{\"severity\":\"info|warn|block\",\"message\":\"...\"}]}. Focus on malware, phishing, extreme content, broken play controls, and iframe issues. Max 8 findings. Be concise.",
+    user: codeBundle.slice(0, 100_000),
+    temperature: 0.2,
   });
-  if (!res.ok) throw new Error("openai failed");
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  const raw = data.choices?.[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(raw) as {
+  const parsed = JSON.parse(content || "{}") as {
     findings?: Array<{ severity?: string; message?: string }>;
   };
   return (parsed.findings ?? [])

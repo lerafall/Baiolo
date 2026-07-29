@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildFromDescription } from "@/lib/ai-build";
+import { isLlmConfigured } from "@/lib/llm";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServer } from "@/lib/supabase/server-auth";
 
@@ -53,14 +54,11 @@ export async function POST(request: Request) {
     );
   }
 
-  if (
-    !process.env.OPENAI_API_KEY?.trim() &&
-    !process.env.BUILDER_API_URL?.trim()
-  ) {
+  if (!isLlmConfigured()) {
     return NextResponse.json(
       {
         error:
-          "AI building isn’t configured yet. Set OPENAI_API_KEY (or BUILDER_API_URL) on the server.",
+          "AI building isn’t configured yet. Set OPENROUTER_API_KEY or OPENAI_API_KEY (or BUILDER_API_URL) on the server.",
       },
       { status: 503 },
     );
@@ -77,7 +75,7 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const code = err instanceof Error ? err.message : "build_failed";
-    if (code === "missing_openai_key") {
+    if (code === "missing_llm_key" || code === "missing_openai_key") {
       return NextResponse.json(
         { error: "AI building isn’t configured yet." },
         { status: 503 },
