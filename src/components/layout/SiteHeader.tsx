@@ -99,25 +99,14 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
           {signedIn && <NotificationBell />}
           {showJoin &&
             (signedIn ? (
-              <>
-                <Button
-                  href="/profile"
-                  size="m"
-                  variant="secondary"
-                  className="min-h-10 shrink-0 px-3 text-sm"
-                >
-                  {t("nav.profile")}
-                </Button>
-                <Button
-                  type="button"
-                  size="m"
-                  variant="ghost"
-                  className="min-h-10 shrink-0 px-2.5 text-sm"
-                  onClick={() => void handleSignOut()}
-                >
-                  {t("nav.out")}
-                </Button>
-              </>
+              <Button
+                href="/profile"
+                size="m"
+                variant="secondary"
+                className="min-h-10 shrink-0 px-3.5 text-sm"
+              >
+                {t("nav.profile")}
+              </Button>
             ) : (
               <Button
                 href={joinHref}
