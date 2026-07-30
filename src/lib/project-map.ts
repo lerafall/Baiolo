@@ -80,9 +80,14 @@ function toProjectModel(
   // Prefer catalog breakdown when totals match; otherwise split the scalar exactly.
   const catalogTotal = fromCatalog ? totalReactions(fromCatalog.reactions) : -1;
   const reactions =
-    fromCatalog && catalogTotal === s.reactions
+    fromCatalog && (catalogTotal === s.reactions || s.reactions === 0)
       ? fromCatalog.reactions
       : splitReactionTotal(s.reactions);
+
+  const resolvedCreator =
+    fromCatalog?.creator ||
+    (creator && creator !== "You" ? creator : "") ||
+    "Creator";
 
   return {
     id: s.id,
@@ -92,7 +97,7 @@ function toProjectModel(
     category,
     tags:
       s.tags?.length > 0 ? s.tags : defaultTagsForCategory[category],
-    creator: fromCatalog?.creator ?? creator,
+    creator: resolvedCreator,
     thumbnail: preferVisual(s.thumbnail, fromCatalog?.thumbnail),
     cover: preferVisual(
       fromCatalog?.cover ?? "",
@@ -108,8 +113,23 @@ function toProjectModel(
   };
 }
 
-/** Prefer the richer stats when merging catalog + cloud for the same id. */
+/** Prefer richer plays; keep stable catalog creator + reaction breakdown for demos. */
 export function mergeProjectStats(base: Project, overlay: Project): Project {
+  const catalogEntry = catalog.find((p) => p.id === base.id || p.id === overlay.id);
+  if (catalogEntry) {
+    return {
+      ...overlay,
+      title: overlay.title || catalogEntry.title,
+      creator: catalogEntry.creator,
+      plays: Math.max(catalogEntry.plays, overlay.plays, base.plays),
+      reactions: catalogEntry.reactions,
+      featured: catalogEntry.featured ?? overlay.featured ?? base.featured,
+      ownerId: catalogEntry.ownerId,
+      thumbnail: preferVisual(overlay.thumbnail, catalogEntry.thumbnail),
+      cover: preferVisual(overlay.cover, catalogEntry.cover),
+      playUrl: overlay.playUrl || catalogEntry.playUrl,
+    };
+  }
   const baseR = totalReactions(base.reactions);
   const overlayR = totalReactions(overlay.reactions);
   return {
@@ -117,13 +137,17 @@ export function mergeProjectStats(base: Project, overlay: Project): Project {
     plays: Math.max(base.plays, overlay.plays),
     reactions: overlayR >= baseR ? overlay.reactions : base.reactions,
     featured: overlay.featured ?? base.featured,
+    creator:
+      overlay.creator && overlay.creator !== "You"
+        ? overlay.creator
+        : base.creator,
   };
 }
 
 /** Explore / public card — only after admin publish. */
 export function submissionToProject(
   s: ProjectSubmission,
-  creator = "You",
+  creator = "",
 ): Project | null {
   if (s.status !== "published" || !s.category) return null;
   let playUrl = resolvePlayableUrl(s);
@@ -144,7 +168,7 @@ export function submissionToProject(
  */
 export function submissionToOwnerProject(
   s: ProjectSubmission,
-  creator = "You",
+  creator = "",
 ): Project | null {
   if (s.status === "draft") return null;
   const playUrl = resolvePlayableUrl(s) || "#play";

@@ -547,6 +547,7 @@ export const pl: Messages = {
     nothingPublished: "Nic jeszcze nieopublikowane",
     nothingPublishedBody: "Gdy projekt wejdzie na żywo, pojawi się tutaj.",
     seeDrafts: "Zobacz szkice",
+    loadingProjects: "Ładujemy Twoje projekty…",
     roleGuest: "Gość",
     roleExplorer: "Odkrywca",
     roleCreator: "Twórca",

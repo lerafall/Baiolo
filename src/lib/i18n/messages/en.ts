@@ -544,6 +544,7 @@ export const en = {
     nothingPublished: "Nothing published yet",
     nothingPublishedBody: "When a project goes live, it will show up here.",
     seeDrafts: "See drafts",
+    loadingProjects: "Loading your projects…",
     roleGuest: "Guest",
     roleExplorer: "Explorer",
     roleCreator: "Creator",

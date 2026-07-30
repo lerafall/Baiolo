@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { MiniSparkline } from "@/components/projects/MiniSparkline";
 import { ProjectCardMenu } from "@/components/projects/ProjectCardMenu";
@@ -31,9 +33,17 @@ import {
   waitingMs,
 } from "@/lib/submission-timeline";
 import { useSubmissions } from "@/lib/submissions";
+import { isCatalogDemoId, isOwnedSubmission } from "@/lib/ownership";
 
 type LiveSort = "newest" | "plays" | "reactions" | "title";
 type LiveFilter = "all" | "published" | "draft" | "rejected";
+
+function parseLiveFilter(raw: string | null): LiveFilter {
+  if (raw === "published" || raw === "draft" || raw === "rejected" || raw === "all") {
+    return raw;
+  }
+  return "all";
+}
 
 function CreatorTips({
   needsChanges,
@@ -124,19 +134,46 @@ function activityBadge(
   return null;
 }
 
-export default function MyProjectsPage() {
+function MyProjectsPage() {
   const t = useT();
-  const { items, ready, upsert, saveAll } = useSubmissions();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { items: allItems, ready, upsert, saveAll } = useSubmissions();
   const { session, ready: sessionReady } = useSession();
   const [aiUsage, setAiUsage] = useState<AiUsageSummary | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [liveSort, setLiveSort] = useState<LiveSort>("newest");
-  const [liveFilter, setLiveFilter] = useState<LiveFilter>("all");
+  const [liveFilter, setLiveFilter] = useState<LiveFilter>(() =>
+    parseLiveFilter(searchParams.get("filter")),
+  );
   const [deleteTarget, setDeleteTarget] = useState<ProjectSubmission | null>(
     null,
   );
   const [now, setNow] = useState(() => Date.now());
+
+  const items = useMemo(() => {
+    if (session.userId) {
+      return allItems.filter((p) => isOwnedSubmission(p, session.userId));
+    }
+    return allItems.filter(
+      (p) => !isCatalogDemoId(p.id) && (!p.ownerId || p.ownerId === "local"),
+    );
+  }, [allItems, session.userId]);
+
+  useEffect(() => {
+    const next = parseLiveFilter(searchParams.get("filter"));
+    setLiveFilter(next);
+  }, [searchParams]);
+
+  function setFilterAndUrl(next: LiveFilter) {
+    setLiveFilter(next);
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "all") params.delete("filter");
+    else params.set("filter", next);
+    const qs = params.toString();
+    router.replace(qs ? `/projects?${qs}` : "/projects", { scroll: false });
+  }
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -656,7 +693,7 @@ export default function MyProjectsPage() {
                   className="rounded-xl border-2 border-border bg-surface px-3 py-2 font-bold text-ink"
                   value={liveFilter}
                   onChange={(e) =>
-                    setLiveFilter(e.target.value as LiveFilter)
+                    setFilterAndUrl(e.target.value as LiveFilter)
                   }
                 >
                   <option value="all">{t("projects.filterAll")}</option>
@@ -769,5 +806,22 @@ export default function MyProjectsPage() {
         onConfirm={() => void confirmDelete()}
       />
     </>
+  );
+}
+
+export default function MyProjectsPageEntry() {
+  return (
+    <Suspense
+      fallback={
+        <>
+          <SiteHeader />
+          <main className="mx-auto max-w-6xl px-5 py-16 text-ink-muted">
+            …
+          </main>
+        </>
+      }
+    >
+      <MyProjectsPage />
+    </Suspense>
   );
 }

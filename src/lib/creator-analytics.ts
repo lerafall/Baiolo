@@ -52,8 +52,8 @@ function buildTrendBuckets(
     const bucket = byDay.get(key);
     if (!bucket) continue;
     bucket.submissions += 1;
-    // Approximate: attribute current play count to the update day (no daily play warehouse).
-    bucket.plays += p.plays || 0;
+    // Do NOT attribute lifetime play totals to updatedAt day — that created
+    // fake one-day spikes (e.g. all demo plays landing on seed/sync day).
   }
 
   for (let i = 0; i < days; i++) {

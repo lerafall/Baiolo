@@ -11,6 +11,7 @@ import { useSession } from "@/lib/session";
 import { useSubmissions } from "@/lib/submissions";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isOwnedSubmission } from "@/lib/ownership";
 
 export default function CreatorAnalyticsPage() {
   const t = useT();
@@ -18,7 +19,11 @@ export default function CreatorAnalyticsPage() {
   const { items, ready } = useSubmissions();
   const [exportBusy, setExportBusy] = useState(false);
   const [exportError, setExportError] = useState("");
-  const stats = useMemo(() => computeCreatorAnalytics(items), [items]);
+  const owned = useMemo(
+    () => items.filter((p) => isOwnedSubmission(p, session.userId)),
+    [items, session.userId],
+  );
+  const stats = useMemo(() => computeCreatorAnalytics(owned), [owned]);
   const maxTop = Math.max(1, ...stats.topProjects.map((p) => p.plays + p.reactions));
   const plan = session.plan;
   const tier = PLAN_LIMITS[plan].analytics;
@@ -34,7 +39,7 @@ export default function CreatorAnalyticsPage() {
           [
             [
               "id,title,status,plays,reactions",
-              ...items.map(
+              ...owned.map(
                 (p) =>
                   `${p.id},"${(p.title || "").replace(/"/g, '""')}",${p.status},${p.plays},${p.reactions}`,
               ),

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
 import { ProjectCard } from "@/components/ui/ProjectCard";
@@ -7,16 +8,22 @@ import { useT } from "@/lib/i18n/LocaleProvider";
 import { submissionToProject } from "@/lib/project-map";
 import { useSession } from "@/lib/session";
 import { useSubmissions } from "@/lib/submissions";
+import { isOwnedSubmission } from "@/lib/ownership";
 
 export default function ProfilePage() {
   const t = useT();
-  const { session, ready, signOut } = useSession();
-  const { items } = useSubmissions();
+  const { session, ready: sessionReady, signOut } = useSession();
+  const { items, ready: submissionsReady } = useSubmissions();
 
-  const mine = items
-    .map((s) => submissionToProject(s, session.name))
-    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+  const mine = useMemo(() => {
+    if (!sessionReady) return [];
+    return items
+      .filter((s) => isOwnedSubmission(s, session.userId))
+      .map((s) => submissionToProject(s, session.name || "Creator"))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p));
+  }, [items, session.name, session.userId, sessionReady]);
 
+  const ready = sessionReady && submissionsReady;
   const signedIn = Boolean(session.userId || session.email);
   const isGuest = !signedIn || session.role === "guest";
 
@@ -42,7 +49,7 @@ export default function ProfilePage() {
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-4xl font-extrabold">{session.name}</h1>
-              {ready && (
+              {sessionReady && (
                 <span className="rounded-pill bg-lilac/70 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-strong">
                   {roleKey ? t(roleKey) : session.role}
                 </span>
@@ -103,7 +110,9 @@ export default function ProfilePage() {
         </div>
 
         <h2 className="mt-12 text-2xl font-extrabold">{t("profile.yourProjects")}</h2>
-        {mine.length === 0 ? (
+        {!ready ? (
+          <p className="mt-6 text-ink-muted">{t("profile.loadingProjects")}</p>
+        ) : mine.length === 0 ? (
           <div className="mt-6 rounded-xl bg-lilac/40 p-10 text-center">
             <p className="text-xl font-extrabold">{t("profile.nothingPublished")}</p>
             <p className="mt-2 text-ink-muted">
@@ -111,7 +120,7 @@ export default function ProfilePage() {
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Button href="/create">{t("projects.addProject")}</Button>
-              <Button href="/projects" variant="secondary">
+              <Button href="/projects?filter=draft" variant="secondary">
                 {t("profile.seeDrafts")}
               </Button>
             </div>
