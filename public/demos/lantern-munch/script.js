@@ -228,7 +228,8 @@
   let frightTimer = 0;
   let eatStreak = 0;
   let wantDir = null;
-  let playerReady = false;
+  let stepTarget = null; // {x,y} while animating one tile
+  let heldDir = null;
   let particles = [];
   let trail = [];
   let fairyLights = [];
@@ -294,7 +295,8 @@
       mouth: 0,
     };
     wantDir = null;
-    playerReady = false;
+    stepTarget = null;
+    heldDir = null;
     fairyLights = [];
     for (let y = 0; y < rows; y += 1) {
       for (let x = 0; x < cols; x += 1) {
@@ -547,38 +549,75 @@
     startLevel(levelIndex + 1);
   });
 
-  function setWant(dir) {
+  function tryStep(dir) {
+    if (!player || mode !== "play" || stepTarget) return false;
+    snapCenter(player);
+    const tx = Math.floor(player.x);
+    const ty = Math.floor(player.y);
+    const d = DIRS[dir];
+    if (!d) return false;
+    if (!walkable(tx + d.x, ty + d.y, false)) return false;
+    player.dir = dir;
     wantDir = dir;
-    playerReady = true;
+    stepTarget = { x: tx + d.x + 0.5, y: ty + d.y + 0.5 };
+    return true;
   }
 
+  function setWant(dir) {
+    heldDir = dir;
+    tryStep(dir);
+  }
+
+  function clearWant(dir) {
+    if (!dir || heldDir === dir) heldDir = null;
+  }
+
+  const keyToDir = {
+    ArrowUp: "up",
+    ArrowDown: "down",
+    ArrowLeft: "left",
+    ArrowRight: "right",
+    w: "up",
+    W: "up",
+    s: "down",
+    S: "down",
+    a: "left",
+    A: "left",
+    d: "right",
+    D: "right",
+  };
+
   window.addEventListener("keydown", (e) => {
-    const map = {
-      ArrowUp: "up",
-      ArrowDown: "down",
-      ArrowLeft: "left",
-      ArrowRight: "right",
-      w: "up",
-      W: "up",
-      s: "down",
-      S: "down",
-      a: "left",
-      A: "left",
-      d: "right",
-      D: "right",
-    };
-    if (map[e.key]) {
-      e.preventDefault();
-      setWant(map[e.key]);
-    }
+    const dir = keyToDir[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    setWant(dir);
   });
 
-  els.pads.addEventListener("click", (e) => {
+  window.addEventListener("keyup", (e) => {
+    const dir = keyToDir[e.key];
+    if (dir) clearWant(dir);
+  });
+
+  els.pads.addEventListener("pointerdown", (e) => {
     const btn = e.target.closest("[data-dir]");
-    if (btn) setWant(btn.dataset.dir);
+    if (!btn) return;
+    e.preventDefault();
+    btn.setPointerCapture?.(e.pointerId);
+    setWant(btn.dataset.dir);
   });
 
-  // swipe
+  els.pads.addEventListener("pointerup", (e) => {
+    const btn = e.target.closest("[data-dir]");
+    if (btn) clearWant(btn.dataset.dir);
+  });
+  els.pads.addEventListener("pointercancel", (e) => {
+    const btn = e.target.closest("[data-dir]");
+    if (btn) clearWant(btn.dataset.dir);
+  });
+
+  // swipe = one step
   let touch0 = null;
   canvas.addEventListener(
     "touchstart",
@@ -597,8 +636,8 @@
       const dy = t.clientY - touch0.y;
       touch0 = null;
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
-      if (Math.abs(dx) > Math.abs(dy)) setWant(dx > 0 ? "right" : "left");
-      else setWant(dy > 0 ? "down" : "up");
+      if (Math.abs(dx) > Math.abs(dy)) tryStep(dx > 0 ? "right" : "left");
+      else tryStep(dy > 0 ? "down" : "up");
     },
     { passive: true },
   );
@@ -624,9 +663,22 @@
       }
     }
 
-    // player — wait for first input so the lantern doesn't auto-cruise
-    if (playerReady && wantDir) {
-      moveEntity(player, level.playerSpeed, false, wantDir);
+    // Player: one tile per press (or keep stepping while held). Ghosts roam on their own.
+    if (stepTarget) {
+      const sp = level.playerSpeed * 0.09;
+      const dx = stepTarget.x - player.x;
+      const dy = stepTarget.y - player.y;
+      const d = Math.hypot(dx, dy);
+      if (d <= sp) {
+        player.x = stepTarget.x;
+        player.y = stepTarget.y;
+        stepTarget = null;
+        // Hold key/pad → keep walking that way
+        if (heldDir) tryStep(heldDir);
+      } else {
+        player.x += (dx / d) * sp;
+        player.y += (dy / d) * sp;
+      }
       player.mouth = (Math.sin(time * 0.02) + 1) * 0.5;
       trail.unshift({ x: player.x, y: player.y, a: 1 });
       if (trail.length > 10) trail.pop();

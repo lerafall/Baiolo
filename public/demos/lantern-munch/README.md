@@ -44,7 +44,9 @@ Trail behind lantern · spark collect puffs · frighten transform · wall fairy-
 
 ## Controls
 
-←↑↓→ or WASD · touch D-pad.
+Tap / press a direction to step one tile (hold to keep walking).
+Spirits move on their own — collect sparks and dodge them.
+←↑↓→ or WASD · touch D-pad · swipe.
 
 ## Files
 
