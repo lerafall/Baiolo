@@ -6,8 +6,10 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DictationField } from "@/components/ui/DictationField";
 import { formatDateTime } from "@/lib/format";
 import type { AdminAccount } from "@/lib/admin-accounts";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function AdminAccountsPanel() {
+  const t = useT();
   const [items, setItems] = useState<AdminAccount[]>([]);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -27,18 +29,18 @@ export function AdminAccountsPanel() {
         message?: string;
       };
       if (!res.ok) {
-        setError(data.error || data.message || "Couldn’t load accounts.");
+        setError(data.error || data.message || t("admin.accountsLoadFailed"));
         setItems([]);
         return;
       }
       setItems(data.items ?? []);
       setMessage(data.message || "");
     } catch {
-      setError("Couldn’t load accounts.");
+      setError(t("admin.accountsLoadFailed"));
     } finally {
       setReady(true);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -55,7 +57,7 @@ export function AdminAccountsPanel() {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error || "Delete failed.");
+        setError(data.error || t("admin.deleteFailed"));
         return;
       }
       setItems((prev) => prev.filter((a) => a.id !== id));
@@ -66,13 +68,22 @@ export function AdminAccountsPanel() {
   }
 
   function labelPlan(plan: string | null | undefined) {
-    if (plan === "pro" || plan === "paid" || plan === "paid_basic") return "Pro";
-    if (plan === "studio" || plan === "paid_pro") return "Studio";
-    return "Free";
+    if (plan === "pro" || plan === "paid" || plan === "paid_basic") {
+      return t("admin.planPro");
+    }
+    if (plan === "studio" || plan === "paid_pro") {
+      return t("admin.planStudio");
+    }
+    return t("admin.planFree");
   }
 
   function isActivePlan(current: string | null | undefined, button: string) {
-    const n = labelPlan(current).toLowerCase();
+    const n =
+      current === "pro" || current === "paid" || current === "paid_basic"
+        ? "pro"
+        : current === "studio" || current === "paid_pro"
+          ? "studio"
+          : "free";
     return n === button;
   }
 
@@ -93,7 +104,7 @@ export function AdminAccountsPanel() {
       };
       if (!res.ok || !data.ok) {
         setError(
-          [data.error || "Plan update failed.", data.detail]
+          [data.error || t("admin.planUpdateFailed"), data.detail]
             .filter(Boolean)
             .join(" "),
         );
@@ -105,7 +116,7 @@ export function AdminAccountsPanel() {
         ),
       );
     } catch {
-      setError("Plan update failed.");
+      setError(t("admin.planUpdateFailed"));
     } finally {
       setPlanBusyId(null);
     }
@@ -128,22 +139,20 @@ export function AdminAccountsPanel() {
     <section className="mt-14">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-extrabold">Accounts</h2>
-          <p className="mt-1 text-ink-muted">
-            Browse sign-ups, award Pro/Studio, and remove accounts when needed.
-          </p>
+          <h2 className="text-2xl font-extrabold">{t("admin.accountsTitle")}</h2>
+          <p className="mt-1 text-ink-muted">{t("admin.accountsSub")}</p>
         </div>
         <Button
           variant="secondary"
           disabled={busy}
           onClick={() => void load()}
         >
-          Refresh
+          {t("admin.accountsRefresh")}
         </Button>
       </div>
 
       <label className="mt-5 block max-w-md">
-        <span className="sr-only">Search accounts</span>
+        <span className="sr-only">{t("admin.searchAccounts")}</span>
         <DictationField
           value={query}
           onChange={setQuery}
@@ -152,7 +161,7 @@ export function AdminAccountsPanel() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, email, provider"
+            placeholder={t("admin.searchAccountsPlaceholder")}
             className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
           />
         </DictationField>
@@ -165,7 +174,9 @@ export function AdminAccountsPanel() {
         <p className="mt-4 text-sm text-ink-muted">{message}</p>
       )}
 
-      {!ready && <p className="mt-6 text-ink-muted">Loading accounts…</p>}
+      {!ready && (
+        <p className="mt-6 text-ink-muted">{t("admin.loadingAccounts")}</p>
+      )}
 
       <ul className="mt-5 space-y-3">
         {filtered.map((a) => (
@@ -180,14 +191,18 @@ export function AdminAccountsPanel() {
               <div className="min-w-0">
                 <p className="truncate font-extrabold">{a.name}</p>
                 <p className="truncate text-sm text-ink-muted">
-                  {a.email || "No email"} · {a.provider || "unknown"} ·{" "}
-                  {a.role} · {labelPlan(a.plan)}
+                  {a.email || t("admin.noEmail")} ·{" "}
+                  {a.provider || t("admin.providerUnknown")} · {a.role} ·{" "}
+                  {labelPlan(a.plan)}
                 </p>
                 <p className="text-xs text-ink-muted">
-                  Joined{" "}
-                  {a.createdAt ? formatDateTime(a.createdAt) : "—"}
+                  {t("admin.joined", {
+                    when: a.createdAt ? formatDateTime(a.createdAt) : "—",
+                  })}
                   {a.lastSignInAt
-                    ? ` · Last sign-in ${formatDateTime(a.lastSignInAt)}`
+                    ? t("admin.lastSignIn", {
+                        when: formatDateTime(a.lastSignInAt),
+                      })
                     : ""}
                 </p>
               </div>
@@ -199,7 +214,7 @@ export function AdminAccountsPanel() {
                 variant={isActivePlan(a.plan, "free") ? undefined : "secondary"}
                 onClick={() => void setAccountPlan(a.id, "free")}
               >
-                Free
+                {t("admin.planFree")}
               </Button>
               <Button
                 size="l"
@@ -207,7 +222,7 @@ export function AdminAccountsPanel() {
                 variant={isActivePlan(a.plan, "pro") ? undefined : "secondary"}
                 onClick={() => void setAccountPlan(a.id, "pro")}
               >
-                Pro
+                {t("admin.planPro")}
               </Button>
               <Button
                 size="l"
@@ -217,7 +232,7 @@ export function AdminAccountsPanel() {
                 }
                 onClick={() => void setAccountPlan(a.id, "studio")}
               >
-                Studio
+                {t("admin.planStudio")}
               </Button>
             </div>
             <Button
@@ -225,26 +240,31 @@ export function AdminAccountsPanel() {
               disabled={busy}
               onClick={() => setDeleteId(a.id)}
             >
-              Delete account
+              {t("admin.deleteAccount")}
             </Button>
           </li>
         ))}
         {ready && filtered.length === 0 && (
           <li className="rounded-xl bg-mint/40 px-5 py-8 text-center text-ink-muted">
-            No accounts found.
+            {t("admin.accountsEmpty")}
           </li>
         )}
       </ul>
 
       <ConfirmDialog
         open={Boolean(pending)}
-        title="Delete this account?"
+        title={t("admin.deleteAccountTitle")}
         body={
           pending
-            ? `Removes ${pending.name}${pending.email ? ` (${pending.email})` : ""} from Baiolo auth. Their projects stay, but lose the owner link.`
+            ? t("admin.deleteAccountBody", {
+                name: pending.name,
+                emailPart: pending.email
+                  ? t("admin.deleteAccountEmailPart", { email: pending.email })
+                  : "",
+              })
             : ""
         }
-        confirmLabel="Yes, delete account"
+        confirmLabel={t("admin.deleteAccountConfirm")}
         tone="danger"
         onCancel={() => setDeleteId(null)}
         onConfirm={() => {

@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 import type { RiskLevel } from "@/lib/moderation";
 import type { ProjectSubmission } from "@/lib/moderation";
 import { canPublish } from "@/lib/pipeline";
-import { reportReasonLabel, useContentReports } from "@/lib/reports";
+import { useContentReports } from "@/lib/reports";
 import { formatDateTime } from "@/lib/format";
 import { useSubmissions } from "@/lib/submissions";
 import { thumbBackgroundStyle } from "@/lib/thumb-style";
@@ -18,13 +18,6 @@ import { DictationField } from "@/components/ui/DictationField";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import type { AdminAccount } from "@/lib/admin-accounts";
 import { PLAN_LIMITS, normalizeUserPlan, reviewQueueRank } from "@/lib/plans.config";
-
-const riskFilters: Array<{ id: "all" | RiskLevel; label: string }> = [
-  { id: "all", label: "All risk" },
-  { id: "low", label: "Low" },
-  { id: "medium", label: "Medium" },
-  { id: "high", label: "High" },
-];
 
 function previewSrc(url: string | null | undefined) {
   if (!url) return "";
@@ -142,7 +135,7 @@ export function AdminDashboard() {
         error?: string;
       };
       if (!res.ok || !data.project) {
-        setGateError(data.error || "That action didn’t work.");
+        setGateError(data.error || t("admin.actionFailed"));
         return;
       }
       upsert(data.project);
@@ -168,15 +161,15 @@ export function AdminDashboard() {
         error?: string;
       };
       if (!res.ok || !data.project) {
-        setGateError(data.error || "Code check didn’t work.");
+        setGateError(data.error || t("admin.codeCheckFailed"));
         return;
       }
       upsert(data.project);
       void refresh();
       setReviewFlash(
         data.review?.ok
-          ? `${data.review.summary ?? "Code check passed."} (${data.review.source ?? "static"})`
-          : data.review?.summary || "Blocking issues — ask for changes.",
+          ? `${data.review.summary ?? t("admin.codeCheckPassed")} (${data.review.source ?? "static"})`
+          : data.review?.summary || t("admin.codeCheckBlocked"),
       );
     } finally {
       setBusy(false);
@@ -197,7 +190,7 @@ export function AdminDashboard() {
         error?: string;
       };
       if (!res.ok) {
-        setGateError(data.error || "Seed didn’t work.");
+        setGateError(data.error || t("admin.seedFailed"));
         return;
       }
       if (data.items?.length) {
@@ -208,8 +201,8 @@ export function AdminDashboard() {
       await refresh();
       setSeedFlash(
         data.seeded
-          ? `Seeded ${data.seeded} demo projects to the cloud.`
-          : "Demo projects ready locally.",
+          ? t("admin.seedCloud", { count: data.seeded })
+          : t("admin.seedLocal"),
       );
     } finally {
       setBusy(false);
@@ -229,7 +222,7 @@ export function AdminDashboard() {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setGateError(data.error || "Couldn’t remove that project.");
+        setGateError(data.error || t("admin.removeFailed"));
         return;
       }
       saveAll(items.filter((i) => i.id !== selected.id));
@@ -281,6 +274,13 @@ export function AdminDashboard() {
 
   const publishReady = selected ? canPublish(selected) : false;
 
+  const riskFilters: Array<{ id: "all" | RiskLevel; label: string }> = [
+    { id: "all", label: t("admin.riskAll") },
+    { id: "low", label: t("admin.riskLow") },
+    { id: "medium", label: t("admin.riskMedium") },
+    { id: "high", label: t("admin.riskHigh") },
+  ];
+
   return (
     <>
       <SiteHeader showJoin={false} />
@@ -289,7 +289,7 @@ export function AdminDashboard() {
         <p className="mt-2 text-lg text-ink-muted">
           {t("admin.queueSub")}
         </p>
-        <p className="mt-2 text-sm text-ink-muted">Keys: j/k move · r reject</p>
+        <p className="mt-2 text-sm text-ink-muted">{t("admin.keysHint")}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button
             variant="secondary"
@@ -306,7 +306,7 @@ export function AdminDashboard() {
         </div>
 
         <label className="mt-6 block max-w-md">
-          <span className="sr-only">Search queue</span>
+          <span className="sr-only">{t("admin.searchQueue")}</span>
           <DictationField
             value={query}
             onChange={setQuery}
@@ -315,7 +315,7 @@ export function AdminDashboard() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search title, description, flags"
+              placeholder={t("admin.searchQueuePlaceholder")}
               className="min-h-12 w-full rounded-pill border-2 border-border bg-surface px-5 text-ink placeholder:text-placeholder focus:border-brand focus:outline-none"
             />
           </DictationField>
@@ -339,7 +339,9 @@ export function AdminDashboard() {
           ))}
         </div>
 
-        {!ready && <p className="mt-8 text-ink-muted">Loading queue…</p>}
+        {!ready && (
+          <p className="mt-8 text-ink-muted">{t("admin.loadingQueue")}</p>
+        )}
         {gateError && (
           <p className="mt-4 font-semibold text-danger">{gateError}</p>
         )}
@@ -387,9 +389,22 @@ export function AdminDashboard() {
                       })()}
                     </div>
                     <p className="mt-1 text-sm text-ink-muted">
-                      Risk: {p.risk ?? "—"} ·{" "}
-                      {p.codeCheckedAt ? "Code ✓" : "Code …"} ·{" "}
-                      {p.playCheckedAt ? "Play ✓" : "Play …"}
+                      {t("admin.riskLine", {
+                        risk:
+                          p.risk === "low"
+                            ? t("admin.riskLow")
+                            : p.risk === "medium"
+                              ? t("admin.riskMedium")
+                              : p.risk === "high"
+                                ? t("admin.riskHigh")
+                                : (p.risk ?? "—"),
+                        code: p.codeCheckedAt
+                          ? t("admin.codeDone")
+                          : t("admin.codePending"),
+                        play: p.playCheckedAt
+                          ? t("admin.playDone")
+                          : t("admin.playPending"),
+                      })}
                     </p>
                   </div>
                 </button>
@@ -397,8 +412,8 @@ export function AdminDashboard() {
             ))}
             {ready && filtered.length === 0 && (
               <li className="rounded-xl bg-mint/40 px-5 py-10 text-center">
-                <p className="text-xl font-extrabold">Queue is clear</p>
-                <p className="mt-2 text-ink-muted">Nothing waiting for review.</p>
+                <p className="text-xl font-extrabold">{t("admin.queueClear")}</p>
+                <p className="mt-2 text-ink-muted">{t("admin.queueClearBody")}</p>
               </li>
             )}
           </ul>
@@ -413,20 +428,41 @@ export function AdminDashboard() {
               <p className="mt-2 text-ink-muted">{selected.description}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <StatusBadge status={selected.status} />
-                <span className="inline-flex min-h-8 items-center rounded-pill bg-lilac/70 px-3 text-sm font-bold capitalize text-brand-strong">
-                  {selected.risk ?? "unknown"} risk
+                <span className="inline-flex min-h-8 items-center rounded-pill bg-lilac/70 px-3 text-sm font-bold text-brand-strong">
+                  {t("admin.riskBadge", {
+                    risk:
+                      selected.risk === "low"
+                        ? t("admin.riskLow")
+                        : selected.risk === "medium"
+                          ? t("admin.riskMedium")
+                          : selected.risk === "high"
+                            ? t("admin.riskHigh")
+                            : t("admin.riskUnknown"),
+                  })}
                 </span>
               </div>
 
               <ol className="mt-5 space-y-2 rounded-xl bg-lilac/35 p-4 text-sm">
                 <li className="font-bold">
-                  1. Check code {selected.codeCheckedAt ? "✓" : "← do this"}
+                  {t("admin.stepCheck", {
+                    mark: selected.codeCheckedAt
+                      ? "✓"
+                      : t("admin.stepDoThis"),
+                  })}
                 </li>
                 <li className="font-bold">
-                  2. Play the game {selected.playCheckedAt ? "✓" : "← then this"}
+                  {t("admin.stepPlay", {
+                    mark: selected.playCheckedAt
+                      ? "✓"
+                      : t("admin.stepThenThis"),
+                  })}
                 </li>
                 <li className="font-bold">
-                  3. Publish {publishReady ? "← ready" : "(locked)"}
+                  {t("admin.stepPublish", {
+                    mark: publishReady
+                      ? t("admin.stepReady")
+                      : t("admin.stepLocked"),
+                  })}
                 </li>
               </ol>
 
@@ -477,7 +513,7 @@ export function AdminDashboard() {
 
               {selected.aiFlags.length > 0 && (
                 <div className="mt-4 rounded-lg bg-warning/15 p-4">
-                  <p className="font-bold">Flags</p>
+                  <p className="font-bold">{t("admin.flags")}</p>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-muted">
                     {selected.aiFlags.map((f) => (
                       <li key={f}>{f}</li>
@@ -488,10 +524,9 @@ export function AdminDashboard() {
 
               {selected.previewUrl && (
                 <div className="mt-5">
-                  <p className="font-bold">Private play preview</p>
+                  <p className="font-bold">{t("admin.previewTitle")}</p>
                   <p className="mt-1 text-sm text-ink-muted">
-                    Try the game here. When it feels fine, tap “I played it —
-                    OK”.
+                    {t("admin.previewBody")}
                   </p>
                   <iframe
                     title={`Preview ${selected.title}`}
@@ -505,13 +540,13 @@ export function AdminDashboard() {
                     rel="noopener noreferrer"
                     className="mt-2 inline-block text-sm font-bold text-brand-strong underline"
                   >
-                    Open preview fullscreen
+                    {t("admin.previewFullscreen")}
                   </a>
                 </div>
               )}
 
               <label className="mt-5 block">
-                <span className="font-bold">Note for creator (optional)</span>
+                <span className="font-bold">{t("admin.noteLabel")}</span>
                 <DictationField
                   className="mt-2"
                   value={note}
@@ -521,7 +556,7 @@ export function AdminDashboard() {
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     rows={3}
-                    placeholder="Please soften the cover colors a little."
+                    placeholder={t("admin.notePlaceholder")}
                     className="w-full rounded-lg border-2 border-border p-3 focus:border-brand focus:outline-none"
                   />
                 </DictationField>
@@ -563,9 +598,9 @@ export function AdminDashboard() {
 
         <ConfirmDialog
           open={rejectOpen && Boolean(selected)}
-          title="Reject this project?"
-          body="It won’t go public. The creator will see a rejected status."
-          confirmLabel="Yes, reject"
+          title={t("admin.rejectTitle")}
+          body={t("admin.rejectBody")}
+          confirmLabel={t("admin.rejectConfirm")}
           tone="danger"
           onCancel={() => setRejectOpen(false)}
           onConfirm={() => {
@@ -577,9 +612,9 @@ export function AdminDashboard() {
 
         <ConfirmDialog
           open={deleteOpen && Boolean(selected)}
-          title="Remove this project?"
-          body="Deletes it from the cloud queue and store. This can’t be undone here."
-          confirmLabel="Yes, remove"
+          title={t("admin.removeTitle")}
+          body={t("admin.removeBody")}
+          confirmLabel={t("admin.removeConfirm")}
           tone="danger"
           onCancel={() => setDeleteOpen(false)}
           onConfirm={() => {
@@ -590,10 +625,8 @@ export function AdminDashboard() {
         <AdminAccountsPanel />
 
         <section className="mt-14">
-          <h2 className="text-2xl font-extrabold">User reports</h2>
-          <p className="mt-1 text-ink-muted">
-            People tapped Report on these projects.
-          </p>
+          <h2 className="text-2xl font-extrabold">{t("admin.reportsTitle")}</h2>
+          <p className="mt-1 text-ink-muted">{t("admin.reportsSub")}</p>
           <ul className="mt-5 space-y-3">
             {openReports.map((r) => (
               <li
@@ -603,25 +636,27 @@ export function AdminDashboard() {
                 <div>
                   <p className="font-extrabold">{r.projectTitle}</p>
                   <p className="text-sm font-bold text-brand-strong">
-                    {reportReasonLabel(r.reason)}
+                    {t(`report.${r.reason}`)}
                   </p>
                   <p className="text-sm text-ink-muted">
-                    Reported {formatDateTime(r.createdAt)}
+                    {t("admin.reportedAt", {
+                      when: formatDateTime(r.createdAt),
+                    })}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button href={`/project/${r.projectId}`} variant="secondary">
-                    Open
+                    {t("admin.openProject")}
                   </Button>
                   <Button variant="ghost" onClick={() => resolveReport(r.id)}>
-                    Mark resolved
+                    {t("admin.markResolved")}
                   </Button>
                 </div>
               </li>
             ))}
             {openReports.length === 0 && (
               <li className="rounded-xl bg-mint/40 px-5 py-8 text-center text-ink-muted">
-                No open reports. Nice and calm.
+                {t("admin.reportsEmpty")}
               </li>
             )}
           </ul>
