@@ -53,6 +53,23 @@ export const projects: Project[] = [
     ownerId: "baiolo",
   },
   {
+    id: "fairy-blocks",
+    title: "Fairy Blocks",
+    tagline: "Classic falling crystals. Four fairy worlds.",
+    description:
+      "A Tetris-inspired puzzle with premium fairy-tale polish: glowing crystal blocks, ghost piece clarity, combo clears, and four themed boards — Moon Garden, Candy Cloud, Crystal Forest, and Aurora Castle. Eight short stages teach by play, then endless mode. Baiolo-ready static demo for browser and mobile.",
+    category: "game",
+    tags: ["puzzle", "arcade", "fantasy", "classic", "mobile"],
+    creator: "Baiolo",
+    thumbnail: "/demos/fairy-blocks/thumb.png",
+    cover: "/demos/fairy-blocks/cover.png",
+    playUrl: "/demos/fairy-blocks/index.html",
+    plays: 8,
+    reactions: { fun: 7, interesting: 6, "would-use-again": 7 },
+    featured: true,
+    ownerId: "baiolo",
+  },
+  {
     id: "cloud-hopper",
     title: "Cloud Hopper",
     tagline: "Jump soft clouds. Catch sun coins.",

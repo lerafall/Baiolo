@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Fairy Blocks · Baiolo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame" data-world="moon">
+      <canvas id="game" width="360" height="640" aria-label="Fairy Blocks board"></canvas>
+
+      <header class="hud" id="hud" hidden>
+        <div class="pill">
+          <span id="stageLabel">Stage 1</span>
+        </div>
+        <div class="pill glow">★ <strong id="score">0</strong></div>
+        <div class="pill">✦ <strong id="lines">0</strong></div>
+      </header>
+
+      <aside class="side" id="side" hidden>
+        <div class="panel">
+          <p class="label">Next</p>
+          <canvas id="next" width="72" height="72"></canvas>
+        </div>
+        <div class="panel">
+          <p class="label">World</p>
+          <p class="world-name" id="worldName">Moon Garden</p>
+        </div>
+      </aside>
+
+      <div class="combo" id="combo" hidden>Combo ×<span id="comboN">2</span></div>
+
+      <div class="pads" id="pads" hidden>
+        <button type="button" data-act="left" aria-label="Left">◀</button>
+        <button type="button" data-act="rot" aria-label="Rotate">↻</button>
+        <button type="button" data-act="right" aria-label="Right">▶</button>
+        <button type="button" data-act="soft" aria-label="Soft drop">▼</button>
+        <button type="button" data-act="hard" aria-label="Hard drop">⬇</button>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <p class="eyebrow">Baiolo demo</p>
+        <h1 class="brand">Fairy Blocks</h1>
+        <p class="body">
+          Classic falling crystals. Clear glowing lines through four fairy
+          worlds — then chase the endless sky.
+        </p>
+        <p class="hint">Move · rotate · clear lines</p>
+        <button type="button" id="startBtn" class="start">Begin the garden</button>
+      </div>
+
+      <div id="stageCard" class="stage-card" hidden>
+        <p class="kicker" id="stageKicker">Stage 1 · Moon Garden</p>
+        <p class="title" id="stageTitle">First sparkles</p>
+        <p class="goal" id="stageGoal">Clear 2 lines</p>
+      </div>
+
+      <div id="clearFlash" class="clear-flash" hidden></div>
+
+      <div id="winCard" class="overlay win" hidden>
+        <p class="eyebrow" id="winEyebrow">Stage clear</p>
+        <h2 class="brand small" id="winTitle">Bloom!</h2>
+        <p class="body" id="winBody">Lines sparkled away.</p>
+        <button type="button" id="nextBtn" class="start">Next stage</button>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

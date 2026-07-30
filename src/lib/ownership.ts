@@ -11,6 +11,7 @@ export const CATALOG_DEMO_IDS = new Set([
   "idea-jar",
   "starfall-garden",
   "moonlight-bakery",
+  "fairy-blocks",
 ]);
 
 export function isCatalogDemoId(id: string) {
