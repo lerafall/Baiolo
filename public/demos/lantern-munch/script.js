@@ -227,7 +227,8 @@
   let dotsLeft = 0;
   let frightTimer = 0;
   let eatStreak = 0;
-  let wantDir = "left";
+  let wantDir = null;
+  let playerReady = false;
   let particles = [];
   let trail = [];
   let fairyLights = [];
@@ -289,10 +290,11 @@
     player = {
       x: px + 0.5,
       y: py + 0.5,
-      dir: "left",
+      dir: "right",
       mouth: 0,
     };
-    wantDir = "left";
+    wantDir = null;
+    playerReady = false;
     fairyLights = [];
     for (let y = 0; y < rows; y += 1) {
       for (let x = 0; x < cols; x += 1) {
@@ -547,6 +549,7 @@
 
   function setWant(dir) {
     wantDir = dir;
+    playerReady = true;
   }
 
   window.addEventListener("keydown", (e) => {
@@ -621,12 +624,17 @@
       }
     }
 
-    // player
-    moveEntity(player, level.playerSpeed, false, wantDir);
-    player.mouth = (Math.sin(time * 0.02) + 1) * 0.5;
-    trail.unshift({ x: player.x, y: player.y, a: 1 });
-    if (trail.length > 10) trail.pop();
-    for (const t of trail) t.a *= 0.85;
+    // player — wait for first input so the lantern doesn't auto-cruise
+    if (playerReady && wantDir) {
+      moveEntity(player, level.playerSpeed, false, wantDir);
+      player.mouth = (Math.sin(time * 0.02) + 1) * 0.5;
+      trail.unshift({ x: player.x, y: player.y, a: 1 });
+      if (trail.length > 10) trail.pop();
+      for (const t of trail) t.a *= 0.85;
+    } else {
+      player.mouth = 0.15;
+      trail = [];
+    }
 
     // collect
     const px = Math.floor(player.x);
