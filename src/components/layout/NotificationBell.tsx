@@ -7,19 +7,32 @@ import { useT } from "@/lib/i18n/LocaleProvider";
 import { useNotifications } from "@/lib/notifications";
 import { notificationHref } from "@/lib/notification-href";
 import { useSubmissions } from "@/lib/submissions";
+import { useSession } from "@/lib/session";
+import { isCatalogDemoId, isOwnedSubmission } from "@/lib/ownership";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { formatDateTime } from "@/lib/format";
 
 export function NotificationBell() {
   const t = useT();
-  const { items } = useSubmissions();
+  const { session } = useSession();
+  const { items, ready: submissionsReady } = useSubmissions();
   const watch = useMemo(
     () =>
       items
         .filter((p) => p.status !== "draft")
+        .filter((p) =>
+          session.userId
+            ? isOwnedSubmission(p, session.userId)
+            : !isCatalogDemoId(p.id) &&
+              (!p.ownerId || p.ownerId === "local"),
+        )
         .map((p) => ({ id: p.id, title: p.title, status: p.status })),
-    [items],
+    [items, session.userId],
   );
-  const { notes, unread, markRead } = useNotifications(watch);
+  const { notes, unread, markRead } = useNotifications(
+    watch,
+    submissionsReady,
+  );
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -86,7 +99,12 @@ export function NotificationBell() {
                     <p className="truncate font-bold text-ink">{n.title}</p>
                     <StatusBadge status={n.status} />
                   </div>
-                  <p className="mt-1 text-xs text-ink-muted">{n.message}</p>
+                  <p className="mt-1 text-xs text-ink-muted">
+                    {t(`statusMsg.${n.status}`)}
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold text-ink-muted/80">
+                    {formatDateTime(n.createdAt)}
+                  </p>
                 </Link>
               </li>
             ))}

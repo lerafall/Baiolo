@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ProjectStatus } from "@/lib/moderation";
-import { statusCopy } from "@/lib/moderation";
 
 const KEY = "baiolo.notifications.v1";
 const SEEN_KEY = "baiolo.status-seen.v1";
@@ -12,7 +11,8 @@ export type BaioloNotification = {
   projectId: string;
   title: string;
   status: ProjectStatus;
-  message: string;
+  /** Legacy English blob — UI should prefer i18n statusMsg.{status}. */
+  message?: string;
   createdAt: string;
   read: boolean;
 };
@@ -45,19 +45,44 @@ function writeSeen(seen: Record<string, ProjectStatus>) {
   localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
 }
 
+/** Keep only the newest notification per project (clearest current status). */
+export function dedupeNotesByProject(
+  notes: BaioloNotification[],
+): BaioloNotification[] {
+  const best = new Map<string, BaioloNotification>();
+  for (const n of notes) {
+    const prev = best.get(n.projectId);
+    if (!prev || Date.parse(n.createdAt) >= Date.parse(prev.createdAt)) {
+      best.set(n.projectId, n);
+    }
+  }
+  return Array.from(best.values()).sort(
+    (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+  );
+}
+
 export function useNotifications(
   projects: Array<{ id: string; title: string; status: ProjectStatus }>,
+  /** When false, skip prune/sync so a loading empty list does not wipe notes. */
+  watchReady = true,
 ) {
   const [notes, setNotes] = useState<BaioloNotification[]>([]);
   const [ready, setReady] = useState(false);
 
+  const projectIds = useMemo(
+    () => new Set(projects.map((p) => p.id)),
+    [projects],
+  );
+
   useEffect(() => {
-    setNotes(readNotes());
+    const stored = dedupeNotesByProject(readNotes());
+    writeNotes(stored);
+    setNotes(stored);
     setReady(true);
   }, []);
 
   useEffect(() => {
-    if (!ready || projects.length === 0) return;
+    if (!ready || !watchReady) return;
     const seen = readSeen();
     const fresh: BaioloNotification[] = [];
     const nextSeen = { ...seen };
@@ -70,7 +95,6 @@ export function useNotifications(
           projectId: p.id,
           title: p.title,
           status: p.status,
-          message: statusCopy[p.status].message,
           createdAt: new Date().toISOString(),
           read: false,
         });
@@ -78,29 +102,43 @@ export function useNotifications(
       nextSeen[p.id] = p.status;
     }
 
-    if (fresh.length > 0) {
-      const merged = [...fresh, ...readNotes()];
+    // Drop notes for projects we no longer watch (e.g. catalog demos).
+    const allStored = readNotes();
+    const existing = allStored.filter((n) => projectIds.has(n.projectId));
+
+    if (fresh.length > 0 || existing.length !== allStored.length) {
+      // New status replaces older rows for the same project.
+      const withoutStaleProjects = existing.filter(
+        (n) => !fresh.some((f) => f.projectId === n.projectId),
+      );
+      const merged = dedupeNotesByProject([...fresh, ...withoutStaleProjects]);
       writeNotes(merged);
       setNotes(merged);
+    } else if (fresh.length === 0) {
+      // Still surface deduped owned notes if storage was already clean.
+      setNotes(dedupeNotesByProject(existing));
     }
     writeSeen(nextSeen);
-  }, [projects, ready]);
+  }, [projects, projectIds, ready, watchReady]);
 
-  const unread = notes.filter((n) => !n.read).length;
+  const displayNotes = useMemo(() => dedupeNotesByProject(notes), [notes]);
+  const unread = displayNotes.filter((n) => !n.read).length;
 
   const markRead = useCallback((id: string) => {
-    const next = readNotes().map((n) =>
-      n.id === id ? { ...n, read: true } : n,
+    const next = dedupeNotesByProject(
+      readNotes().map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
     writeNotes(next);
     setNotes(next);
   }, []);
 
   const markAllRead = useCallback(() => {
-    const next = readNotes().map((n) => ({ ...n, read: true }));
+    const next = dedupeNotesByProject(
+      readNotes().map((n) => ({ ...n, read: true })),
+    );
     writeNotes(next);
     setNotes(next);
   }, []);
 
-  return { notes, unread, ready, markRead, markAllRead };
+  return { notes: displayNotes, unread, ready, markRead, markAllRead };
 }

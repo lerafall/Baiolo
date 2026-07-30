@@ -11,6 +11,8 @@ type ConfirmDialogProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   tone?: "danger" | "primary";
+  /** When true, the confirm action cannot be submitted. */
+  confirmDisabled?: boolean;
   children?: React.ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
@@ -23,6 +25,7 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel,
   tone = "primary",
+  confirmDisabled = false,
   children,
   onConfirm,
   onCancel,
@@ -32,6 +35,7 @@ export function ConfirmDialog({
   const resolvedCancel = cancelLabel ?? t("confirm.cancel");
   const panelRef = useRef<HTMLDivElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const titleId = useId();
   const bodyId = useId();
@@ -40,7 +44,13 @@ export function ConfirmDialog({
     if (!open) return;
 
     previouslyFocused.current = document.activeElement as HTMLElement | null;
-    const timer = window.setTimeout(() => confirmRef.current?.focus(), 0);
+    const timer = window.setTimeout(() => {
+      if (confirmDisabled) {
+        cancelRef.current?.focus();
+      } else {
+        confirmRef.current?.focus();
+      }
+    }, 0);
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -71,7 +81,7 @@ export function ConfirmDialog({
       document.removeEventListener("keydown", onKeyDown);
       previouslyFocused.current?.focus?.();
     };
-  }, [open, onCancel]);
+  }, [open, onCancel, confirmDisabled]);
 
   if (!open) return null;
 
@@ -102,11 +112,15 @@ export function ConfirmDialog({
           <Button
             ref={confirmRef}
             variant={tone === "danger" ? "destructive" : "primary"}
-            onClick={onConfirm}
+            disabled={confirmDisabled}
+            onClick={() => {
+              if (confirmDisabled) return;
+              onConfirm();
+            }}
           >
             {resolvedConfirm}
           </Button>
-          <Button variant="ghost" onClick={onCancel}>
+          <Button ref={cancelRef} variant="ghost" onClick={onCancel}>
             {resolvedCancel}
           </Button>
         </div>

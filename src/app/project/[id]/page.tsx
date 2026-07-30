@@ -49,7 +49,7 @@ export default function ProjectPage({
   const [feedback, setFeedback] = useState("");
   const [playing, setPlaying] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportReason, setReportReason] = useState<ReportReason>("unsafe");
+  const [reportReason, setReportReason] = useState<ReportReason | null>(null);
 
   const ownedSubmission = useMemo(
     () => items.find((s) => s.id === id) ?? null,
@@ -375,7 +375,10 @@ export default function ProjectPage({
                 variant="destructive"
                 size="m"
                 onClick={() => {
-                  requireAuth(() => setReportOpen(true));
+                  requireAuth(() => {
+                    setReportReason(null);
+                    setReportOpen(true);
+                  });
                 }}
                 disabled={engagement.reported}
               >
@@ -391,19 +394,31 @@ export default function ProjectPage({
           body={t("project.reportBody")}
           confirmLabel={t("project.reportConfirm")}
           tone="danger"
-          onCancel={() => setReportOpen(false)}
+          confirmDisabled={!reportReason}
+          onCancel={() => {
+            setReportOpen(false);
+            setReportReason(null);
+          }}
           onConfirm={() => {
+            if (!reportReason) return;
             engagement.report();
             addContentReport(live.id, live.title, reportReason);
             setReportOpen(false);
+            setReportReason(null);
             push(t("project.reportedToast"), "warn");
           }}
         >
-          <div className="flex flex-wrap gap-2">
+          <div
+            className="flex flex-wrap gap-2"
+            role="radiogroup"
+            aria-label={t("project.reportBody")}
+          >
             {reportReasons.map((r) => (
               <button
                 key={r.id}
                 type="button"
+                role="radio"
+                aria-checked={reportReason === r.id}
                 onClick={() => setReportReason(r.id)}
                 className={cn(
                   "min-h-10 rounded-pill border-2 px-4 text-sm font-bold",
