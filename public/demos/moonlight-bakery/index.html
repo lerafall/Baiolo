@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Moonlight Bakery · Baiolo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame">
+      <canvas id="sky" width="360" height="640" aria-hidden="true"></canvas>
+
+      <header class="hud" id="hud" hidden>
+        <div class="pill">Day <strong id="dayNum">1</strong><span class="soft">/8</span></div>
+        <div class="pill warm">★ <strong id="stars">0</strong></div>
+        <div class="pill coin">◎ <strong id="coins">0</strong></div>
+      </header>
+
+      <div class="combo" id="combo" hidden>Combo ×<span id="comboN">2</span>!</div>
+
+      <section class="queue" id="queue" aria-label="Customers"></section>
+
+      <section class="workspace" id="workspace">
+        <div class="station prep" id="prep">
+          <p class="label">Prep</p>
+          <div class="bowl" id="bowl" data-drop="prep">
+            <span class="bowl-hint" id="bowlHint">Drop ingredients</span>
+            <div class="mix" id="mixIcons"></div>
+          </div>
+          <button type="button" class="mini" id="bakeBtn" disabled>Bake →</button>
+        </div>
+
+        <div class="ovens" id="ovens">
+          <div class="oven" data-oven="0">
+            <div class="oven-glow"></div>
+            <p class="label">Oven</p>
+            <div class="oven-slot" id="oven0"></div>
+            <div class="bake-bar"><i id="bar0"></i></div>
+          </div>
+          <div class="oven hidden" data-oven="1" id="ovenB">
+            <div class="oven-glow"></div>
+            <p class="label">Oven 2</p>
+            <div class="oven-slot" id="oven1"></div>
+            <div class="bake-bar"><i id="bar1"></i></div>
+          </div>
+        </div>
+
+        <div class="station tray" id="trayStation">
+          <p class="label">Ready</p>
+          <div class="tray" id="tray" data-drop="tray"></div>
+        </div>
+      </section>
+
+      <section class="pantry" id="pantry" aria-label="Ingredients">
+        <button type="button" class="ing" data-ing="flour" draggable="true" title="Flour">
+          <span class="emoji">🌾</span>
+          <span>Flour</span>
+        </button>
+        <button type="button" class="ing" data-ing="berry" draggable="true" title="Berries" id="ingBerry" hidden>
+          <span class="emoji">🫐</span>
+          <span>Berry</span>
+        </button>
+        <button type="button" class="ing" data-ing="sugar" draggable="true" title="Moon sugar" id="ingSugar" hidden>
+          <span class="emoji">✨</span>
+          <span>Sugar</span>
+        </button>
+      </section>
+
+      <div class="helper" id="helper" hidden aria-hidden="true">
+        <span class="helper-sprite">🧚</span>
+        <span class="helper-tip" id="helperTip">I've got crumbs!</span>
+      </div>
+
+      <div id="dayCard" class="day-card" hidden>
+        <p class="kicker" id="dayKicker">Day 1</p>
+        <p class="title" id="dayTitle">First guest</p>
+        <p class="hint" id="dayHint">Make one Moon Bun and serve the bunny.</p>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <p class="eyebrow">Baiolo demo</p>
+        <h1 class="brand">Moonlight Bakery</h1>
+        <p class="body">
+          Bake magical pastries for forest friends under a soft moon. Drag,
+          bake, serve — keep the queue smiling.
+        </p>
+        <p class="hint-line">Drag ingredients · bake · serve</p>
+        <button type="button" id="startBtn" class="start">Open the bakery</button>
+      </div>
+
+      <div id="summary" class="overlay summary" hidden>
+        <p class="eyebrow" id="sumKicker">Day complete</p>
+        <h2 class="brand small" id="sumTitle">Sweet work</h2>
+        <div class="stats">
+          <div><span>Served</span><strong id="sumServed">0</strong></div>
+          <div><span>Coins</span><strong id="sumCoins">0</strong></div>
+          <div><span>Best combo</span><strong id="sumCombo">×1</strong></div>
+        </div>
+        <div class="star-row" id="sumStars" aria-label="Star rating"></div>
+        <button type="button" id="nextBtn" class="start">Next day</button>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
