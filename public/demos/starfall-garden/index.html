@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Starfall Garden · Baiolo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame">
+      <canvas
+        id="game"
+        width="360"
+        height="640"
+        aria-label="Starfall Garden game"
+      ></canvas>
+
+      <div class="hud" id="hud" hidden>
+        <div class="pill">
+          Level <strong id="levelNum">1</strong><span class="soft">/8</span>
+        </div>
+        <div class="pill glow">
+          ✦ <strong id="lights">0</strong>
+        </div>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <p class="eyebrow">Baiolo demo</p>
+        <h1 class="brand">Starfall Garden</h1>
+        <p class="body">
+          Aim a tiny falling star through a floating garden. Reach the crystal
+          flower. Gather soft lights along the way.
+        </p>
+        <p class="hint">Drag to aim · release to launch</p>
+        <button type="button" id="startBtn" class="start">Enter the garden</button>
+      </div>
+
+      <div id="levelCard" class="level-card" hidden>
+        <p class="level-kicker" id="levelKicker">Level 1</p>
+        <p class="level-title" id="levelTitle">First light</p>
+        <p class="level-hint" id="levelHint">Drag and release toward the flower.</p>
+      </div>
+
+      <div id="winCard" class="overlay win" hidden>
+        <p class="eyebrow">Bloom!</p>
+        <h2 class="brand small" id="winTitle">Level complete</h2>
+        <p class="body" id="winBody">The crystal drinks your starlight.</p>
+        <button type="button" id="nextBtn" class="start">Next garden</button>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

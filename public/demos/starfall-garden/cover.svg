@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400" role="img" aria-label="Starfall Garden cover">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1548"/>
+      <stop offset="55%" stop-color="#24185a"/>
+      <stop offset="100%" stop-color="#120c2b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="35%" r="45%">
+      <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#c4b5fd" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mint" cx="70%" cy="60%" r="35%">
+      <stop offset="0%" stop-color="#6ee7b7" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#6ee7b7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="640" height="400" fill="url(#sky)"/>
+  <rect width="640" height="400" fill="url(#glow)"/>
+  <rect width="640" height="400" fill="url(#mint)"/>
+  <ellipse cx="200" cy="280" rx="90" ry="18" fill="#34d399" opacity="0.85" transform="rotate(-18 200 280)"/>
+  <ellipse cx="420" cy="220" rx="100" ry="16" fill="#2dd4bf" opacity="0.8" transform="rotate(22 420 220)"/>
+  <g transform="translate(320 150)">
+    <circle r="48" fill="#a5f3fc" opacity="0.25"/>
+    <ellipse cx="0" cy="-18" rx="22" ry="12" fill="#f9a8d4"/>
+    <ellipse cx="18" cy="8" rx="22" ry="12" fill="#c4b5fd" transform="rotate(60)"/>
+    <ellipse cx="-18" cy="8" rx="22" ry="12" fill="#f9a8d4" transform="rotate(-60)"/>
+    <circle r="12" fill="#fde68a"/>
+  </g>
+  <g transform="translate(160 300)">
+    <polygon points="0,-16 4.5,-4.5 16,0 4.5,4.5 0,16 -4.5,4.5 -16,0 -4.5,-4.5" fill="#fef08a"/>
+    <circle r="22" fill="#fde68a" opacity="0.25"/>
+  </g>
+  <circle cx="480" cy="90" r="3" fill="#fde68a" opacity="0.8"/>
+  <circle cx="520" cy="140" r="2" fill="#fff" opacity="0.6"/>
+  <circle cx="90" cy="110" r="2.5" fill="#c4b5fd" opacity="0.7"/>
+  <text x="40" y="56" fill="#e9e5ff" font-family="Segoe UI, sans-serif" font-size="28" font-weight="800">Starfall Garden</text>
+  <text x="40" y="86" fill="#c4b5fd" font-family="Segoe UI, sans-serif" font-size="14" font-weight="600">Aim · bounce · bloom</text>
+</svg>

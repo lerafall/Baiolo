@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-label="Starfall Garden thumbnail">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1548"/>
+      <stop offset="100%" stop-color="#120c2b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#c4b5fd" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="480" height="360" rx="24" fill="url(#sky)"/>
+  <rect width="480" height="360" fill="url(#glow)"/>
+  <ellipse cx="150" cy="240" rx="70" ry="14" fill="#34d399" opacity="0.9" transform="rotate(-20 150 240)"/>
+  <ellipse cx="330" cy="190" rx="75" ry="13" fill="#2dd4bf" opacity="0.85" transform="rotate(18 330 190)"/>
+  <g transform="translate(250 120)">
+    <circle r="36" fill="#a5f3fc" opacity="0.28"/>
+    <ellipse cy="-14" rx="16" ry="9" fill="#f9a8d4"/>
+    <ellipse cx="14" cy="6" rx="16" ry="9" fill="#c4b5fd" transform="rotate(55)"/>
+    <ellipse cx="-14" cy="6" rx="16" ry="9" fill="#f9a8d4" transform="rotate(-55)"/>
+    <circle r="9" fill="#fde68a"/>
+  </g>
+  <g transform="translate(130 250)">
+    <circle r="18" fill="#fde68a" opacity="0.3"/>
+    <polygon points="0,-14 4,-4 14,0 4,4 0,14 -4,4 -14,0 -4,-4" fill="#fef08a"/>
+  </g>
+</svg>

@@ -1,0 +1,237 @@
+:root {
+  --night-deep: #120c2b;
+  --night: #1a1240;
+  --mist: #6d5a9c;
+  --lilac: #c4b5fd;
+  --mint: #6ee7b7;
+  --gold: #fde68a;
+  --rose: #f9a8d4;
+  --crystal: #a5f3fc;
+  --ink: #f5f3ff;
+  --frame: #2e1065;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: radial-gradient(ellipse at top, #2e1065 0%, #0f0a1f 70%);
+  font-family: "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
+  user-select: none;
+  touch-action: none;
+  -webkit-user-select: none;
+}
+
+.frame {
+  position: relative;
+  width: min(100vw, 420px);
+  height: min(100vh, 740px);
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 10px solid var(--frame);
+  box-shadow:
+    0 0 0 3px rgba(196, 181, 253, 0.45),
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    inset 0 0 40px rgba(165, 243, 252, 0.08);
+  background: var(--night-deep);
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.hud {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.pill {
+  min-height: 36px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: rgba(18, 12, 43, 0.72);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid rgba(196, 181, 253, 0.35);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.pill.glow {
+  color: var(--gold);
+  border-color: rgba(253, 230, 138, 0.45);
+}
+
+.pill .soft {
+  opacity: 0.55;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 28px 40px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(196, 181, 253, 0.28), transparent 55%),
+    radial-gradient(ellipse at 50% 80%, rgba(110, 231, 183, 0.12), transparent 50%),
+    rgba(12, 8, 32, 0.78);
+  backdrop-filter: blur(6px);
+  animation: fade-in 0.45s ease;
+}
+
+.overlay.win {
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(253, 230, 138, 0.35), transparent 50%),
+    rgba(12, 8, 32, 0.72);
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lilac);
+}
+
+.brand {
+  margin: 10px 0 0;
+  font-size: clamp(2rem, 8vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-shadow: 0 0 28px rgba(196, 181, 253, 0.55);
+}
+
+.brand.small {
+  font-size: 1.85rem;
+}
+
+.body {
+  margin: 14px 0 0;
+  max-width: 28ch;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  color: rgba(245, 243, 255, 0.82);
+}
+
+.hint {
+  margin: 18px 0 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--mint);
+}
+
+.start {
+  margin-top: 26px;
+  min-height: 52px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1a1240;
+  cursor: pointer;
+  background: linear-gradient(135deg, #fde68a 0%, #f9a8d4 48%, #c4b5fd 100%);
+  box-shadow:
+    0 10px 28px rgba(249, 168, 212, 0.35),
+    0 0 0 3px rgba(255, 255, 255, 0.18);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.start:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+.start:active {
+  transform: translateY(1px);
+}
+
+.level-card {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 28px;
+  z-index: 3;
+  padding: 16px 18px;
+  border-radius: 18px;
+  pointer-events: none;
+  background: rgba(18, 12, 43, 0.78);
+  border: 1px solid rgba(196, 181, 253, 0.3);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  animation: rise-in 0.5s ease;
+}
+
+.level-kicker {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.level-title {
+  margin: 6px 0 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.level-hint {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  color: rgba(245, 243, 255, 0.75);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

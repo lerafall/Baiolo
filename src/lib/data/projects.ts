@@ -19,6 +19,23 @@ export const projects: Project[] = [
     ownerId: "baiolo",
   },
   {
+    id: "starfall-garden",
+    title: "Starfall Garden",
+    tagline: "Aim a star. Bounce soft leaves. Bloom the crystal.",
+    description:
+      "A polished fantasy puzzle-arcade: drag to launch a tiny falling star through floating gardens of mint leaves, soft thorns, portals, and light fragments. Eight short levels teach one idea at a time — then a finale that weaves them together. Built as a Baiolo-ready static demo for browser and mobile.",
+    category: "game",
+    tags: ["puzzle", "arcade", "fantasy", "cozy", "mobile"],
+    creator: "Baiolo",
+    thumbnail: "/demos/starfall-garden/thumb.svg",
+    cover: "/demos/starfall-garden/cover.svg",
+    playUrl: "/demos/starfall-garden/index.html",
+    plays: 18,
+    reactions: { fun: 14, interesting: 11, "would-use-again": 12 },
+    featured: true,
+    ownerId: "baiolo",
+  },
+  {
     id: "cloud-hopper",
     title: "Cloud Hopper",
     tagline: "Jump soft clouds. Catch sun coins.",

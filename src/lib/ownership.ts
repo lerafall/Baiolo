@@ -9,6 +9,7 @@ export const CATALOG_DEMO_IDS = new Set([
   "color-splash",
   "petal-puzzle",
   "idea-jar",
+  "starfall-garden",
 ]);
 
 export function isCatalogDemoId(id: string) {
