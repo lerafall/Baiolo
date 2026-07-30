@@ -70,6 +70,23 @@ export const projects: Project[] = [
     ownerId: "baiolo",
   },
   {
+    id: "lantern-munch",
+    title: "Lantern Munch",
+    tagline: "Collect sparks. Dodge spirits. Clear the maze.",
+    description:
+      "A fantasy Pac-Man-style maze chase: guide a glowing lantern through six themed boards — Firefly Courtyard, Crystal Halls, Mushroom Bazaar, Moonwell Ruins, Aurora Garden, and Castle of Lanterns. Eat power orbs, outwit distinct spirits, and clear every spark. Baiolo-ready static demo for browser and mobile.",
+    category: "game",
+    tags: ["arcade", "maze", "fantasy", "classic", "mobile"],
+    creator: "Baiolo",
+    thumbnail: "/demos/lantern-munch/thumb.png",
+    cover: "/demos/lantern-munch/cover.png",
+    playUrl: "/demos/lantern-munch/index.html",
+    plays: 6,
+    reactions: { fun: 5, interesting: 5, "would-use-again": 6 },
+    featured: true,
+    ownerId: "baiolo",
+  },
+  {
     id: "cloud-hopper",
     title: "Cloud Hopper",
     tagline: "Jump soft clouds. Catch sun coins.",

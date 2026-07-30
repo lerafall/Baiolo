@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Lantern Munch · Baiolo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame" data-theme="firefly">
+      <canvas id="game" width="360" height="640" aria-label="Lantern Munch maze"></canvas>
+
+      <header class="hud" id="hud" hidden>
+        <div class="pill"><span id="levelLabel">1 / 6</span></div>
+        <div class="pill glow">★ <strong id="score">0</strong></div>
+        <div class="pill">✦ <strong id="dotsLeft">0</strong></div>
+      </header>
+
+      <div class="lives" id="lives" hidden></div>
+      <div class="combo" id="combo" hidden>Spirit ×<span id="comboN">2</span>!</div>
+
+      <div class="pads" id="pads" hidden>
+        <button type="button" data-dir="up" aria-label="Up">▲</button>
+        <div class="mid">
+          <button type="button" data-dir="left" aria-label="Left">◀</button>
+          <button type="button" data-dir="down" aria-label="Down">▼</button>
+          <button type="button" data-dir="right" aria-label="Right">▶</button>
+        </div>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <p class="eyebrow">Baiolo demo</p>
+        <h1 class="brand">Lantern Munch</h1>
+        <p class="body">
+          Guide a tiny lantern through glowing mazes. Collect every spark, dodge
+          spirits, and munch a power orb when you need bravery.
+        </p>
+        <p class="hint">Move · collect · clear the maze</p>
+        <button type="button" id="startBtn" class="start">Light the path</button>
+      </div>
+
+      <div id="levelCard" class="level-card" hidden>
+        <p class="kicker" id="levelKicker">Level 1</p>
+        <p class="title" id="levelTitle">Firefly Courtyard</p>
+        <p class="goal" id="levelGoal">Collect every spark.</p>
+      </div>
+
+      <div id="winCard" class="overlay win" hidden>
+        <p class="eyebrow" id="winEyebrow">Maze clear</p>
+        <h2 class="brand small" id="winTitle">Path bright!</h2>
+        <p class="body" id="winBody">All sparks gathered.</p>
+        <button type="button" id="nextBtn" class="start">Next maze</button>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

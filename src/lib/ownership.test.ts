@@ -27,6 +27,7 @@ describe("ownership", () => {
     expect(isCatalogDemoId("starfall-garden")).toBe(true);
     expect(isCatalogDemoId("moonlight-bakery")).toBe(true);
     expect(isCatalogDemoId("fairy-blocks")).toBe(true);
+    expect(isCatalogDemoId("lantern-munch")).toBe(true);
     expect(
       isOwnedSubmission({ ...base, id: "cloud-hopper", ownerId: "user-1" }, "user-1"),
     ).toBe(false);
