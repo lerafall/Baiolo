@@ -552,6 +552,10 @@ export const pl: Messages = {
     roleExplorer: "Odkrywca",
     roleCreator: "Twórca",
     roleAdmin: "Admin",
+    planFree: "Darmowy",
+    planPro: "Pro",
+    planStudio: "Studio",
+    planBadge: "Plan {plan}",
   },
   onboarding: {
     welcome: "Witaj w Baiolo",

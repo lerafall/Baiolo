@@ -1,14 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
 import { ProjectCard } from "@/components/ui/ProjectCard";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { submissionToProject } from "@/lib/project-map";
-import { useSession } from "@/lib/session";
+import { useSession, type SessionPlan } from "@/lib/session";
 import { useSubmissions } from "@/lib/submissions";
 import { isOwnedSubmission } from "@/lib/ownership";
+import { normalizeUserPlan } from "@/lib/plans.config";
+
+function planLabelKey(plan: SessionPlan) {
+  if (plan === "pro") return "profile.planPro" as const;
+  if (plan === "studio") return "profile.planStudio" as const;
+  return "profile.planFree" as const;
+}
 
 export default function ProfilePage() {
   const t = useT();
@@ -26,6 +34,8 @@ export default function ProfilePage() {
   const ready = sessionReady && submissionsReady;
   const signedIn = Boolean(session.userId || session.email);
   const isGuest = !signedIn || session.role === "guest";
+  const plan = normalizeUserPlan(session.plan);
+  const planName = t(planLabelKey(plan));
 
   const roleKey =
     session.role === "guest"
@@ -43,8 +53,19 @@ export default function ProfilePage() {
       <SiteHeader showJoin={false} />
       <main className="mx-auto w-full max-w-6xl px-5 py-10 md:px-8">
         <div className="flex flex-col items-start gap-6 rounded-xl bg-surface p-8 shadow-[var(--shadow-1)] sm:flex-row sm:items-center">
-          <div className="flex size-24 items-center justify-center rounded-full bg-lilac text-5xl shadow-[var(--shadow-1)]">
-            {session.avatar}
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex size-24 items-center justify-center rounded-full bg-lilac text-5xl shadow-[var(--shadow-1)]">
+              {session.avatar}
+            </div>
+            {sessionReady && (
+              <Link
+                href="/pricing"
+                className="rounded-pill bg-mint/60 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-secondary-strong transition-colors hover:bg-mint"
+                title={t("profile.planBadge", { plan: planName })}
+              >
+                {t("profile.planBadge", { plan: planName })}
+              </Link>
+            )}
           </div>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2">

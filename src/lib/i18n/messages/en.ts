@@ -549,6 +549,10 @@ export const en = {
     roleExplorer: "Explorer",
     roleCreator: "Creator",
     roleAdmin: "Admin",
+    planFree: "Free",
+    planPro: "Pro",
+    planStudio: "Studio",
+    planBadge: "{plan} plan",
   },
   onboarding: {
     welcome: "Welcome to Baiolo",
