@@ -9,7 +9,14 @@ import { ModeBadge } from "@/components/layout/ModeBadge";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { authHref } from "@/lib/next-path";
-import { useSession } from "@/lib/session";
+import { useSession, type SessionPlan } from "@/lib/session";
+import { normalizeUserPlan } from "@/lib/plans.config";
+
+function planLabelKey(plan: SessionPlan) {
+  if (plan === "pro") return "profile.planPro" as const;
+  if (plan === "studio") return "profile.planStudio" as const;
+  return "profile.planFree" as const;
+}
 
 export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
   const pathname = usePathname();
@@ -17,6 +24,7 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
   const { session, ready, signOut } = useSession();
   const signedIn = ready && Boolean(session.userId || session.email);
   const joinHref = authHref(pathname || "/explore");
+  const planName = t(planLabelKey(normalizeUserPlan(session.plan)));
 
   const links = [
     { href: "/explore", label: t("nav.explore") },
@@ -67,7 +75,15 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
             (signedIn ? (
               <>
                 <Button href="/profile" size="m" variant="secondary">
-                  {session.avatar} {t("nav.profile")}
+                  <span className="inline-flex items-center gap-2">
+                    <span aria-hidden>{session.avatar}</span>
+                    <span className="inline-flex flex-col items-start leading-tight">
+                      <span>{t("nav.profile")}</span>
+                      <span className="text-[11px] font-extrabold uppercase tracking-wide text-secondary-strong">
+                        {planName}
+                      </span>
+                    </span>
+                  </span>
                 </Button>
                 <Button
                   type="button"
@@ -105,7 +121,15 @@ export function SiteHeader({ showJoin = true }: { showJoin?: boolean }) {
                 variant="secondary"
                 className="min-h-10 shrink-0 px-3.5 text-sm"
               >
-                {t("nav.profile")}
+                <span className="inline-flex items-center gap-1.5">
+                  <span aria-hidden>{session.avatar}</span>
+                  <span className="inline-flex flex-col items-start leading-tight">
+                    <span>{t("nav.profile")}</span>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wide text-secondary-strong">
+                      {planName}
+                    </span>
+                  </span>
+                </span>
               </Button>
             ) : (
               <Button
