@@ -1354,9 +1354,18 @@
 
   function resize() {
     const rect = frame.getBoundingClientRect();
-    if (rect.width < 2 || rect.height < 2) return false; // laid out but not visible yet
-    const fw = Math.max(280, Math.floor(rect.width));
-    const fh = Math.max(240, Math.floor(rect.height));
+    // A degenerate measurement used to abort the whole frame, which left the
+    // loop spinning at 60fps against an unsized camera and never drawing.
+    // Inside an iframe the window box is the right answer anyway.
+    let rw = rect.width;
+    let rh = rect.height;
+    if (rw < 2 || rh < 2) {
+      rw = window.innerWidth || document.documentElement.clientWidth || 0;
+      rh = window.innerHeight || document.documentElement.clientHeight || 0;
+    }
+    if (rw < 2 || rh < 2) return false; // genuinely not laid out yet
+    const fw = Math.max(280, Math.floor(rw));
+    const fh = Math.max(240, Math.floor(rh));
 
     // On a tall phone screen a full-height canvas would show ~35 tiles of world,
     // shrinking the fox to a speck. Play in a band up top; thumbs get the rest.

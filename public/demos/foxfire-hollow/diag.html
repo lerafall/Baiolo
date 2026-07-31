@@ -306,12 +306,42 @@
             } catch (e) {
               return (box.textContent = "F: cannot read canvas pixels — " + e);
             }
-            if (ticks === 0)
+            if (ticks === 0) {
               box.textContent = "G: the animation loop is FROZEN in the iframe (0 frames per second) — the game never gets to draw.";
-            else if (!painted)
-              box.textContent = `H: the loop runs (${ticks} frames/sec) but the canvas stays EMPTY — drawing produces nothing.`;
-            else
+              return;
+            }
+            if (painted) {
               box.textContent = `I: the loop runs (${ticks} frames/sec) and the canvas IS painted — so it is drawn but something on top hides it.`;
+              return;
+            }
+
+            // Canvas empty with a live loop: is the context dead, or is the
+            // game's own render path never reaching a draw call? Paint from
+            // out here and read it back to tell those two apart.
+            let outsideWorks = false;
+            try {
+              const cx = canvas.getContext("2d");
+              cx.save();
+              cx.setTransform(1, 0, 0, 1, 0, 0);
+              cx.fillStyle = "#ff0000";
+              cx.fillRect(0, 0, canvas.width, canvas.height);
+              const t = cx.getImageData(4, 4, 1, 1).data;
+              outsideWorks = t[0] > 200;
+              cx.restore();
+            } catch (e) {
+              box.textContent = "H0: drawing threw — " + e;
+              return;
+            }
+            const st = w.Foxfire.state;
+            const cam = w.Foxfire.camera || {};
+            const info =
+              `backing=${canvas.width}x${canvas.height} ` +
+              `cam=${Math.round(cam.cw || 0)}x${Math.round(cam.ch || 0)} ` +
+              `scale=${(cam.scale || 0).toFixed(2)} ` +
+              `level=${w.Foxfire.level() ? "yes" : "NO"} mode=${st.mode} fade=${(st.fade || 0).toFixed(2)}`;
+            box.textContent = outsideWorks
+              ? `H1: the canvas works when I paint it myself, so the game's own drawing never happens. ${info}`
+              : `H2: even a plain red fill does not stick — the canvas context is dead. ${info}`;
           }, 1000);
         } catch (e) {
           box.textContent = "J: check failed — " + e;
