@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Spark Nest · Baiolo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame">
+      <canvas id="game" width="360" height="640" aria-label="Spark Nest game"></canvas>
+
+      <header class="hud" id="hud" hidden>
+        <div class="pill">Wave <strong id="wave">1</strong></div>
+        <div class="pill glow">★ <strong id="score">0</strong></div>
+        <div class="pill">✦ <strong id="stars">0</strong></div>
+      </header>
+
+      <div class="combo" id="combo" hidden>Combo ×<span id="comboN">2</span></div>
+      <div class="toast" id="toast" hidden></div>
+
+      <div class="progress" id="progress" hidden>
+        <div class="progress-label">Next trail unlock</div>
+        <div class="bar"><i id="unlockBar"></i></div>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <p class="eyebrow">Baiolo game</p>
+        <h1 class="brand">Spark Nest</h1>
+        <p class="body">
+          Drag your nest. Catch falling star-sparks. Dodge the moths. Survive
+          waves, stack combos, unlock glowing trails.
+        </p>
+        <p class="hint">Drag nest · catch gold · avoid moths</p>
+        <p class="meta" id="bestLine">Best 0 · Stars 0</p>
+        <button type="button" id="startBtn" class="start">Start nesting</button>
+        <button type="button" id="dailyBtn" class="ghost">Daily sky</button>
+      </div>
+
+      <div id="pauseCard" class="overlay soft" hidden>
+        <h2 class="brand small">Nest pause</h2>
+        <button type="button" id="resumeBtn" class="start">Keep going</button>
+      </div>
+
+      <div id="endCard" class="overlay win" hidden>
+        <p class="eyebrow" id="endEyebrow">Run over</p>
+        <h2 class="brand small" id="endTitle">Nice nest!</h2>
+        <p class="body" id="endBody">Score 0</p>
+        <div class="stats" id="endStats"></div>
+        <button type="button" id="againBtn" class="start">One more run</button>
+        <button type="button" id="menuBtn" class="ghost">Menu</button>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

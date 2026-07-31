@@ -87,6 +87,23 @@ export const projects: Project[] = [
     ownerId: "baiolo",
   },
   {
+    id: "spark-nest",
+    title: "Spark Nest",
+    tagline: "Catch sparks. Dodge moths. Nest the night sky.",
+    description:
+      "A compact arcade catcher for Baiolo: drag your nest, catch falling star-sparks, dodge moths, stack combos through escalating waves, survive Storm Moth spikes, and unlock trail cosmetics with local stars. Fast to learn, sticky to replay.",
+    category: "game",
+    tags: ["arcade", "catch", "cozy", "mobile"],
+    creator: "Baiolo",
+    thumbnail: "/demos/spark-nest/thumb.png",
+    cover: "/demos/spark-nest/cover.png",
+    playUrl: "/demos/spark-nest/index.html",
+    plays: 4,
+    reactions: { fun: 4, interesting: 3, "would-use-again": 4 },
+    featured: true,
+    ownerId: "baiolo",
+  },
+  {
     id: "cloud-hopper",
     title: "Cloud Hopper",
     tagline: "Jump soft clouds. Catch sun coins.",
