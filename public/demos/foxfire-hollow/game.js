@@ -1395,6 +1395,10 @@
     return true;
   }
 
+  // anything thrown outside our own try/catch — event handlers, async work
+  window.addEventListener("error", (e) => crash(e.error || e.message));
+  window.addEventListener("unhandledrejection", (e) => crash(e.reason));
+
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", () => setTimeout(resize, 120));
   if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(frame);
@@ -2184,6 +2188,9 @@
   /** Turns a would-be black screen into something the player can report. */
   let crashed = false;
   function crash(err) {
+    // recorded even when the overlay itself cannot be seen, so the diagnostics
+    // page can read it from the parent document
+    window.__foxfireError = String((err && err.stack) || err);
     if (crashed) return;
     crashed = true;
     console.error("[Foxfire Hollow]", err);

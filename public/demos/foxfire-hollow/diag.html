@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Foxfire Hollow · diagnostics</title>
+    <style>
+      /* deliberately plain: no filters, no gradients, nothing a phone GPU can drop */
+      body {
+        margin: 0;
+        padding: 14px;
+        background: #fff;
+        color: #111;
+        font: 15px/1.45 system-ui, sans-serif;
+      }
+      h1 {
+        font-size: 17px;
+        margin: 0 0 10px;
+      }
+      h2 {
+        font-size: 14px;
+        margin: 18px 0 6px;
+        color: #555;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      pre {
+        background: #f2f2f4;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 13px;
+        margin: 0;
+      }
+      .swatch {
+        height: 44px;
+        border-radius: 8px;
+        background: #d81b60;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 90px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      iframe {
+        width: 100%;
+        height: 300px;
+        border: 2px solid #333;
+        border-radius: 8px;
+        background: #ccc;
+      }
+      .ok {
+        color: #0a7a35;
+        font-weight: 700;
+      }
+      .bad {
+        color: #c62828;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Foxfire Hollow — diagnostics</h1>
+
+    <h2>1. Plain paint</h2>
+    <div class="swatch">This bar must be pink</div>
+
+    <h2>2. Canvas paint</h2>
+    <canvas id="probe"></canvas>
+    <p id="probeText">…</p>
+
+    <h2>3. The game, embedded</h2>
+    <iframe id="frame" src="./index.html" title="game"></iframe>
+
+    <h2>4. Readings</h2>
+    <pre id="out">measuring…</pre>
+
+    <h2>5. Animation loop</h2>
+    <pre id="loopOut">measuring…</pre>
+
+    <h2>6. Force one frame</h2>
+    <p>
+      <button id="force" style="font: inherit; padding: 10px 18px; border-radius: 8px">
+        Draw one frame by hand
+      </button>
+    </p>
+    <pre id="forceOut">not run</pre>
+
+    <script>
+      // --- canvas probe: does this device paint a canvas at all?
+      (function () {
+        const c = document.getElementById("probe");
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        c.width = c.clientWidth * dpr;
+        c.height = 90 * dpr;
+        const x = c.getContext("2d");
+        if (!x) {
+          document.getElementById("probeText").innerHTML =
+            '<span class="bad">no 2D context at all</span>';
+          return;
+        }
+        x.fillStyle = "#1565c0";
+        x.fillRect(0, 0, c.width, c.height);
+        x.fillStyle = "#8bc34a";
+        x.fillRect(10, 10, c.width - 20, c.height - 20);
+        const d = x.getImageData(c.width / 2, c.height / 2, 1, 1).data;
+        document.getElementById("probeText").innerHTML =
+          d[1] > 100
+            ? '<span class="ok">canvas pixels readable — should be green on blue above</span>'
+            : '<span class="bad">canvas did not paint</span>';
+      })();
+
+      // --- read the embedded game from the outside
+      const out = document.getElementById("out");
+      const frame = document.getElementById("frame");
+
+      function box(el) {
+        if (!el) return "missing";
+        const r = el.getBoundingClientRect();
+        return `${Math.round(r.width)}x${Math.round(r.height)} @ ${Math.round(r.left)},${Math.round(r.top)}`;
+      }
+
+      function measure() {
+        const lines = [];
+        lines.push(`UA: ${navigator.userAgent}`);
+        lines.push(`outer viewport: ${innerWidth}x${innerHeight}  dpr ${devicePixelRatio}`);
+        lines.push(`dvh supported: ${CSS.supports("height", "100dvh")}`);
+        try {
+          const w = frame.contentWindow;
+          const d = frame.contentDocument;
+          if (!d) {
+            lines.push("iframe document: BLOCKED (cannot read)");
+            out.textContent = lines.join("\n");
+            return;
+          }
+          lines.push(`iframe viewport: ${w.innerWidth}x${w.innerHeight}`);
+          lines.push(`readyState: ${d.readyState}`);
+          lines.push(`stylesheets: ${d.styleSheets.length}`);
+          lines.push(`game booted: ${!!w.Foxfire}`);
+          lines.push(`recorded error: ${w.__foxfireError || "none"}`);
+
+          const gameFrame = d.getElementById("frame");
+          const canvas = d.getElementById("game");
+          const title = d.getElementById("titleCard");
+          const crash = d.getElementById("crash");
+          lines.push("");
+          lines.push(`.frame box:     ${box(gameFrame)}`);
+          lines.push(`canvas box:     ${box(canvas)}`);
+          lines.push(`canvas backing: ${canvas ? canvas.width + "x" + canvas.height : "missing"}`);
+          lines.push(`titleCard box:  ${box(title)}`);
+          lines.push(`crash shown:    ${crash ? !crash.hidden : "missing"}`);
+
+          if (title) {
+            const cs = w.getComputedStyle(title);
+            lines.push(
+              `titleCard style: display=${cs.display} visibility=${cs.visibility} opacity=${cs.opacity} z=${cs.zIndex}`,
+            );
+            lines.push(`titleCard hidden attr: ${title.hidden}`);
+          }
+          if (gameFrame) {
+            const cs = w.getComputedStyle(gameFrame);
+            lines.push(`.frame style: height=${cs.height} overflow=${cs.overflow} bg=${cs.backgroundColor}`);
+          }
+          if (canvas) {
+            try {
+              const cx = canvas.getContext("2d");
+              const px = cx.getImageData(Math.floor(canvas.width / 2), Math.floor(canvas.height * 0.3), 1, 1).data;
+              lines.push(`canvas centre pixel: rgba(${px[0]},${px[1]},${px[2]},${px[3]})`);
+            } catch (e) {
+              lines.push(`canvas read failed: ${e}`);
+            }
+          }
+        } catch (e) {
+          lines.push(`read failed: ${e}`);
+        }
+        out.textContent = lines.join("\n");
+      }
+
+      // Does the game's animation loop actually tick inside this iframe?
+      // Mobile Chrome throttles rAF for iframes it considers off-screen, and a
+      // loop that never runs leaves an unpainted (black) canvas with no error.
+      function rafProbe() {
+        const box = document.getElementById("loopOut");
+        try {
+          const w = frame.contentWindow;
+          if (!w || !w.requestAnimationFrame) {
+            box.textContent = "no requestAnimationFrame in the iframe";
+            return;
+          }
+          let ticks = 0;
+          const step = () => {
+            ticks++;
+            w.requestAnimationFrame(step);
+          };
+          w.requestAnimationFrame(step);
+          setTimeout(() => {
+            box.textContent =
+              `rAF ticks in 1s: ${ticks}\n` +
+              `visibilityState: ${frame.contentDocument.visibilityState}\n` +
+              (ticks === 0
+                ? "LOOP IS FROZEN -> the game never gets to draw"
+                : "loop is alive");
+          }, 1000);
+        } catch (e) {
+          box.textContent = "rAF probe failed: " + e;
+        }
+      }
+
+      document.getElementById("force").addEventListener("click", () => {
+        const box = document.getElementById("forceOut");
+        try {
+          const w = frame.contentWindow;
+          const canvas = frame.contentDocument.getElementById("game");
+          if (!w.Foxfire) {
+            box.textContent = "game object missing — scripts did not run";
+            return;
+          }
+          w.Foxfire.state.fade = 0;
+          w.Foxfire.render();
+          const cx = canvas.getContext("2d");
+          const px = cx.getImageData(Math.floor(canvas.width / 2), Math.floor(canvas.height * 0.3), 1, 1).data;
+          box.textContent =
+            `after a manual render, centre pixel = rgba(${px[0]},${px[1]},${px[2]},${px[3]})\n` +
+            (px[3] === 0
+              ? "STILL EMPTY -> drawing is broken"
+              : "PAINTED -> drawing works, the loop was not running");
+        } catch (e) {
+          box.textContent = "force failed: " + e;
+        }
+      });
+
+      frame.addEventListener("load", () => {
+        setTimeout(measure, 900);
+        setTimeout(rafProbe, 1200);
+      });
+      setTimeout(measure, 3000);
+    </script>
+  </body>
+</html>
