@@ -104,6 +104,23 @@ export const projects: Project[] = [
     ownerId: "baiolo",
   },
   {
+    id: "sunny-speedway",
+    title: "Sunny Speedway",
+    tagline: "Steer. Dodge. Race the golden hour.",
+    description:
+      "A Pixar-inspired three-lane racer for Baiolo: swipe a cheerful little car through golden-hour traffic, near-miss cones and rivals, grab nitro and shields, survive Big Rig bosses, and unlock glossy paint jobs with coins. Fast to learn, sticky to replay.",
+    category: "game",
+    tags: ["racing", "arcade", "pixar-style", "mobile"],
+    creator: "Baiolo",
+    thumbnail: "/demos/sunny-speedway/thumb.png",
+    cover: "/demos/sunny-speedway/cover.png",
+    playUrl: "/demos/sunny-speedway/index.html",
+    plays: 3,
+    reactions: { fun: 3, interesting: 3, "would-use-again": 3 },
+    featured: true,
+    ownerId: "baiolo",
+  },
+  {
     id: "cloud-hopper",
     title: "Cloud Hopper",
     tagline: "Jump soft clouds. Catch sun coins.",

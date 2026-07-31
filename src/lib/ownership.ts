@@ -14,6 +14,7 @@ export const CATALOG_DEMO_IDS = new Set([
   "fairy-blocks",
   "lantern-munch",
   "spark-nest",
+  "sunny-speedway",
 ]);
 
 export function isCatalogDemoId(id: string) {

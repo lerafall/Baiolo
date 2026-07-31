@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Sunny Speedway · Baiolo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame">
+      <canvas
+        id="game"
+        width="390"
+        height="700"
+        aria-label="Sunny Speedway game"
+      ></canvas>
+
+      <header class="hud" id="hud" hidden>
+        <div class="pill">Stage <strong id="stage">1</strong></div>
+        <div class="pill glow">★ <strong id="score">0</strong></div>
+        <div class="pill">💎 <strong id="coins">0</strong></div>
+      </header>
+
+      <div class="combo" id="combo" hidden>
+        Near miss ×<span id="comboN">2</span>
+      </div>
+      <div class="toast" id="toast" hidden></div>
+
+      <div class="progress" id="progress" hidden>
+        <div class="progress-label">Next paint unlock</div>
+        <div class="bar"><i id="unlockBar"></i></div>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <p class="eyebrow">Baiolo · Pixar-style racer</p>
+        <h1 class="brand">Sunny Speedway</h1>
+        <p class="body">
+          Steer a cheerful little racer through golden-hour traffic. Dodge
+          cones, rival cars, and Big Rig bosses — stack near-miss combos and
+          unlock glossy paint jobs.
+        </p>
+        <p class="hint">Swipe / A·D / ←→ to change lanes · Hold for nitro</p>
+        <p class="meta" id="bestLine">Best 0 · Coins 0</p>
+        <button type="button" id="startBtn" class="start">Start race</button>
+        <button type="button" id="dailyBtn" class="ghost">Daily route</button>
+      </div>
+
+      <div id="pauseCard" class="overlay soft" hidden>
+        <h2 class="brand small">Pit stop</h2>
+        <button type="button" id="resumeBtn" class="start">Back on track</button>
+      </div>
+
+      <div id="endCard" class="overlay win" hidden>
+        <p class="eyebrow" id="endEyebrow">Race over</p>
+        <h2 class="brand small" id="endTitle">Nice drive!</h2>
+        <p class="body" id="endBody">Score 0</p>
+        <div class="stats" id="endStats"></div>
+        <button type="button" id="againBtn" class="start">One more lap</button>
+        <button type="button" id="menuBtn" class="ghost">Menu</button>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
