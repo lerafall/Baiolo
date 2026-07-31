@@ -45,6 +45,10 @@ Every hollow keeps a best time with a gold/silver/bronze medal, an emberseed cou
 
 No build step, no dependencies, no external assets — every pixel is drawn with canvas 2D at runtime. `window.Foxfire` is exposed as a small debug handle (state, fox, input, `startLevel`, `step`, `render`).
 
+Anything thrown at boot, during a level load or inside the frame loop surfaces as a readable overlay instead of a blank canvas, and is also left on `window.__foxfireError`.
+
+`index.html?safe=1` renders in flat colours — no gradient-clipped text, translucent panels or shadows. It exists as an escape hatch for devices whose GPU mishandles those effects.
+
 ## Promotional art
 
 `promo/` holds key art (1920×1080), a social card (1200×630) and a square card (1080×1080). All of it is rendered by the game's own engine, so the art always matches what the game actually looks like.
