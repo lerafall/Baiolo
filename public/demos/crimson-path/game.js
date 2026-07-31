@@ -2279,7 +2279,7 @@
   function crash(err) {
     // recorded even when the overlay itself cannot be seen, so the diagnostics
     // page can read it from the parent document
-    window.__foxfireError = String((err && err.stack) || err);
+    window.__crimsonError = String((err && err.stack) || err);
     if (crashed) return;
     crashed = true;
     console.error("[Crimson Path]", err);
