@@ -130,6 +130,96 @@ describe("ai-build parsers", () => {
     ).toBe(false);
   });
 
+  // These three used to be thrown away and answered with the canned coin
+  // catcher, which is why generated projects came back samey and wrong.
+  it("keeps click-driven games that have no render loop", () => {
+    const memory = {
+      "index.html":
+        '<html><body><div id="board"></div><p id="moves">Moves: 0</p><script src="script.js"></script></body></html>',
+      "style.css": "#board{display:grid}",
+      "script.js": `const ANIMALS = ["fox","bear","owl","frog"];
+const board = document.getElementById("board");
+let first = null, moves = 0;
+[...ANIMALS, ...ANIMALS].forEach((animal) => {
+  const card = document.createElement("button");
+  card.addEventListener("click", () => {
+    card.textContent = animal;
+    if (!first) { first = card; return; }
+    moves++;
+    document.getElementById("moves").textContent = "Moves: " + moves;
+    first = null;
+  });
+  board.appendChild(card);
+});`,
+    };
+    expect(looksIncompletePlayable(memory, "game")).toBe(false);
+    expect(
+      ensurePlayableFiles(memory, { title: "Animal Memory", category: "game" })["script.js"],
+    ).toContain("ANIMALS");
+  });
+
+  it("keeps a quiz built entirely from event handlers", () => {
+    const quiz = {
+      "index.html":
+        '<html><body><p id="q"></p><div id="answers"></div><p id="score">Score: 0</p><script src="script.js"></script></body></html>',
+      "style.css": "body{text-align:center}",
+      "script.js": `const QUESTIONS = [{ q: "Capital of Poland?", a: ["Warsaw", "Krakow"], c: 0 }];
+let i = 0, score = 0;
+function render() {
+  const item = QUESTIONS[i];
+  document.getElementById("q").textContent = item ? item.q : "Done";
+  const box = document.getElementById("answers");
+  box.innerHTML = "";
+  if (!item) return;
+  item.a.forEach((text, idx) => {
+    const b = document.createElement("button");
+    b.textContent = text;
+    b.addEventListener("click", () => {
+      if (idx === item.c) { score++; document.getElementById("score").textContent = "Score: " + score; }
+      i++; render();
+    });
+    box.appendChild(b);
+  });
+}
+render();`,
+    };
+    expect(looksIncompletePlayable(quiz, "game")).toBe(false);
+    expect(
+      ensurePlayableFiles(quiz, { title: "Capital Quiz", category: "game" })["script.js"],
+    ).toContain("QUESTIONS");
+  });
+
+  it("keeps an arcade game whose spawn timer sits near its collision scoring", () => {
+    const arcade = {
+      "index.html":
+        '<html><body><canvas id="game" width="360" height="520"></canvas><p id="score">Score: 0</p><script src="script.js"></script></body></html>',
+      "style.css": "canvas{display:block}",
+      "script.js": `const cv = document.getElementById("game");
+const cx = cv.getContext("2d");
+let score = 0, px = 180, items = [];
+addEventListener("pointermove", (e) => { px = e.clientX; });
+setInterval(() => { items.push({ x: Math.random() * 340, y: -20 }); }, 900);
+function loop() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  cx.fillRect(px - 30, 470, 60, 14);
+  for (const it of items) {
+    it.y += 3;
+    if (it.y > 460 && Math.abs(it.x - px) < 34) {
+      score += 1;
+      document.getElementById("score").textContent = "Score: " + score;
+      it.y = 9999;
+    }
+  }
+  requestAnimationFrame(loop);
+}
+loop();`,
+    };
+    expect(hasSuspiciousAutoScore(arcade["script.js"])).toBe(false);
+    expect(
+      ensurePlayableFiles(arcade, { title: "Star Catcher", category: "game" })["script.js"],
+    ).toContain("items.push");
+  });
+
   it("ensurePlayableFiles replaces score-only shells", () => {
     const out = ensurePlayableFiles(
       {

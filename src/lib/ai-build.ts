@@ -405,48 +405,43 @@ export function sanitizeAiFiles(files: StarterFiles): StarterFiles {
   };
 }
 
-/** Detect background score timers / per-frame score bumps without clear collision gating. */
+/** Every `setInterval(...)` / `setTimeout(...)` call, argument list included. */
+function timerCalls(js: string): string[] {
+  const out: string[] = [];
+  const re = /set(?:Interval|Timeout)\s*\(/gi;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(js))) {
+    let depth = 0;
+    let i = match.index + match[0].length - 1; // sits on the opening paren
+    for (; i < js.length; i++) {
+      const ch = js[i];
+      if (ch === "(") depth++;
+      else if (ch === ")") {
+        depth--;
+        if (depth === 0) {
+          i++;
+          break;
+        }
+      }
+    }
+    out.push(js.slice(match.index, i));
+  }
+  return out;
+}
+
+/**
+ * Detect a score that climbs on a timer with no player involved.
+ *
+ * Deliberately narrow: it only looks inside the timer's own call, because the
+ * earlier version scanned 360 characters past any timer and so condemned
+ * ordinary games, where a spawn timer naturally sits a few lines above the
+ * collision that awards a point. A score rising during idle play is better
+ * caught by watching the live preview than by reading the source.
+ */
 export function hasSuspiciousAutoScore(js: string): boolean {
   const bump =
     /score\s*(\+\+|\+=\s*[1-9]\d*|=\s*score\s*\+\s*[1-9]\d*)|points\s*(\+\+|\+=\s*[1-9]\d*)/i;
-
-  // setInterval/setTimeout whose nearby body bumps score
-  const timerRe = /set(?:Interval|Timeout)\s*\(/gi;
-  let match: RegExpExecArray | null;
-  while ((match = timerRe.exec(js))) {
-    const slice = js.slice(match.index, match.index + 360);
-    if (bump.test(slice)) {
-      return true;
-    }
-  }
-
-  const hasInteractGate =
-    /\b(playerReady|hasInteract|armed|interacted|__baioloInteracted)\b/i.test(
-      js,
-    );
-
-  // Falling collectibles that can hit a stationary player without an interact gate
-  if (
-    /requestAnimationFrame\s*\(/i.test(js) &&
-    bump.test(js) &&
-    /\b(hit|collid|overlap|catch|collect)\b/i.test(js) &&
-    /\b(spawn|coins\.push|vy\s*\+|falling)\b/i.test(js) &&
-    !hasInteractGate
-  ) {
-    return true;
-  }
-
-  // score bump every animation frame without collision/input gating keywords
-  if (
-    /requestAnimationFrame\s*\(/i.test(js) &&
-    bump.test(js) &&
-    !/\b(hit|collid|overlap|intersect|catch|collect|onClick|keydown|pointerdown|playerReady|hasInteract|playing)\b/i.test(
-      js,
-    )
-  ) {
-    return true;
-  }
-  return false;
+  return timerCalls(js).some((call) => bump.test(call));
 }
 export function looksIncompletePlayable(
   files: StarterFiles,
@@ -459,25 +454,36 @@ export function looksIncompletePlayable(
   const html = files["index.html"] || "";
   if (js.trim().length < 120) return true;
 
-  // Classic Baiolo failure: score label in HTML, no canvas, JS may still look "full".
-  if (!/<canvas\b/i.test(html)) {
-    if (
-      /score\s*:\s*0/i.test(html) ||
-      /getElementById\s*\(\s*['"]game['"]\s*\)/.test(js)
-    ) {
+  // The script reaches for an element the page never renders — it throws on load.
+  const referenced = new Set<string>();
+  for (const m of js.matchAll(/getElementById\s*\(\s*['"]([\w-]+)['"]\s*\)/g)) {
+    referenced.add(m[1]!);
+  }
+  for (const m of js.matchAll(/querySelector(?:All)?\s*\(\s*['"]#([\w-]+)['"]/g)) {
+    referenced.add(m[1]!);
+  }
+  for (const id of referenced) {
+    if (!new RegExp(`id\\s*=\\s*["']?${id}(?:["'\\s>]|$)`, "i").test(html)) {
       return true;
     }
   }
+  if (/getContext\s*\(/.test(js) && !/<canvas\b/i.test(html)) return true;
 
-  const hasLoop = /requestAnimationFrame|setInterval\s*\(/.test(js);
+  // A game is finished when the player can act and the page answers. Requiring a
+  // render loop used to condemn every click-driven game — memory, quiz, cards,
+  // word games — none of which tick, all of which are perfectly complete.
   const hasInput =
-    /addEventListener\s*\(\s*['"](?:key|pointer|touch|click|mouse)/.test(js) ||
-    /\bon(?:keydown|keyup|pointer|touch|click)\b/.test(js + html);
-  const drawsSomething =
-    /\.(?:fillRect|arc|drawImage|fillText)\s*\(/.test(js) ||
+    /addEventListener\s*\(\s*['"](?:key|pointer|touch|click|mouse|submit|change|input)/.test(
+      js,
+    ) || /\bon(?:keydown|keyup|pointer|touch|click|change|input|submit)\b/.test(js + html);
+  const changesThePage =
+    /\.(?:fillRect|arc|drawImage|fillText|stroke|fill)\s*\(/.test(js) ||
     /createElement\s*\(/.test(js) ||
-    /innerHTML\s*=/.test(js);
-  return !hasLoop || !hasInput || !drawsSomething;
+    /\.(?:innerHTML|textContent|innerText|value)\s*=/.test(js) ||
+    /classList\.(?:add|remove|toggle)\s*\(/.test(js) ||
+    /\.(?:append|appendChild|replaceChildren|insertAdjacentHTML)\s*\(/.test(js) ||
+    /\.style\.[\w-]+\s*=/.test(js);
+  return !hasInput || !changesThePage;
 }
 
 /**
@@ -504,17 +510,16 @@ export function ensurePlayableFiles(
 
   if (!looksIncompletePlayable(sanitized, category)) return sanitized;
 
+  // Only genuinely broken output gets here, so the substitute is a last resort
+  // rather than a house style. It used to fire on shape alone — no <canvas>, or
+  // a brief that merely mentioned catching — and quietly handed back a coin
+  // catcher wearing the creator's title.
   const brief = options?.brief ?? "";
   const title =
     (options?.title || "").trim().slice(0, 40) ||
     (briefLooksLikeCatchGame(brief) ? "Coin Catcher" : "Baiolo Game");
-  const blob = `${brief}\n${title}\n${sanitized["index.html"] || ""}`;
 
-  if (
-    briefLooksLikeCatchGame(blob) ||
-    /catcher|coin|monet|koszyk/i.test(blob) ||
-    !/<canvas\b/i.test(sanitized["index.html"] || "")
-  ) {
+  if (briefLooksLikeCatchGame(`${brief}\n${title}`)) {
     return sanitizeAiFiles(coinCatcherFiles(title));
   }
 
