@@ -505,6 +505,17 @@
   }
 
   function startLevel(index, keepStats) {
+    try {
+      loadLevel(index, keepStats);
+    } catch (err) {
+      // baking a level is the heaviest thing the game does — if it fails on a
+      // low-memory device, say so instead of leaving the start fade on screen
+      state.fade = 0;
+      crash(err);
+    }
+  }
+
+  function loadLevel(index, keepStats) {
     const def = Levels.LEVELS[index];
     if (!def) return;
     state.index = index;
@@ -2274,10 +2285,11 @@
   /* ------------------------------------------------------------- ui wiring */
 
   function hideCards() {
-    els.title.hidden = true;
-    els.map.hidden = true;
-    els.pause.hidden = true;
-    els.win.hidden = true;
+    // null-safe on purpose: a throw here used to hide every card and leave an
+    // empty black frame with no way back
+    for (const el of [els.title, els.map, els.pause, els.win]) {
+      if (el) el.hidden = true;
+    }
   }
 
   function showTitle() {
@@ -2439,9 +2451,16 @@
 
   /* ----------------------------------------------------------------- boot */
 
-  setSound(save.sound);
-  resize();
-  showTitle();
+  // Boot is guarded too: a throw out here never reached the frame loop's
+  // handler, so the player just got an empty dark frame and no explanation.
+  try {
+    setSound(save.sound);
+    resize();
+    showTitle();
+  } catch (err) {
+    crash(err);
+    if (els.title) els.title.hidden = false; // menu still beats a black box
+  }
   requestAnimationFrame(frameLoop);
 
   // small handle for debugging / automated smoke tests
