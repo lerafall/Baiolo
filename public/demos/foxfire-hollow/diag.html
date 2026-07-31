@@ -81,9 +81,10 @@
     <h1>Foxfire Hollow — diagnostics</h1>
 
     <div id="verdict" class="verdict">Running checks…</div>
-    <p style="font-size: 13px; color: #555">
-      Read the box above out loud to Claude — that one line is the answer.
-    </p>
+    <div id="sendOut" class="verdict" style="background: #eef7ff; margin-top: 8px">
+      Collecting a report… (this page sends it by itself, you do not have to read
+      anything)
+    </div>
 
     <h2>0. Is the menu the black thing?</h2>
     <p>
@@ -401,11 +402,108 @@
         }
       }
 
+      /** Collect everything and post it back, so nobody has to read a phone screen. */
+      function sendReport() {
+        const r = {};
+        const grab = (fn, fallback) => {
+          try {
+            return fn();
+          } catch (e) {
+            return fallback + ": " + e;
+          }
+        };
+        r.ua = navigator.userAgent;
+        r.outer = `${innerWidth}x${innerHeight} dpr${devicePixelRatio}`;
+        r.screen = `${screen.width}x${screen.height}`;
+        r.dvh = grab(() => CSS.supports("height", "100dvh"), "?");
+        r.verdict = document.getElementById("verdict").textContent;
+        r.readings = document.getElementById("out").textContent;
+        r.loop = document.getElementById("loopOut").textContent;
+        r.copy = document.getElementById("copyOut").textContent;
+        r.probe = document.getElementById("probeText").textContent;
+
+        r.inside = grab(() => {
+          const w = frame.contentWindow;
+          const d = frame.contentDocument;
+          const canvas = d.getElementById("game");
+          const gf = d.getElementById("frame");
+          const card = d.getElementById("titleCard");
+          const cs = (el) => {
+            if (!el) return "missing";
+            const s = w.getComputedStyle(el);
+            return {
+              display: s.display,
+              opacity: s.opacity,
+              visibility: s.visibility,
+              transform: s.transform,
+              filter: s.filter,
+              zIndex: s.zIndex,
+              background: s.backgroundColor,
+              width: s.width,
+              height: s.height,
+            };
+          };
+          // which element actually sits on top in the middle of the game area?
+          const gr = gf ? gf.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
+          const midX = gr.width / 2;
+          const midY = gr.height * 0.35;
+          const top = d.elementFromPoint(midX, midY);
+          // sample a few points of the canvas
+          const pts = [];
+          if (canvas) {
+            const cx = canvas.getContext("2d");
+            for (const [fx, fy] of [
+              [0.5, 0.15],
+              [0.5, 0.5],
+              [0.2, 0.8],
+            ]) {
+              const p = cx.getImageData(
+                Math.floor(canvas.width * fx),
+                Math.floor(canvas.height * fy),
+                1,
+                1,
+              ).data;
+              pts.push(`${p[0]},${p[1]},${p[2]},${p[3]}`);
+            }
+          }
+          return {
+            booted: !!w.Foxfire,
+            error: w.__foxfireError || null,
+            mode: w.Foxfire ? w.Foxfire.state.mode : null,
+            fade: w.Foxfire ? w.Foxfire.state.fade : null,
+            camera: w.Foxfire
+              ? `${Math.round(w.Foxfire.camera.cw || 0)}x${Math.round(w.Foxfire.camera.ch || 0)} scale ${(w.Foxfire.camera.scale || 0).toFixed(2)} dpr ${w.Foxfire.camera.dpr}`
+              : null,
+            canvasBacking: canvas ? `${canvas.width}x${canvas.height}` : "missing",
+            canvasSamples: pts,
+            topElementAtCentre: top ? `${top.tagName}#${top.id}.${top.className}` : "none",
+            frameStyle: cs(gf),
+            canvasStyle: cs(canvas),
+            cardStyle: cs(card),
+            bodyClass: d.body.className,
+          };
+        }, "inside");
+
+        fetch("/api/dev-report?k=foxfire-diag", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(r),
+        })
+          .then(() => {
+            document.getElementById("sendOut").textContent =
+              "Report sent. You can close this page — nothing else to do.";
+          })
+          .catch((e) => {
+            document.getElementById("sendOut").textContent = "Could not send: " + e;
+          });
+      }
+
       frame.addEventListener("load", () => {
         setTimeout(measure, 900);
         setTimeout(rafProbe, 1200);
         setTimeout(verdict, 1600);
         setTimeout(copyPicture, 3200);
+        setTimeout(sendReport, 4200);
       });
       setTimeout(measure, 3000);
     </script>
