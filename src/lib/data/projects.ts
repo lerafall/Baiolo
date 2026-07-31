@@ -2,6 +2,23 @@ import type { Project } from "@/lib/types";
 
 export const projects: Project[] = [
   {
+    id: "foxfire-hollow",
+    title: "Foxfire Hollow",
+    tagline: "Ten hollows. One ember. Light them all.",
+    description:
+      "A hand-painted precision platformer: run, wall-jump and ember-dash a little fox spirit through ten levels across three worlds — Mossveil Woods, Emberstone Caverns and the Skyroot Canopy. Coyote time, jump buffering and instant respawns keep it fair; hidden moonpetals, par times and unlockable coats keep you coming back. Every frame is drawn in canvas — no art assets, no install.",
+    category: "game",
+    tags: ["platformer", "precision", "fantasy", "arcade", "mobile"],
+    creator: "Baiolo",
+    thumbnail: "/demos/foxfire-hollow/thumb.png",
+    cover: "/demos/foxfire-hollow/cover.png",
+    playUrl: "/demos/foxfire-hollow/index.html",
+    plays: 6,
+    reactions: { fun: 5, interesting: 4, "would-use-again": 5 },
+    featured: true,
+    ownerId: "baiolo",
+  },
+  {
     id: "star-catch",
     title: "Star Catch",
     tagline: "Tap falling stars before they vanish.",

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1b1426" />
+    <title>Foxfire Hollow · Baiolo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame">
+      <canvas id="game" aria-label="Foxfire Hollow — a platformer"></canvas>
+
+      <header class="hud" id="hud" hidden>
+        <div class="hud-left">
+          <span class="pill name" id="levelName">1. First Light</span>
+        </div>
+        <div class="hud-mid">
+          <span class="pill time" id="timer">0:00.00</span>
+        </div>
+        <div class="hud-right">
+          <span class="pill" title="Emberseeds">🌰 <b id="seeds">0/0</b></span>
+          <span class="pill pip" id="petalPip" title="Moonpetal">🌙</span>
+          <span class="pill ember" id="emberPip" title="Ember dash ready" hidden>✦</span>
+          <span class="pill" title="Falls">💀 <b id="deaths">0</b></span>
+          <button type="button" class="pill btn" id="pauseBtn" title="Pause">⏸</button>
+        </div>
+      </header>
+
+      <div class="banner" id="banner" hidden></div>
+
+      <!-- touch controls: revealed the moment a finger touches the screen -->
+      <div class="touch" id="touch">
+        <div class="dpad">
+          <button type="button" class="tbtn up" id="padUp" aria-label="Up">▲</button>
+          <button type="button" class="tbtn left" id="padLeft" aria-label="Left">◀</button>
+          <button type="button" class="tbtn right" id="padRight" aria-label="Right">▶</button>
+          <button type="button" class="tbtn down" id="padDown" aria-label="Down">▼</button>
+        </div>
+        <div class="actions">
+          <button type="button" class="tbtn dash" id="btnDash" aria-label="Dash">✦</button>
+          <button type="button" class="tbtn jump" id="btnJump" aria-label="Jump">⤒</button>
+        </div>
+      </div>
+
+      <!-- title -->
+      <section class="card title" id="titleCard">
+        <p class="eyebrow">Baiolo · hand-painted platformer</p>
+        <h1 class="logo"><span>Foxfire</span> Hollow</h1>
+        <p class="lede" id="titleBest">A tiny fox. A long night. Ten hollows to light.</p>
+        <div class="keys">
+          <span><b>← →</b> run</span><span><b>Space</b> jump</span><span><b>Shift</b> ember dash</span>
+        </div>
+        <div class="row">
+          <button type="button" class="btn primary" id="playBtn">Light the first lantern</button>
+          <button type="button" class="btn ghost" id="mapBtn">Hollows &amp; coats</button>
+        </div>
+        <button type="button" class="btn tiny" id="soundBtn">🔊 Sound on</button>
+      </section>
+
+      <!-- level select -->
+      <section class="card map" id="mapCard" hidden>
+        <div class="map-head">
+          <h2>The Hollows</h2>
+          <span class="totals" id="mapTotals"></span>
+        </div>
+        <div class="grid" id="levelGrid"></div>
+        <div class="skins">
+          <h3>Coats</h3>
+          <div class="skin-row" id="skinRow"></div>
+        </div>
+        <button type="button" class="btn ghost" id="mapBack">Back</button>
+      </section>
+
+      <!-- pause -->
+      <section class="card small" id="pauseCard" hidden>
+        <h2>Caught your breath?</h2>
+        <div class="row">
+          <button type="button" class="btn primary" id="resumeBtn">Keep running</button>
+          <button type="button" class="btn ghost" id="retryBtn">Restart hollow</button>
+        </div>
+        <div class="row">
+          <button type="button" class="btn ghost" id="pauseMapBtn">Level select</button>
+          <button type="button" class="btn tiny" id="soundBtn2">🔊 Sound on</button>
+        </div>
+        <p class="fine">Esc resume · R restart</p>
+      </section>
+
+      <!-- level complete -->
+      <section class="card win" id="winCard" hidden>
+        <p class="eyebrow">Hollow lit</p>
+        <h2 id="winTitle">Lantern lit!</h2>
+        <p class="big-time"><span id="winMedal">🥇</span> <b id="winTime">0:00.00</b></p>
+        <div class="stats" id="winStats"></div>
+        <div class="row">
+          <button type="button" class="btn primary" id="nextBtn">Next hollow →</button>
+          <button type="button" class="btn ghost" id="winRetryBtn">Run it again</button>
+        </div>
+        <button type="button" class="btn tiny" id="winMapBtn">Level select</button>
+      </section>
+    </main>
+
+    <script src="levels.js"></script>
+    <script src="art.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>
