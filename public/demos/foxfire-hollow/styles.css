@@ -5,7 +5,7 @@
   --ember-deep: #e2612c;
   --teal: #3fd1c0;
   --violet: #a98cff;
-  --glass: rgba(24, 18, 30, 0.62);
+  --glass: rgba(24, 18, 30, 0.86);
   --glass-strong: rgba(20, 15, 26, 0.9);
   --edge: rgba(255, 226, 180, 0.28);
   font-family: "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
@@ -125,8 +125,6 @@ body {
 
 .pill {
   background: var(--glass);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--edge);
   border-radius: 999px;
   padding: 6px 12px;
@@ -227,8 +225,6 @@ body {
   text-align: center;
   background:
     radial-gradient(120% 90% at 50% 0%, rgba(46, 26, 60, 0.55), rgba(12, 8, 18, 0.88));
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   animation: fade 0.35s ease;
   overflow-y: auto;
 }
@@ -563,9 +559,7 @@ body.touch .touch {
   height: 46px;
   border-radius: 16px;
   border: 1px solid rgba(255, 226, 180, 0.28);
-  background: rgba(28, 20, 36, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(28, 20, 36, 0.82);
   color: rgba(255, 246, 232, 0.9);
   font-size: 16px;
   font-family: inherit;
