@@ -1,4 +1,6 @@
 :root {
+  /* the page is dark by design — stops Chrome applying its own dark treatment */
+  color-scheme: dark;
   --ink: #20182c;
   --cream: #fff6e8;
   --ember: #ff9a4d;
@@ -45,19 +47,14 @@ body {
   background: radial-gradient(120% 80% at 50% 0%, #1d1530, #0f0a17);
 }
 
+/* Laid out in normal flow on purpose. As an absolutely positioned layer it
+ * painted into its backing store but never reached the screen on at least one
+ * Android device; a plain in-flow canvas composites the same everywhere. */
 #game {
-  position: absolute;
-  top: 0;
-  left: 0;
   display: block;
   width: 100%;
   height: 100%;
   touch-action: none;
-}
-
-/* on phones the canvas is a band up top and the thumbs own the space below */
-.frame.portrait #game {
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
 }
 
 .crash {
@@ -225,14 +222,10 @@ body {
   text-align: center;
   background:
     radial-gradient(120% 90% at 50% 0%, rgba(46, 26, 60, 0.55), rgba(12, 8, 18, 0.88));
-  animation: fade 0.35s ease;
+  /* no entrance animation: it was measured stuck at its opening frame
+   * (opacity 0) on the reporting phone, which hid the whole menu */
+  opacity: 1;
   overflow-y: auto;
-}
-
-@keyframes fade {
-  from {
-    opacity: 0;
-  }
 }
 
 .eyebrow {
@@ -524,7 +517,9 @@ body {
 
 /* ------------------------------------------------------- touch controls */
 
-.touch {
+/* the container is targeted by id: a class here once collided with the
+ * `touch` flag set on <body>, which hid the entire page on phones */
+#touch {
   display: none;
   position: absolute;
   inset: auto 0 0 0;
@@ -535,7 +530,7 @@ body {
   pointer-events: none;
 }
 
-body.touch .touch {
+body.has-touch #touch {
   display: flex;
 }
 

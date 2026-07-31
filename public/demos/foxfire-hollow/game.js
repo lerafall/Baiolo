@@ -329,7 +329,7 @@
   function bindTouch(el, key) {
     const on = (e) => {
       e.preventDefault();
-      document.body.classList.add("touch");
+      document.body.classList.add("has-touch");
       if (key === "jump" && !input.jump) input.jumpPressed = true;
       if (key === "dash" && !input.dash) input.dashPressed = true;
       input[key] = true;
@@ -365,12 +365,12 @@
   // show the thumb controls up front on touch devices — waiting for the first
   // touch leaves a phone player looking at a game with no visible controls
   if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
-    document.body.classList.add("touch");
+    document.body.classList.add("has-touch");
   }
   window.addEventListener(
     "touchstart",
     () => {
-      document.body.classList.add("touch");
+      document.body.classList.add("has-touch");
     },
     { once: true, passive: true },
   );
