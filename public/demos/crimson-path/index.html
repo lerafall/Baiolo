@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#2a1a12" />
+    <title>Crimson Path · Baiolo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame">
+      <canvas id="game" aria-label="Crimson Path — a platformer"></canvas>
+
+      <header class="hud" id="hud" hidden>
+        <div class="hud-left">
+          <span class="pill name" id="levelName">1. Basket Day</span>
+        </div>
+        <div class="hud-mid">
+          <span class="pill time" id="timer">0:00.00</span>
+        </div>
+        <div class="hud-right">
+          <span class="pill" title="Crumbs">🥧 <b id="seeds">0/0</b></span>
+          <span class="pill pip" id="petalPip" title="Wildflower">🌼</span>
+          <span class="pill ember" id="emberPip" title="Cloak dash ready" hidden>✦</span>
+          <span class="pill" title="Falls">💀 <b id="deaths">0</b></span>
+          <button type="button" class="pill btn" id="pauseBtn" title="Pause">⏸</button>
+        </div>
+      </header>
+
+      <div class="banner" id="banner" hidden></div>
+      <div class="crash" id="crash" hidden></div>
+
+      <!-- touch controls -->
+      <div id="touch">
+        <div class="dpad">
+          <button type="button" class="tbtn up" id="padUp" aria-label="Up">▲</button>
+          <button type="button" class="tbtn left" id="padLeft" aria-label="Left">◀</button>
+          <button type="button" class="tbtn right" id="padRight" aria-label="Right">▶</button>
+          <button type="button" class="tbtn down" id="padDown" aria-label="Down">▼</button>
+        </div>
+        <div class="actions">
+          <button type="button" class="tbtn dash" id="btnDash" aria-label="Dash">✦</button>
+          <button type="button" class="tbtn jump" id="btnJump" aria-label="Jump">⤒</button>
+        </div>
+      </div>
+
+      <!-- story card -->
+      <section class="card story" id="storyCard" hidden>
+        <p class="eyebrow" id="storyEyebrow">Once upon a time…</p>
+        <p class="story-text" id="storyText"></p>
+        <button type="button" class="btn primary" id="storyContinue">Continue</button>
+      </section>
+
+      <!-- title -->
+      <section class="card title" id="titleCard">
+        <p class="eyebrow">Baiolo · hand-painted platformer</p>
+        <h1 class="logo"><span>Crimson</span> Path</h1>
+        <p class="lede" id="titleBest">Ten baskets. One wolf. Reach grandmother.</p>
+        <div class="keys">
+          <span><b>← →</b> run</span><span><b>Space</b> jump</span><span><b>Shift</b> cloak dash</span>
+        </div>
+        <div class="row">
+          <button type="button" class="btn primary" id="playBtn">Take the first step</button>
+          <button type="button" class="btn ghost" id="mapBtn">Paths &amp; cloaks</button>
+        </div>
+        <button type="button" class="btn tiny" id="soundBtn">🔊 Sound on</button>
+      </section>
+
+      <!-- level select -->
+      <section class="card map" id="mapCard" hidden>
+        <div class="map-head">
+          <h2>The Paths</h2>
+          <span class="totals" id="mapTotals"></span>
+        </div>
+        <div class="grid" id="levelGrid"></div>
+        <div class="skins">
+          <h3>Cloaks</h3>
+          <div class="skin-row" id="skinRow"></div>
+        </div>
+        <button type="button" class="btn ghost" id="mapBack">Back</button>
+      </section>
+
+      <!-- pause -->
+      <section class="card small" id="pauseCard" hidden>
+        <h2>Caught your breath?</h2>
+        <div class="row">
+          <button type="button" class="btn primary" id="resumeBtn">Keep running</button>
+          <button type="button" class="btn ghost" id="retryBtn">Restart path</button>
+        </div>
+        <div class="row">
+          <button type="button" class="btn ghost" id="pauseMapBtn">Level select</button>
+          <button type="button" class="btn tiny" id="soundBtn2">🔊 Sound on</button>
+        </div>
+        <p class="fine">Esc resume · R restart</p>
+      </section>
+
+      <!-- level complete -->
+      <section class="card win" id="winCard" hidden>
+        <p class="eyebrow">Cottage reached!</p>
+        <h2 id="winTitle">Basket delivered!</h2>
+        <p class="big-time"><span id="winMedal">🥇</span> <b id="winTime">0:00.00</b></p>
+        <div class="stats" id="winStats"></div>
+        <div class="row">
+          <button type="button" class="btn primary" id="nextBtn">Next path →</button>
+          <button type="button" class="btn ghost" id="winRetryBtn">Run it again</button>
+        </div>
+        <button type="button" class="btn tiny" id="winMapBtn">Level select</button>
+      </section>
+    </main>
+
+    <script src="levels.js"></script>
+    <script src="art.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>

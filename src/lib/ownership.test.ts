@@ -31,6 +31,7 @@ describe("ownership", () => {
     expect(isCatalogDemoId("spark-nest")).toBe(true);
     expect(isCatalogDemoId("sunny-speedway")).toBe(true);
     expect(isCatalogDemoId("foxfire-hollow")).toBe(true);
+    expect(isCatalogDemoId("crimson-path")).toBe(true);
     expect(
       isOwnedSubmission({ ...base, id: "cloud-hopper", ownerId: "user-1" }, "user-1"),
     ).toBe(false);

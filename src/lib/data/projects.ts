@@ -19,6 +19,23 @@ export const projects: Project[] = [
     ownerId: "baiolo",
   },
   {
+    id: "crimson-path",
+    title: "Crimson Path",
+    tagline: "Ten baskets. One wolf. Reach grandmother.",
+    description:
+      "A hand-painted Little Red Riding Hood platformer: run, wall-jump and cloak-dash through ten fairy-tale paths across Sunny Glade, Dark Thicket and Cottage Lane. Fill your basket with crumbs, pick hidden wildflowers, outwit prowling wolves, and unlock new cloaks. Story beats, par times and a finale wolf chase keep you coming back. Canvas-only — no install.",
+    category: "game",
+    tags: ["platformer", "fairy-tale", "precision", "adventure", "mobile"],
+    creator: "Baiolo",
+    thumbnail: "/demos/crimson-path/thumb.png",
+    cover: "/demos/crimson-path/cover.png",
+    playUrl: "/demos/crimson-path/index.html",
+    plays: 4,
+    reactions: { fun: 4, interesting: 4, "would-use-again": 4 },
+    featured: true,
+    ownerId: "baiolo",
+  },
+  {
     id: "star-catch",
     title: "Star Catch",
     tagline: "Tap falling stars before they vanish.",
