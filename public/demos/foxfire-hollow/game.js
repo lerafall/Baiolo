@@ -354,6 +354,14 @@
   bindTouch($("btnJump"), "jump");
   bindTouch($("btnDash"), "dash");
 
+  // ?safe=1 strips every decorative effect that can break layer compositing on
+  // some mobile GPUs (gradient-clipped text, shadows, translucent panels)
+  try {
+    if (/(^|[?&])safe=1/.test(location.search)) document.body.classList.add("safe");
+  } catch {
+    /* ignore */
+  }
+
   // show the thumb controls up front on touch devices — waiting for the first
   // touch leaves a phone player looking at a game with no visible controls
   if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {

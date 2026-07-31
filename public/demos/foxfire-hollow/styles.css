@@ -624,3 +624,48 @@ body.touch .touch {
     transition: none;
   }
 }
+
+/* ------------------------------------------------------- safe mode (?safe=1)
+ * Flat colours, no gradient-clipped text, no shadows, no translucency: the
+ * effects that some mobile GPUs composite as an opaque black layer.
+ */
+body.safe .card {
+  background: #171126;
+}
+
+body.safe .logo {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: #ffbe6a;
+  filter: none;
+}
+
+body.safe .frame {
+  background: #120d1c;
+}
+
+body.safe #game {
+  box-shadow: none;
+}
+
+body.safe .pill,
+body.safe .tbtn,
+body.safe .crash {
+  background: #1d1630;
+  box-shadow: none;
+}
+
+body.safe .btn.primary,
+body.safe .actions .jump {
+  background: #ffb45c;
+  box-shadow: none;
+}
+
+body.safe .actions .dash {
+  background: #7fd4ff;
+}
+
+body.safe .banner {
+  background: #ffa852;
+}

@@ -362,9 +362,9 @@
             }
             if (painted) {
               box.textContent =
-                `I: drawing is healthy — ${ticks} frames/sec and the canvas has real pixels. ` +
-                `If the game box above shows the forest, it works. If it is still black, ` +
-                `press "Copy the game's picture here" below.`;
+                `I: the loop runs at ${ticks} frames/sec and the canvas is not blank. ` +
+                `That alone does not say whether it drew a scene or just a dark wash — ` +
+                `read section 4b below and tell Claude that line.`;
               return;
             }
 
