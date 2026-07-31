@@ -2,6 +2,23 @@ import type { Project } from "@/lib/types";
 
 export const projects: Project[] = [
   {
+    id: "foxfire-duel",
+    title: "Foxfire Duel",
+    tagline: "One phone, two thumbs, one island.",
+    description:
+      "A local versus game for two people sharing one screen. Each fox answers to a single button: tap to hop back, hold to charge an ember bash, release to lunge. Every hit builds scorch, so the longer a round runs the further the next hit throws you — and the island crumbles from both ends, so nobody can stall. Three bot levels for playing alone. Baiolo-ready static demo, landscape, no install.",
+    category: "game",
+    tags: ["versus", "local-multiplayer", "party", "fantasy", "mobile"],
+    creator: "Baiolo",
+    thumbnail: "/demos/foxfire-duel/thumb.png",
+    cover: "/demos/foxfire-duel/cover.png",
+    playUrl: "/demos/foxfire-duel/index.html",
+    plays: 3,
+    reactions: { fun: 3, interesting: 2, "would-use-again": 3 },
+    featured: true,
+    ownerId: "baiolo",
+  },
+  {
     id: "foxfire-hollow",
     title: "Foxfire Hollow",
     tagline: "Ten hollows. One ember. Light them all.",

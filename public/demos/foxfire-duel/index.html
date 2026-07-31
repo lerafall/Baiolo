@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1b1426" />
+    <title>Foxfire Duel · Baiolo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame" id="frame">
+      <canvas id="game" aria-label="Foxfire Duel — a two player game"></canvas>
+
+      <header class="hud" id="hud" hidden>
+        <div class="side p1">
+          <span class="tag">Ember</span>
+          <span class="meter" id="p1Scorch" data-v="0"></span>
+          <span class="boon" id="p1Boon" hidden></span>
+        </div>
+        <div class="score"><b id="p1Score">0</b><i>—</i><b id="p2Score">0</b></div>
+        <div class="side p2">
+          <span class="tag">Frost</span>
+          <span class="meter" id="p2Scorch" data-v="0"></span>
+          <span class="boon" id="p2Boon" hidden></span>
+        </div>
+      </header>
+
+      <div class="crash" id="crash" hidden></div>
+
+      <!-- one button per player, at opposite ends of the long edge -->
+      <div id="touch">
+        <button type="button" class="pad p1" id="padP1" aria-label="Ember">
+          <span>EMBER</span>
+        </button>
+        <button type="button" class="pad p2" id="padP2" aria-label="Frost">
+          <span>FROST</span>
+        </button>
+      </div>
+
+      <section class="card menu" id="menuCard">
+        <p class="eyebrow">Baiolo · one phone, two thumbs</p>
+        <h1 class="logo"><span>Foxfire</span> Duel</h1>
+        <p class="lede">
+          Put the phone down between you. Each fox answers to one button:
+          <b>tap</b> to hop back, <b>hold</b> to charge an ember bash, let go to
+          lunge. Every hit adds scorch — and the more you carry, the further the
+          next one throws you. Knock them off the island.
+        </p>
+        <div class="row">
+          <button type="button" class="btn primary" id="twoPlayers">Two players</button>
+        </div>
+        <p class="fine">or duel the forest spirit</p>
+        <div class="row">
+          <button type="button" class="btn ghost" id="bot-easy">Easy</button>
+          <button type="button" class="btn ghost" id="bot-normal">Normal</button>
+          <button type="button" class="btn ghost" id="bot-hard">Hard</button>
+        </div>
+        <div class="row small-row">
+          <button type="button" class="btn tiny" id="firstToBtn">
+            First to <b id="firstTo">5</b>
+          </button>
+          <button type="button" class="btn tiny" id="soundBtn">🔊 Sound on</button>
+        </div>
+        <p class="fine keys">On a keyboard: <b>A</b> for Ember · <b>L</b> for Frost</p>
+      </section>
+
+      <section class="card over" id="overCard" hidden>
+        <p class="eyebrow">Match over</p>
+        <h2 id="overTitle">Ember wins!</h2>
+        <p class="big" id="overBody">5 — 3</p>
+        <div class="row">
+          <button type="button" class="btn primary" id="againBtn">Rematch</button>
+          <button type="button" class="btn ghost" id="menuBtn">Menu</button>
+        </div>
+      </section>
+
+      <section class="rotate" id="rotateCard" hidden>
+        <div class="phone"></div>
+        <p>Turn the phone sideways —<br />you both need an edge to hold.</p>
+      </section>
+    </main>
+
+    <script src="art.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>
