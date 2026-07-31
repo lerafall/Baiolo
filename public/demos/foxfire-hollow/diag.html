@@ -106,6 +106,15 @@
     <h2>4. Readings</h2>
     <pre id="out">measuring…</pre>
 
+    <h2>4b. Copy of the game's picture</h2>
+    <p style="font-size: 13px; color: #555">
+      The same pixels the game just drew, copied onto a plain canvas out here.
+      If a forest shows up in this box but the game box above is black, the
+      drawing is fine and something in the game page is covering it.
+    </p>
+    <canvas id="copy"></canvas>
+    <pre id="copyOut">…</pre>
+
     <h2>5. Animation loop</h2>
     <pre id="loopOut">measuring…</pre>
 
@@ -275,6 +284,47 @@
         }
       });
 
+      /** Mirror the game's own pixels onto a plain canvas out here. */
+      function copyPicture() {
+        const out2 = document.getElementById("copyOut");
+        const dst = document.getElementById("copy");
+        try {
+          const src = frame.contentDocument.getElementById("game");
+          if (!src || !src.width) {
+            out2.textContent = "no canvas to copy";
+            return;
+          }
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const cssW = dst.clientWidth || dst.parentElement.clientWidth || 320;
+          dst.width = Math.max(120, Math.round(cssW * dpr));
+          dst.height = Math.max(60, Math.round((dst.width * src.height) / src.width));
+          dst.style.height = Math.round(dst.height / dpr) + "px";
+          const cx = dst.getContext("2d");
+          cx.drawImage(src, 0, 0, dst.width, dst.height);
+          // describe it in words too, in case the picture is hard to judge
+          const d = cx.getImageData(0, 0, dst.width, dst.height).data;
+          let bright = 0;
+          let sum = [0, 0, 0];
+          const step = 4 * 37;
+          let n = 0;
+          for (let i = 0; i < d.length; i += step) {
+            sum[0] += d[i];
+            sum[1] += d[i + 1];
+            sum[2] += d[i + 2];
+            if (d[i] + d[i + 1] + d[i + 2] > 150) bright++;
+            n++;
+          }
+          const avg = sum.map((v) => Math.round(v / n));
+          out2.textContent =
+            `average colour rgb(${avg}) · ${Math.round((bright / n) * 100)}% of pixels are bright\n` +
+            (bright / n > 0.15
+              ? "this is a real scene — the game IS drawing a picture"
+              : "this copy is dark/flat — the game is drawing almost nothing");
+        } catch (e) {
+          out2.textContent = "copy failed: " + e;
+        }
+      }
+
       // one plain-language answer, so nobody has to read a wall of numbers
       function verdict() {
         const box = document.getElementById("verdict");
@@ -311,7 +361,10 @@
               return;
             }
             if (painted) {
-              box.textContent = `I: the loop runs (${ticks} frames/sec) and the canvas IS painted — so it is drawn but something on top hides it.`;
+              box.textContent =
+                `I: drawing is healthy — ${ticks} frames/sec and the canvas has real pixels. ` +
+                `If the game box above shows the forest, it works. If it is still black, ` +
+                `press "Copy the game's picture here" below.`;
               return;
             }
 
@@ -352,6 +405,7 @@
         setTimeout(measure, 900);
         setTimeout(rafProbe, 1200);
         setTimeout(verdict, 1600);
+        setTimeout(copyPicture, 3200);
       });
       setTimeout(measure, 3000);
     </script>
