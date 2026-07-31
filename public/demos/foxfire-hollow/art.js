@@ -516,6 +516,17 @@
     return bgCache.get(biome);
   }
 
+  /** Drop the baked strips so they get rebuilt (after a lost canvas context). */
+  function forgetBackgrounds() {
+    for (const set of bgCache.values()) {
+      for (const c of Object.values(set)) {
+        c.width = 0;
+        c.height = 0;
+      }
+    }
+    bgCache.clear();
+  }
+
   /* -------------------------------------------------------------- terrain */
 
   function bakeTerrain(level, biome) {
@@ -537,16 +548,25 @@
       return d;
     };
 
-    // 1) soft drop shadow under the whole silhouette
-    ctx.save();
-    if (typeof ctx.filter === "string") ctx.filter = "blur(7px)";
-    ctx.fillStyle = "rgba(0,0,0,0.34)";
+    // 1) soft drop shadow under the whole silhouette.
+    // Built as one quarter-size mask and blitted back once: a blurred fillRect
+    // per tile costs thousands of GPU filter passes and locks up phones.
+    const S = 4;
+    const mask = surface(Math.ceil((w * TILE) / S), Math.ceil((h * TILE) / S));
+    const mctx = mask.getContext("2d");
+    mctx.fillStyle = "#000";
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        if (solid(x, y)) ctx.fillRect(x * TILE - 3, y * TILE + 5, TILE + 6, TILE + 6);
+        if (solid(x, y)) mctx.fillRect((x * TILE) / S, (y * TILE) / S, TILE / S, TILE / S);
       }
     }
+    ctx.save();
+    ctx.globalAlpha = 0.34;
+    if (typeof ctx.filter === "string") ctx.filter = "blur(3px)";
+    ctx.drawImage(mask, -3, 5, w * TILE, h * TILE);
     ctx.restore();
+    mask.width = 0;
+    mask.height = 0;
 
     // 2) rock body
     for (let y = 0; y < h; y++) {
@@ -1196,6 +1216,7 @@
     roundRect,
     paintSky,
     backgrounds,
+    forgetBackgrounds,
     bakeTerrain,
     drawFox,
     drawEmber,

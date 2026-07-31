@@ -354,6 +354,11 @@
   bindTouch($("btnJump"), "jump");
   bindTouch($("btnDash"), "dash");
 
+  // show the thumb controls up front on touch devices — waiting for the first
+  // touch leaves a phone player looking at a game with no visible controls
+  if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+    document.body.classList.add("touch");
+  }
   window.addEventListener(
     "touchstart",
     () => {
@@ -491,12 +496,21 @@
 
   /* ---------------------------------------------------------- level load */
 
+  /** iOS caps total canvas memory; a dropped reference is not enough. */
+  function releaseTerrain() {
+    if (!terrain) return;
+    terrain.width = 0;
+    terrain.height = 0;
+    terrain = null;
+  }
+
   function startLevel(index, keepStats) {
     const def = Levels.LEVELS[index];
     if (!def) return;
     state.index = index;
     save.lastIndex = index;
     level = Levels.buildLevel(def);
+    releaseTerrain();
     terrain = Art.bakeTerrain(level, def.biome);
     crumbles.clear();
     ents = [];
@@ -1329,17 +1343,31 @@
 
   function resize() {
     const rect = frame.getBoundingClientRect();
-    const cw = Math.max(280, Math.floor(rect.width));
-    const ch = Math.max(240, Math.floor(rect.height));
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (rect.width < 2 || rect.height < 2) return false; // laid out but not visible yet
+    const fw = Math.max(280, Math.floor(rect.width));
+    const fh = Math.max(240, Math.floor(rect.height));
+
+    // On a tall phone screen a full-height canvas would show ~35 tiles of world,
+    // shrinking the fox to a speck. Play in a band up top; thumbs get the rest.
+    const portrait = fh / fw > 1.15;
+    const cw = fw;
+    const ch = portrait ? Math.round(Math.min(fh * 0.68, fw * 1.3)) : fh;
+
+    // keep the backing store inside a sane pixel budget — blowing past it makes
+    // mobile Safari hand back a blank (black) canvas
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    while (dpr > 1 && cw * ch * dpr * dpr > 2.6e6) dpr -= 0.25;
+
     canvas.width = Math.floor(cw * dpr);
     canvas.height = Math.floor(ch * dpr);
     canvas.style.width = `${cw}px`;
     canvas.style.height = `${ch}px`;
+    frame.classList.toggle("portrait", portrait);
 
-    // aim for ~13 tiles of height, but never show less than 16 or more than 28 across
+    // aim for ~13 tiles of height, but keep a workable slice of the world in view
     let scale = ch / 420;
-    if (cw / scale < 520) scale = cw / 520;
+    const minWorldW = portrait ? 460 : 520;
+    if (cw / scale < minWorldW) scale = cw / minWorldW;
     if (cw / scale > 900) scale = cw / 900;
     camera.scale = scale;
     camera.w = cw / scale;
@@ -1347,14 +1375,33 @@
     camera.dpr = dpr;
     camera.cw = cw;
     camera.ch = ch;
+    camera.fw = frame.clientWidth;
+    camera.fh = frame.clientHeight;
     if (level) {
       camera.x = clampCamX(camera.x);
       camera.y = clampCamY(camera.y);
     }
+    return true;
   }
 
   window.addEventListener("resize", resize);
-  if (window.ResizeObserver) new ResizeObserver(resize).observe(frame);
+  window.addEventListener("orientationchange", () => setTimeout(resize, 120));
+  if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(frame);
+
+  // Phones drop the 2D context when memory gets tight: the canvas goes black
+  // with no error at all. Ask for it back, then rebuild everything baked.
+  canvas.addEventListener("contextlost", (e) => {
+    e.preventDefault();
+    console.warn("[Foxfire Hollow] canvas context lost");
+  });
+  canvas.addEventListener("contextrestored", () => {
+    Art.forgetBackgrounds();
+    if (level) {
+      releaseTerrain();
+      terrain = Art.bakeTerrain(level, level.def.biome);
+    }
+    resize();
+  });
 
   /* ---------------------------------------------------------------- render */
 
@@ -2116,9 +2163,38 @@
 
   function frameLoop(now) {
     requestAnimationFrame(frameLoop);
+    try {
+      tick(now);
+    } catch (err) {
+      crash(err);
+    }
+  }
+
+  /** Turns a would-be black screen into something the player can report. */
+  let crashed = false;
+  function crash(err) {
+    if (crashed) return;
+    crashed = true;
+    console.error("[Foxfire Hollow]", err);
+    const box = $("crash");
+    if (!box) return;
+    box.hidden = false;
+    box.innerHTML = `<strong>The hollow went dark.</strong><span>${String(
+      (err && err.message) || err,
+    ).slice(0, 160)}</span><button type="button" id="crashReload">Reload</button>`;
+    const btn = $("crashReload");
+    if (btn) btn.addEventListener("click", () => window.location.reload());
+  }
+
+  function tick(now) {
     let dt = (now - last) / 1000;
     last = now;
     if (dt > 0.25) dt = 0.25;
+
+    // phones resize the viewport constantly (URL bar, rotation, keyboard) and
+    // some of those never fire a resize event inside an iframe
+    if (frame.clientWidth !== camera.fw || frame.clientHeight !== camera.fh) resize();
+    if (!camera.cw || !camera.ch) return;
 
     if (state.mode === "play" || state.mode === "win") {
       acc += dt;
@@ -2222,6 +2298,7 @@
   function quietLoad(i) {
     const def = Levels.LEVELS[i];
     level = Levels.buildLevel(def);
+    releaseTerrain();
     terrain = Art.bakeTerrain(level, def.biome);
     ents = [];
     crumbles.clear();
