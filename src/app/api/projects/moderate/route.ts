@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { loadModerationTarget } from "@/lib/admin-project-source";
 import type { ProjectSubmission } from "@/lib/moderation";
 import {
   applyAdminAction,
@@ -16,7 +17,10 @@ import {
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type Body = {
-  project: ProjectSubmission;
+  /** Preferred: the server reads the row itself. */
+  projectId?: string;
+  /** Legacy / mock mode only. */
+  project?: ProjectSubmission;
   action: AdminAction;
   note?: string;
 };
@@ -46,14 +50,26 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as Body;
 
-  if (!body.project || !body.action || !isAdminAction(body.action)) {
+  if ((!body.projectId && !body.project) || !body.action || !isAdminAction(body.action)) {
     return NextResponse.json(
       { error: "Missing project or action." },
       { status: 400 },
     );
   }
 
-  if (body.action === "publish" && !canPublish(body.project)) {
+  // Act on the stored row, never on whatever the browser happened to hold.
+  const { project: target } = await loadModerationTarget(
+    body.projectId,
+    body.project,
+  );
+  if (!target) {
+    return NextResponse.json(
+      { error: "That project no longer exists — refresh the queue." },
+      { status: 404 },
+    );
+  }
+
+  if (body.action === "publish" && !canPublish(target)) {
     return NextResponse.json(
       {
         error:
@@ -63,12 +79,12 @@ export async function POST(request: Request) {
     );
   }
 
-  let next = applyAdminAction(body.project, body.action, body.note);
+  let next = applyAdminAction(target, body.action, body.note);
 
   if (
     body.action === "publish" &&
     next.status !== "published" &&
-    body.project.status !== "published"
+    target.status !== "published"
   ) {
     return NextResponse.json(
       {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { loadModerationTarget } from "@/lib/admin-project-source";
 import type { ProjectSubmission } from "@/lib/moderation";
 import { reviewLinkPackage, reviewZipBytes } from "@/lib/code-review";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -10,7 +11,10 @@ import {
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type Body = {
-  project: ProjectSubmission;
+  /** Preferred: the server reads the row itself. */
+  projectId?: string;
+  /** Legacy / mock mode only. */
+  project?: ProjectSubmission;
 };
 
 export const runtime = "nodejs";
@@ -36,11 +40,19 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as Body;
 
-  if (!body.project) {
+  if (!body.projectId && !body.project) {
     return NextResponse.json({ error: "Missing project." }, { status: 400 });
   }
 
-  const project = body.project;
+  // Read the stored row: a tab opened before an edit carries stale paths, and
+  // the review then fails on a ZIP that has since moved.
+  const { project } = await loadModerationTarget(body.projectId, body.project);
+  if (!project) {
+    return NextResponse.json(
+      { error: "That project no longer exists — refresh the queue." },
+      { status: 404 },
+    );
+  }
   let review;
 
   if (project.uploadType === "link") {

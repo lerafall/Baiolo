@@ -125,6 +125,8 @@ export function AdminDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // the id is what matters; `project` stays for mock mode only
+          projectId: project.id,
           project,
           action,
           note,
@@ -153,7 +155,7 @@ export function AdminDashboard() {
       const res = await fetch("/api/projects/code-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project }),
+        body: JSON.stringify({ projectId: project.id, project }),
       });
       const data = (await res.json()) as {
         project?: ProjectSubmission;
