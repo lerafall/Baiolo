@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import type { PipelineSubmitInput } from "@/lib/pipeline";
 import { runSubmitPipeline } from "@/lib/pipeline";
 import { extractZipForPlay } from "@/lib/publish-zip";
+import { isCatalogDemoId } from "@/lib/ownership";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { submissionToRow } from "@/lib/supabase/map";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { freshProjectId, guardProjectWrite } from "@/lib/project-write-guard";
 import { createSupabaseServer } from "@/lib/supabase/server-auth";
 
 export async function POST(request: Request) {
@@ -32,8 +34,26 @@ export async function POST(request: Request) {
     if (user?.id) ownerId = user.id;
   }
 
+  // A submission must never land on top of a curated demo or someone else's
+  // project just because the browser sent that id.
+  let targetId = body.id;
+  const guardClient = isSupabaseConfigured() ? getSupabaseServerClient() : null;
+  if (guardClient) {
+    const guard = await guardProjectWrite(guardClient, body.id, ownerId);
+    if (!guard.ok) {
+      return NextResponse.json(
+        { error: "That project belongs to someone else." },
+        { status: 403 },
+      );
+    }
+    targetId = guard.id;
+  } else if (isCatalogDemoId(body.id)) {
+    targetId = freshProjectId();
+  }
+
   const result = await runSubmitPipeline({
     ...body,
+    id: targetId,
     ownerId,
     storagePath: body.storagePath ?? null,
     shareIntent: body.shareIntent === "public" ? "public" : "private",

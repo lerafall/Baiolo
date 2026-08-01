@@ -3,6 +3,8 @@ import type { ProjectStatus, ProjectSubmission } from "@/lib/moderation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { rowToSubmission, submissionToRow } from "@/lib/supabase/map";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server-auth";
+import { guardProjectWrite } from "@/lib/project-write-guard";
 
 /** Higher = more advanced in the pipeline. Used to block stale client downgrades. */
 export function statusRank(status: ProjectStatus | null | undefined): number {
@@ -93,6 +95,28 @@ export async function POST(request: Request) {
         project: existing,
       });
     }
+  }
+
+  // Same gate as /submit: never overwrite a curated demo or another account's row.
+  const authed = await createSupabaseServer();
+  const {
+    data: { user },
+  } = (await authed?.auth.getUser()) ?? { data: { user: null } };
+  const guard = await guardProjectWrite(supabase, body.id, user?.id ?? null);
+  if (!guard.ok) {
+    return NextResponse.json(
+      { error: "That project belongs to someone else." },
+      { status: 403 },
+    );
+  }
+  if (guard.renamed) {
+    // A curated id can only arrive from a stale local cache — drop the sync
+    // rather than quietly minting a duplicate row behind the creator's back.
+    return NextResponse.json({
+      mode: "supabase",
+      skipped: true,
+      reason: "curated_id",
+    });
   }
 
   const { error } = await supabase

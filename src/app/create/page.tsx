@@ -19,6 +19,7 @@ import {
   type CreateDraft,
 } from "@/lib/draft";
 import type { ProjectSubmission, UploadType } from "@/lib/moderation";
+import { isCatalogDemoId } from "@/lib/ownership";
 import { useSession } from "@/lib/session";
 import { useSubmissions } from "@/lib/submissions";
 import type { ProjectCategory } from "@/lib/types";
@@ -136,7 +137,13 @@ function CreateWizard() {
 
     if (editId) {
       const sub = items.find((s) => s.id === editId);
-      if (sub) {
+      // Curated demos and other people's projects are readable here, but editing
+      // one used to load its id into the draft and overwrite it on submit.
+      const editable =
+        sub &&
+        !isCatalogDemoId(sub.id) &&
+        (!sub.ownerId || !session.userId || sub.ownerId === session.userId);
+      if (sub && editable) {
         const workshopFiles =
           sub.uploadType === "ai" || sub.uploadType === "html"
             ? readMockPlayFiles(sub.id)
@@ -187,7 +194,7 @@ function CreateWizard() {
 
     setDraft(readDraft() ?? emptyDraft());
     setHydrated(true);
-  }, [editId, items, submissionsReady]);
+  }, [editId, items, submissionsReady, session.userId]);
 
   // Persist draft locally + mirror to My Projects (debounced — avoids render loops).
   useEffect(() => {
