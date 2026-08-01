@@ -99,7 +99,7 @@ function modelForTier(
         envTrim("OPENAI_MODEL_FAST") ||
         envTrim("OPENROUTER_MODEL") ||
         envTrim("OPENAI_MODEL") ||
-        "openai/gpt-4o-mini"
+        "deepseek/deepseek-v4-flash"
       );
     }
     return (
@@ -107,7 +107,7 @@ function modelForTier(
       envTrim("OPENAI_MODEL_QUALITY") ||
       envTrim("OPENROUTER_MODEL") ||
       envTrim("OPENAI_MODEL") ||
-      "openai/gpt-4o"
+      "anthropic/claude-sonnet-5"
     );
   }
 
@@ -154,6 +154,12 @@ export async function chatCompletionJson(options: {
   maxTokens?: number;
   /** fast = cheaper; quality = stronger. Default quality. */
   tier?: LlmTier;
+  /**
+   * Ask for a JSON object back. Default true. Set false when the reply carries
+   * code in fenced blocks — JSON string escaping measurably shortens and
+   * degrades generated code.
+   */
+  json?: boolean;
   /** Optional JPEG/PNG data URL so vision models can see the live preview. */
   imageDataUrl?: string | null;
 }): Promise<{
@@ -192,12 +198,14 @@ export async function chatCompletionJson(options: {
     body: JSON.stringify({
       model: cfg.model,
       temperature: options.temperature ?? 0.7,
-      max_tokens: options.maxTokens ?? 12_000,
+      max_tokens: options.maxTokens ?? 24_000,
       messages: [
         { role: "system", content: options.system },
         { role: "user", content: userContent },
       ],
-      response_format: { type: "json_object" },
+      ...(options.json === false
+        ? {}
+        : { response_format: { type: "json_object" as const } }),
     }),
   });
 

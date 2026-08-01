@@ -98,6 +98,54 @@ export function truncateExistingFiles(
   return out;
 }
 
+/**
+ * Read a reply written as metadata lines plus fenced code blocks.
+ *
+ * Models write markedly better and longer code in plain fenced blocks than
+ * inside a JSON string, where every newline and quote has to be escaped and a
+ * single truncation destroys the whole package.
+ */
+export function parseAiBuildBlocks(
+  raw: string,
+): Omit<AiBuildResult, "provider"> | null {
+  const blocks = new Map<string, string>();
+  const fence = /```([\w+-]*)[^\S\r\n]*\r?\n([\s\S]*?)```/g;
+  let m: RegExpExecArray | null;
+  while ((m = fence.exec(raw))) {
+    const lang = (m[1] || "").toLowerCase();
+    const body = m[2] ?? "";
+    const key =
+      /^(html|htm)$/.test(lang) || /<!doctype html|<html[\s>]/i.test(body)
+        ? "index.html"
+        : /^css$/.test(lang)
+          ? "style.css"
+          : /^(js|javascript|jsx)$/.test(lang)
+            ? "script.js"
+            : "";
+    // first block of each kind wins; later ones are usually explanations
+    if (key && !blocks.has(key)) blocks.set(key, body.trim());
+  }
+  if (!blocks.has("index.html")) return null;
+
+  const files = normalizeAiBuildFiles(Object.fromEntries(blocks));
+  if (!files) return null;
+
+  const field = (name: string) =>
+    raw.match(new RegExp(`^\\s*${name}\\s*:\\s*(.+)$`, "im"))?.[1]?.trim() ?? "";
+  const rawCategory = field("CATEGORY").toLowerCase();
+  const category = CATEGORIES.includes(rawCategory as ProjectCategory)
+    ? (rawCategory as ProjectCategory)
+    : "experiment";
+
+  return {
+    title: field("TITLE").slice(0, 60) || "AI project",
+    description: field("DESCRIPTION").slice(0, 280) || "Built from a description in Baiolo.",
+    category,
+    files,
+    message: field("MESSAGE").slice(0, 220) || undefined,
+  };
+}
+
 export function parseAiBuildPayload(
   raw: string,
 ): Omit<AiBuildResult, "provider"> | null {
@@ -111,11 +159,12 @@ export function parseAiBuildPayload(
   try {
     parsed = JSON.parse(raw) as typeof parsed;
   } catch {
-    return null;
+    // not JSON — the model may have answered in the fenced-block format
+    return parseAiBuildBlocks(raw);
   }
 
   const files = normalizeAiBuildFiles(parsed.files);
-  if (!files) return null;
+  if (!files) return parseAiBuildBlocks(raw);
 
   const category =
     typeof parsed.category === "string" &&
@@ -312,9 +361,32 @@ How to talk:
 - Never ask about accounts, money, hosting, frameworks, or code.${repairExtra}`;
 }
 
-const BUILD_SYSTEM_PROMPT = `You build tiny playable static web apps for Baiolo (kids/creators showcase).
-Reply with JSON only:
-{"title":"...","description":"...","category":"game|tool|experiment|demo","message":"...","files":{"index.html":"...","style.css":"...","script.js":"..."}}
+/** Metadata lines + fenced code, shared by both prompts. */
+const REPLY_FORMAT = `Reply in exactly this shape — four metadata lines, then three code blocks:
+
+TITLE: short name, max 40 characters
+CATEGORY: game|tool|experiment|demo
+DESCRIPTION: one sentence about what it is
+MESSAGE: one short friendly sentence to the creator about what you built or changed
+
+\`\`\`html
+<!doctype html> … the complete index.html …
+\`\`\`
+
+\`\`\`css
+… the complete style.css …
+\`\`\`
+
+\`\`\`js
+… the complete script.js …
+\`\`\`
+
+Write the code plainly inside the blocks. Do not escape newlines, do not wrap the
+files in JSON, and never abbreviate with comments like "rest of the code here".`;
+
+const BUILD_SYSTEM_PROMPT = `You build playable static web apps for Baiolo (kids/creators showcase).
+
+${REPLY_FORMAT}
 
 Hard rules:
 - Self-contained HTML+CSS+JS only. No frameworks, no npm, no CDNs, no fetch to unknown APIs.
@@ -333,7 +405,7 @@ Quality bar (games / interactive demos MUST meet all):
 5. Entities spawn and stay on-screen; draw them every frame (canvas) or keep DOM nodes in sync.
 6. CSS sizes the play area (min-height ~70vh or fixed canvas). Canvas must have width/height attributes AND CSS size.
 7. script.js must run without thrown errors on load — define variables before use; wait for DOM if needed.
-8. Prefer ~80–250 lines of clear JS over tiny stubs. Incomplete “Score: 0” shells are failures.
+8. Write as much code as the idea honestly needs — a good small game is usually several hundred lines of JS. Never pad, but never ship a stub either: an incomplete “Score: 0” shell is a failure. Finish every function you start.
 9. Score / points may increase ONLY from a real player action (click, key, touch) or a real collision / collect / win event AFTER the player has interacted at least once. NEVER auto-increment score in the background (no setInterval/setTimeout that only does score += n; no requestAnimationFrame that increments score every frame). Leaving the game idle for 10+ seconds with no input MUST leave Score at 0. Falling objects must NOT award points if they hit a stationary default player position without prior input — spawn collectibles away from the start position, or gate scoring behind a playerMoved / hasInteracted flag.
 
 For catch / collect games specifically:
@@ -343,8 +415,8 @@ For catch / collect games specifically:
 - Show live score text that changes.`;
 
 const REPAIR_SYSTEM_PROMPT = `You are repairing or editing an existing Baiolo HTML+CSS+JS project.
-Reply with JSON only:
-{"title":"...","description":"...","category":"game|tool|experiment|demo","message":"...","files":{"index.html":"...","style.css":"...","script.js":"..."}}
+
+${REPLY_FORMAT}
 
 Hard rules:
 - Return a COMPLETE fixed set of files (index.html, style.css, script.js) — not a patch/diff.
@@ -734,7 +806,9 @@ async function buildViaLlm(
       user: extraReminder ? `${extraReminder}\n\n${userPrompt}` : userPrompt,
       temperature,
       tier,
-      maxTokens: 12_000,
+      // room for a real game: the old 12k cap truncated anything ambitious
+      maxTokens: 30_000,
+      json: false,
       imageDataUrl: preview?.imageDataUrl,
     });
     return { content, provider, model };
@@ -745,7 +819,7 @@ async function buildViaLlm(
   if (!parsed) {
     last = await run(
       0.2,
-      "Your previous reply was invalid. Reply with valid JSON only and include working index.html, style.css, script.js.",
+      "Your previous reply could not be read. Reply again in the exact format: the TITLE/CATEGORY/DESCRIPTION/MESSAGE lines, then one ```html, one ```css and one ```js block, each complete.",
     );
     parsed = parseAiBuildPayload(last.content);
   }

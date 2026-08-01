@@ -6,10 +6,60 @@ import {
   isFixIntent,
   looksIncompletePlayable,
   normalizeAiBuildFiles,
+  parseAiBuildBlocks,
   parseAiBuildPayload,
   parseChatTurnPayload,
   truncateExistingFiles,
 } from "@/lib/ai-build";
+
+describe("fenced-block replies", () => {
+  const reply = [
+    "TITLE: Bubble Pop",
+    "CATEGORY: game",
+    "DESCRIPTION: Pop the bubbles before they float away.",
+    "MESSAGE: Zrobione — bąbelki znikają po kliknięciu.",
+    "",
+    "```html",
+    '<!doctype html><html><body><div id="stage"></div></body></html>',
+    "```",
+    "",
+    "```css",
+    "#stage { position: relative; height: 70vh; }",
+    "```",
+    "",
+    "```js",
+    'const stage = document.getElementById("stage");',
+    'stage.addEventListener("click", () => { stage.innerHTML = "pop"; });',
+    "```",
+  ].join("\n");
+
+  it("reads metadata and all three files", () => {
+    const out = parseAiBuildBlocks(reply);
+    expect(out?.title).toBe("Bubble Pop");
+    expect(out?.category).toBe("game");
+    expect(out?.message).toContain("bąbelki");
+    expect(out?.files["index.html"]).toContain("<div id=\"stage\">");
+    expect(out?.files["style.css"]).toContain("70vh");
+    expect(out?.files["script.js"]).toContain("addEventListener");
+  });
+
+  it("is reached through the normal parser when the reply is not JSON", () => {
+    expect(parseAiBuildPayload(reply)?.title).toBe("Bubble Pop");
+  });
+
+  it("still prefers a valid JSON reply", () => {
+    const json = JSON.stringify({
+      title: "Old Shape",
+      category: "tool",
+      files: { "index.html": "<html><body>hi</body></html>" },
+    });
+    expect(parseAiBuildPayload(json)?.title).toBe("Old Shape");
+  });
+
+  it("returns null when there is no html block to build from", () => {
+    expect(parseAiBuildBlocks("TITLE: Nothing\n\n```js\nconsole.log(1)\n```")).toBeNull();
+  });
+});
 
 describe("ai-build parsers", () => {
   it("normalizes allowed files and aliases", () => {
