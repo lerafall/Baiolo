@@ -1,6 +1,6 @@
 import type { ProjectSubmission, ProjectVisibility } from "@/lib/moderation";
 import { sourceTypeFromUploadType } from "@/lib/ai-usage";
-import { mockAiPrecheck } from "@/lib/ai-precheck";
+import { runModerationPrecheck } from "@/lib/jev-moderation";
 
 /**
  * Moderation pipeline facade.
@@ -50,7 +50,7 @@ export async function runSubmitPipeline(
         : "Add a title and a file or link.",
   });
 
-  const ai = mockAiPrecheck({
+  const ai = await runModerationPrecheck({
     title: input.title,
     description: input.description,
     sourceLabel: input.sourceLabel,
@@ -103,7 +103,7 @@ export async function runSubmitPipeline(
     visibility,
     sharedWith: input.sharedWith ?? [],
     risk: ai.risk,
-    aiFlags: ai.flags,
+    aiFlags: ai.shadowNote ? [...ai.flags, ai.shadowNote] : ai.flags,
     changeRequest: null,
     updatedAt: new Date().toISOString(),
     plays: 0,
