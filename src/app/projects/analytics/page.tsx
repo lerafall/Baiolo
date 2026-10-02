@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/Button";
-import { computeCreatorAnalytics } from "@/lib/creator-analytics";
+import { computeCreatorAnalytics, type TrendBucket } from "@/lib/creator-analytics";
 import { formatCount } from "@/lib/format";
 import { PLAN_LIMITS, analyticsTierAtLeast } from "@/lib/plans.config";
 import { useSession } from "@/lib/session";
@@ -12,6 +12,46 @@ import { useSubmissions } from "@/lib/submissions";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isOwnedSubmission } from "@/lib/ownership";
+
+function TrendBars({
+  title,
+  buckets,
+  t,
+}: {
+  title: string;
+  buckets: TrendBucket[];
+  t: ReturnType<typeof useT>;
+}) {
+  const max = Math.max(1, ...buckets.map((b) => b.submissions + (b.plays > 0 ? 1 : 0)));
+  return (
+    <section className="mt-10">
+      <h2 className="text-2xl font-extrabold">{title}</h2>
+      <ul className="mt-4 space-y-2">
+        {buckets.map((b) => (
+          <li key={b.date} className="flex items-center gap-3 text-sm">
+            <span className="w-24 shrink-0 font-semibold text-ink-muted">
+              {b.date.slice(5)}
+            </span>
+            <div className="h-3 flex-1 overflow-hidden rounded-pill bg-lilac">
+              <div
+                className="h-full rounded-pill bg-brand"
+                style={{
+                  width: `${Math.round((b.submissions / max) * 100)}%`,
+                }}
+              />
+            </div>
+            <span className="w-28 shrink-0 text-right text-ink-muted">
+              {t("analytics.trendMeta", {
+                n: b.submissions,
+                plays: formatCount(b.plays),
+              })}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 export default function CreatorAnalyticsPage() {
   const t = useT();
@@ -73,44 +113,6 @@ export default function CreatorAnalyticsPage() {
     } finally {
       setExportBusy(false);
     }
-  }
-
-  function TrendBars({
-    title,
-    buckets,
-  }: {
-    title: string;
-    buckets: typeof stats.trends7;
-  }) {
-    const max = Math.max(1, ...buckets.map((b) => b.submissions + (b.plays > 0 ? 1 : 0)));
-    return (
-      <section className="mt-10">
-        <h2 className="text-2xl font-extrabold">{title}</h2>
-        <ul className="mt-4 space-y-2">
-          {buckets.map((b) => (
-            <li key={b.date} className="flex items-center gap-3 text-sm">
-              <span className="w-24 shrink-0 font-semibold text-ink-muted">
-                {b.date.slice(5)}
-              </span>
-              <div className="h-3 flex-1 overflow-hidden rounded-pill bg-lilac">
-                <div
-                  className="h-full rounded-pill bg-brand"
-                  style={{
-                    width: `${Math.round((b.submissions / max) * 100)}%`,
-                  }}
-                />
-              </div>
-              <span className="w-28 shrink-0 text-right text-ink-muted">
-                {t("analytics.trendMeta", {
-                  n: b.submissions,
-                  plays: formatCount(b.plays),
-                })}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    );
   }
 
   return (
@@ -203,8 +205,8 @@ export default function CreatorAnalyticsPage() {
 
         {showTrends ? (
           <>
-            <TrendBars title={t("analytics.trends7")} buckets={stats.trends7} />
-            <TrendBars title={t("analytics.trends30")} buckets={stats.trends30} />
+            <TrendBars title={t("analytics.trends7")} buckets={stats.trends7} t={t} />
+            <TrendBars title={t("analytics.trends30")} buckets={stats.trends30} t={t} />
           </>
         ) : (
           <section className="mt-10 rounded-xl border-2 border-dashed border-border bg-lilac/30 p-5">
