@@ -10,7 +10,7 @@ import { useT } from "@/lib/i18n/LocaleProvider";
 import { useSession } from "@/lib/session";
 import { safeNextPath } from "@/lib/next-path";
 
-const ROLE_IDS = ["create", "explore", "both"] as const;
+type RoleId = "create" | "explore" | "both";
 const INTEREST_IDS = [
   "Games",
   "Tools",
@@ -31,7 +31,7 @@ const interestKey: Record<(typeof INTEREST_IDS)[number], string> = {
 
 function roleFromSession(
   role: string,
-): (typeof ROLE_IDS)[number] {
+): RoleId {
   if (role === "creator") return "create";
   if (role === "explorer") return "explore";
   return "both";
@@ -45,7 +45,7 @@ function OnboardingBody() {
   const afterOnboarding = safeNextPath(search.get("next"), "/explore");
   const { session, ready, completeOnboarding } = useSession();
   const [step, setStep] = useState(0);
-  const [role, setRole] = useState<(typeof ROLE_IDS)[number] | null>(null);
+  const [role, setRole] = useState<RoleId | null>(null);
   const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR);
   const [picked, setPicked] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
