@@ -1,0 +1,37 @@
+# Bramka Jev: ocena każdego pull requesta (tryb doradczy).
+#
+# pull_request_target uruchamia ten plik i skrypt z gałęzi głównej, nie z PR,
+# więc agent nie może zmienić bramki w swoim PR. Kod z PR nie jest uruchamiany.
+# Klucz TYPESAFE_API_KEY leży w środowisku „jev” dostępnym tylko dla gałęzi
+# głównej, więc workflow z gałęzi agenta go nie dostanie.
+name: Jev gate
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: jev-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  jev:
+    # Tylko PR z gałęzi tego repozytorium (nie z forków obcych osób).
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: jev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node .github/jev-gate/gate.mjs
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
