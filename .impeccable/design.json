@@ -1,0 +1,560 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T15:20:51+00:00",
+  "title": "Design System: Baiolo",
+  "extensions": {
+    "colorMeta": {
+      "wonder-purple": {
+        "role": "primary",
+        "displayName": "Wonder Purple",
+        "canonical": "#8b5cf6",
+        "tonalRamp": [
+          "#0f002b",
+          "#2d0464",
+          "#4f13a4",
+          "#703bd5",
+          "#9264ff",
+          "#b19dfa",
+          "#d2c9fe",
+          "#efecfe"
+        ]
+      },
+      "wonder-purple-deep": {
+        "role": "primary",
+        "displayName": "Wonder Purple Deep",
+        "canonical": "#6d28d9",
+        "tonalRamp": [
+          "#0f002c",
+          "#2e0365",
+          "#5011a5",
+          "#7231e0",
+          "#9168f7",
+          "#b19dfb",
+          "#d2c9ff",
+          "#eeecff"
+        ]
+      },
+      "fresh-mint": {
+        "role": "secondary",
+        "displayName": "Fresh Mint",
+        "canonical": "#2dd4bf",
+        "tonalRamp": [
+          "#000f0c",
+          "#002e28",
+          "#055148",
+          "#11766a",
+          "#059f8e",
+          "#11c9b4",
+          "#52edd7",
+          "#bcfef2"
+        ]
+      },
+      "fresh-mint-deep": {
+        "role": "secondary",
+        "displayName": "Fresh Mint Deep",
+        "canonical": "#0f766e",
+        "tonalRamp": [
+          "#000f0d",
+          "#002e2a",
+          "#03504b",
+          "#0e766e",
+          "#419a91",
+          "#68c0b6",
+          "#8ce4da",
+          "#bbfef5"
+        ]
+      },
+      "sun-gold": {
+        "role": "tertiary",
+        "displayName": "Sun Gold",
+        "canonical": "#fbbf24",
+        "tonalRamp": [
+          "#120900",
+          "#332400",
+          "#584104",
+          "#81600e",
+          "#ad8105",
+          "#daa410",
+          "#ffc849",
+          "#ffecc8"
+        ]
+      },
+      "coral-pop": {
+        "role": "tertiary",
+        "displayName": "Coral Pop",
+        "canonical": "#ff6b4a",
+        "tonalRamp": [
+          "#1f0000",
+          "#4b0b00",
+          "#7d1d05",
+          "#b33010",
+          "#e35231",
+          "#fc896e",
+          "#fec0b1",
+          "#ffe9e3"
+        ]
+      },
+      "warm-cream": {
+        "role": "neutral",
+        "displayName": "Warm Cream",
+        "canonical": "#fff8ef",
+        "tonalRamp": [
+          "#0f0a05",
+          "#2b261f",
+          "#4a443d",
+          "#6b655d",
+          "#8e8880",
+          "#b3ada4",
+          "#d7d0c7",
+          "#f4ede4"
+        ]
+      },
+      "paper-white": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#262626",
+          "#454545",
+          "#666666",
+          "#898989",
+          "#aeaeae",
+          "#d1d1d1",
+          "#eeeeee"
+        ]
+      },
+      "apricot-wash": {
+        "role": "neutral",
+        "displayName": "Apricot Wash",
+        "canonical": "#ffe6c2",
+        "tonalRamp": [
+          "#130900",
+          "#352202",
+          "#554122",
+          "#786242",
+          "#9c8564",
+          "#c2aa88",
+          "#e6cdaa",
+          "#ffebd0"
+        ]
+      },
+      "lilac-wash": {
+        "role": "neutral",
+        "displayName": "Lilac Wash",
+        "canonical": "#e0cfff",
+        "tonalRamp": [
+          "#110222",
+          "#2c1d42",
+          "#4b3c63",
+          "#6d5d87",
+          "#9080ac",
+          "#b5a4d3",
+          "#d8c7f7",
+          "#f1ebfe"
+        ]
+      },
+      "mint-wash": {
+        "role": "neutral",
+        "displayName": "Mint Wash",
+        "canonical": "#b8fff3",
+        "tonalRamp": [
+          "#000f0c",
+          "#012e29",
+          "#085048",
+          "#2d746a",
+          "#53988d",
+          "#78bdb2",
+          "#9be1d5",
+          "#b8fff3"
+        ]
+      },
+      "sun-wash": {
+        "role": "neutral",
+        "displayName": "Sun Wash",
+        "canonical": "#ffe14d",
+        "tonalRamp": [
+          "#0f0b00",
+          "#2e2601",
+          "#504506",
+          "#766612",
+          "#9e890e",
+          "#c8ad19",
+          "#efd137",
+          "#fff0a9"
+        ]
+      },
+      "midnight-ink": {
+        "role": "neutral",
+        "displayName": "Midnight Ink",
+        "canonical": "#1e1b4b",
+        "tonalRamp": [
+          "#09012d",
+          "#211e4f",
+          "#3e3e72",
+          "#5e6096",
+          "#8083bc",
+          "#a4a8e4",
+          "#c9cdfd",
+          "#ebedfe"
+        ]
+      },
+      "dusk-ink": {
+        "role": "neutral",
+        "displayName": "Dusk Ink",
+        "canonical": "#5b53a0",
+        "tonalRamp": [
+          "#0c002f",
+          "#25145d",
+          "#413781",
+          "#6159a7",
+          "#837dce",
+          "#a7a2f7",
+          "#cccbfc",
+          "#ecedff"
+        ]
+      },
+      "haze-ink": {
+        "role": "neutral",
+        "displayName": "Haze Ink",
+        "canonical": "#7c75a8",
+        "tonalRamp": [
+          "#0d0228",
+          "#271e49",
+          "#453d6b",
+          "#655e8f",
+          "#8881b5",
+          "#ada6dc",
+          "#d0cafd",
+          "#eeecfe"
+        ]
+      },
+      "lilac-line": {
+        "role": "neutral",
+        "displayName": "Lilac Line",
+        "canonical": "#ddd6fe",
+        "tonalRamp": [
+          "#0d0520",
+          "#28213f",
+          "#463f60",
+          "#676083",
+          "#8a83a8",
+          "#afa8ce",
+          "#d2cbf2",
+          "#efecff"
+        ]
+      },
+      "lilac-line-strong": {
+        "role": "neutral",
+        "displayName": "Lilac Line Strong",
+        "canonical": "#c4a1ff",
+        "tonalRamp": [
+          "#120027",
+          "#33055c",
+          "#522d81",
+          "#7350a7",
+          "#9774ce",
+          "#bc99f6",
+          "#d9c6fc",
+          "#f1ebff"
+        ]
+      },
+      "focus-lilac": {
+        "role": "neutral",
+        "displayName": "Focus Lilac",
+        "canonical": "#a78bfa",
+        "tonalRamp": [
+          "#10002c",
+          "#2e0265",
+          "#4d2990",
+          "#6d4eb7",
+          "#8f72df",
+          "#b29cfb",
+          "#d3c8fe",
+          "#efecff"
+        ]
+      },
+      "success-green": {
+        "role": "status",
+        "displayName": "Success Green",
+        "canonical": "#22c55e",
+        "tonalRamp": [
+          "#001002",
+          "#003010",
+          "#025422",
+          "#0c7b37",
+          "#23a34f",
+          "#32ce67",
+          "#61f389",
+          "#c8ffd1"
+        ]
+      },
+      "warning-amber": {
+        "role": "status",
+        "displayName": "Warning Amber",
+        "canonical": "#f59e0b",
+        "tonalRamp": [
+          "#150700",
+          "#392000",
+          "#613b00",
+          "#8d5905",
+          "#ba791b",
+          "#ea9a27",
+          "#ffc580",
+          "#ffebd5"
+        ]
+      },
+      "danger-red": {
+        "role": "status",
+        "displayName": "Danger Red",
+        "canonical": "#ef4444",
+        "tonalRamp": [
+          "#200001",
+          "#4e0207",
+          "#830d15",
+          "#bb1c25",
+          "#ed4142",
+          "#fe857d",
+          "#fcc0ba",
+          "#fee9e6"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing claim only; 2.25rem on mobile."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles; section titles at 1.875rem."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card, step and panel titles."
+      },
+      "body-large": {
+        "displayName": "Body Large",
+        "purpose": "Lead paragraphs under headlines."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default text; buttons at 700."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase eyebrows, plan labels, tags."
+      }
+    },
+    "shadows": [
+      {
+        "name": "soft",
+        "value": "0 6px 28px -6px rgba(42, 31, 89, 0.12)",
+        "purpose": "Resting cards, buttons, chips."
+      },
+      {
+        "name": "lift",
+        "value": "0 10px 40px -8px rgba(42, 31, 89, 0.14)",
+        "purpose": "Hero panels, bottom nav."
+      },
+      {
+        "name": "float",
+        "value": "0 14px 56px -10px rgba(42, 31, 89, 0.16)",
+        "purpose": "Overlays and dialogs."
+      },
+      {
+        "name": "hover",
+        "value": "0 12px 48px -8px rgba(42, 31, 89, 0.18)",
+        "purpose": "Interactive surfaces on hover, with a 2–4px lift."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-transition",
+        "value": "200ms ease-out",
+        "purpose": "Hover and press on buttons, chips, cards."
+      },
+      {
+        "name": "rise",
+        "value": "0.45s ease-out, translateY(12px) scale(.98) to rest",
+        "purpose": "Entrance of hero items, staggered by 60ms."
+      },
+      {
+        "name": "floaty",
+        "value": "4s ease-in-out infinite, ±6px",
+        "purpose": "Decorative hero sun; off under reduced motion."
+      },
+      {
+        "name": "spark",
+        "value": "0.35s ease-out, scale 1 → 1.08 → 1",
+        "purpose": "Reaction chip selected bounce."
+      },
+      {
+        "name": "share-pulse",
+        "value": "1.8s ease-in-out infinite ring",
+        "purpose": "Attention ring on the share button; off under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "container",
+        "value": "1152px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one action colour: Play, Submit, Start exploring.",
+      "html": "<button class=\"ds-btn-primary\">Play</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;font-family: var(--font-nunito), Nunito, system-ui, sans-serif;font-weight:700;font-size:16px;min-height:44px;padding:0 20px;transition:all .2s ease-out;cursor:pointer;background:#8b5cf6;color:#fff;border:none;box-shadow:0 6px 28px -6px rgba(42, 31, 89, 0.12);} .ds-btn-primary:hover{background:#6d28d9;box-shadow:0 12px 48px -8px rgba(42, 31, 89, 0.18);transform:translateY(-2px);} .ds-btn-primary:focus-visible{outline:3px solid #a78bfa;outline-offset:3px;}"
+    },
+    {
+      "name": "Large Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary-large",
+      "description": "Landing and wizard hero actions.",
+      "html": "<button class=\"ds-btn-primary-l\">Share an idea</button>",
+      "css": ".ds-btn-primary-l{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;font-family: var(--font-nunito), Nunito, system-ui, sans-serif;font-weight:700;font-size:16px;min-height:44px;padding:0 20px;transition:all .2s ease-out;cursor:pointer;min-height:56px;padding:0 28px;font-size:18px;background:#8b5cf6;color:#fff;border:none;box-shadow:0 6px 28px -6px rgba(42, 31, 89, 0.12);} .ds-btn-primary-l:hover{background:#6d28d9;box-shadow:0 12px 48px -8px rgba(42, 31, 89, 0.18);transform:translateY(-2px);} .ds-btn-primary-l:focus-visible{outline:3px solid #a78bfa;outline-offset:3px;}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Second choice next to a primary action.",
+      "html": "<button class=\"ds-btn-secondary\">Start exploring</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;font-family: var(--font-nunito), Nunito, system-ui, sans-serif;font-weight:700;font-size:16px;min-height:44px;padding:0 20px;transition:all .2s ease-out;cursor:pointer;background:#fff;color:#6d28d9;border:2px solid #c4a1ff;box-shadow:0 6px 28px -6px rgba(42, 31, 89, 0.12);} .ds-btn-secondary:hover{background:#e0cfff;box-shadow:0 12px 48px -8px rgba(42, 31, 89, 0.18);transform:translateY(-2px);} .ds-btn-secondary:focus-visible{outline:3px solid #a78bfa;outline-offset:3px;}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Low-emphasis actions like Cancel.",
+      "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
+      "css": ".ds-btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;font-family: var(--font-nunito), Nunito, system-ui, sans-serif;font-weight:700;font-size:16px;min-height:44px;padding:0 20px;transition:all .2s ease-out;cursor:pointer;background:transparent;color:#5b53a0;border:none;} .ds-btn-ghost:hover{background:rgba(224,207,255,.6);color:#1e1b4b;} .ds-btn-ghost:focus-visible{outline:3px solid #a78bfa;outline-offset:3px;}"
+    },
+    {
+      "name": "Filter Pill",
+      "kind": "chip",
+      "refersTo": "filter-pill",
+      "description": "Explore category filters; aria-pressed when active.",
+      "html": "<div style=\"display:flex;gap:8px\"><button class=\"ds-pill ds-pill-on\" aria-pressed=\"true\">Games</button><button class=\"ds-pill\" aria-pressed=\"false\">Tools</button></div>",
+      "css": ".ds-pill{min-height:44px;border-radius:999px;border:2px solid #ddd6fe;background:#fff;color:#5b53a0;padding:0 20px;font-family: var(--font-nunito), Nunito, system-ui, sans-serif;font-weight:700;font-size:16px;cursor:pointer;transition:all .2s;} .ds-pill:hover{border-color:#c4a1ff;background:rgba(224,207,255,.5);color:#1e1b4b;} .ds-pill-on,.ds-pill-on:hover{border-color:#8b5cf6;background:#8b5cf6;color:#fff;box-shadow:0 6px 28px -6px rgba(42, 31, 89, 0.12);} .ds-pill:focus-visible{outline:3px solid #a78bfa;outline-offset:3px;}"
+    },
+    {
+      "name": "Reaction Chip",
+      "kind": "chip",
+      "refersTo": "reaction-chip",
+      "description": "Fun / Interesting / Would use again, each with its own accent; bounces when selected.",
+      "html": "<div style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"ds-react ds-react-fun ds-react-on\">Fun <span class=\"ds-count\">12</span></button><button class=\"ds-react ds-react-int\">Interesting <span class=\"ds-count\">4</span></button><button class=\"ds-react ds-react-again\">Would use again</button></div>",
+      "css": ".ds-react{display:inline-flex;align-items:center;gap:8px;min-height:44px;border-radius:999px;border:2px solid #ddd6fe;background:#fff;color:#1e1b4b;padding:0 16px;font-family: var(--font-nunito), Nunito, system-ui, sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;} .ds-react:hover{transform:translateY(-2px);box-shadow:0 6px 28px -6px rgba(42, 31, 89, 0.12);} .ds-react-fun:hover,.ds-react-fun.ds-react-on{border-color:#fbbf24;} .ds-react-fun.ds-react-on{background:rgba(255,225,77,.4);box-shadow:0 6px 28px -6px rgba(42, 31, 89, 0.12);} .ds-react-int:hover{border-color:#2dd4bf;} .ds-react-again:hover{border-color:#8b5cf6;} .ds-count{border-radius:999px;background:rgba(224,207,255,.7);padding:2px 8px;font-size:12px;color:#5b53a0;} .ds-react:focus-visible{outline:3px solid #a78bfa;outline-offset:3px;}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Single-line pill input; border turns purple on focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Name your project\" />",
+      "css": ".ds-input{min-height:48px;width:100%;max-width:360px;border-radius:999px;border:2px solid #ddd6fe;background:#fff;color:#1e1b4b;padding:0 20px;font-family: var(--font-nunito), Nunito, system-ui, sans-serif;font-size:16px;} .ds-input::placeholder{color:#7c75a8;} .ds-input:focus{border-color:#8b5cf6;outline:none;}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Calm submission status pill; each status maps to a wash + ink.",
+      "html": "<div style=\"display:flex;gap:8px;flex-wrap:wrap\"><span class=\"ds-badge\" style=\"background:#e0cfff;color:#6d28d9\">Checking</span><span class=\"ds-badge\" style=\"background:rgba(184,255,243,.6);color:#0f766e\">In review</span><span class=\"ds-badge\" style=\"background:rgba(34,197,94,.25);color:#1e1b4b\">Published</span></div>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;min-height:32px;border-radius:999px;padding:0 12px;font-family: var(--font-nunito), Nunito, system-ui, sans-serif;font-weight:700;font-size:14px;}"
+    },
+    {
+      "name": "Project Card",
+      "kind": "card",
+      "refersTo": "card-project",
+      "description": "Signature unit: cover, eyebrow, title, tagline, tags, Play.",
+      "html": "<article class=\"ds-card\"><div class=\"ds-cover\"></div><button class=\"ds-heart\" aria-label=\"Save\">♡</button><div class=\"ds-body\"><p class=\"ds-eyebrow\">Game</p><h3 class=\"ds-title\">Cloud Hopper</h3><p class=\"ds-tagline\">Hop across soft clouds and catch coins.</p><p><span class=\"ds-tag\">cozy</span> <span class=\"ds-tag\">arcade</span></p><div class=\"ds-foot\"><span class=\"ds-meta\">1.2k plays · 48 reactions</span><button class=\"ds-play\">Play</button></div></div></article>",
+      "css": ".ds-card{position:relative;width:300px;border-radius:32px;background:#fff;box-shadow:0 6px 28px -6px rgba(42, 31, 89, 0.12);font-family: var(--font-nunito), Nunito, system-ui, sans-serif;color:#1e1b4b;transition:all .2s;overflow:hidden;} .ds-card:hover{transform:translateY(-4px);box-shadow:0 12px 48px -8px rgba(42, 31, 89, 0.18);} .ds-cover{aspect-ratio:4/3;background:radial-gradient(circle at 70% 30%,#ffe14d 0 14%,transparent 15%),linear-gradient(160deg,#e0cfff,#b8fff3);} .ds-heart{position:absolute;right:12px;top:12px;width:44px;height:44px;border-radius:50%;border:2px solid #ddd6fe;background:rgba(255,255,255,.95);color:#5b53a0;font-size:18px;cursor:pointer;} .ds-heart:hover{transform:scale(1.05);} .ds-body{padding:20px;display:flex;flex-direction:column;gap:8px;} .ds-eyebrow{margin:0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.025em;color:#5b53a0;} .ds-title{margin:0;font-size:20px;font-weight:800;line-height:1.25;} .ds-tagline{margin:0;font-size:14px;color:#5b53a0;} .ds-tag{display:inline-block;border-radius:999px;background:rgba(224,207,255,.6);color:#6d28d9;padding:2px 10px;font-size:12px;font-weight:700;} .ds-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px;} .ds-meta{font-size:12px;font-weight:600;color:#5b53a0;} .ds-play{min-height:44px;padding:0 20px;border-radius:999px;border:none;background:#8b5cf6;color:#fff;font-weight:700;font-size:16px;font-family:inherit;box-shadow:0 6px 28px -6px rgba(42, 31, 89, 0.12);cursor:pointer;transition:all .2s;} .ds-play:hover{background:#6d28d9;transform:translateY(-2px);} .ds-play:focus-visible,.ds-heart:focus-visible{outline:3px solid #a78bfa;outline-offset:3px;}"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "nav-bottom-item-active",
+      "description": "Mobile nav: four labelled icons, active item on a lilac pill.",
+      "html": "<nav class=\"ds-bnav\"><a class=\"ds-bitem ds-bitem-on\" href=\"#\"><span>🧭</span>Explore</a><a class=\"ds-bitem\" href=\"#\"><span>✨</span>Create</a><a class=\"ds-bitem\" href=\"#\"><span>📦</span>My projects</a><a class=\"ds-bitem\" href=\"#\"><span>🙂</span>Profile</a></nav>",
+      "css": ".ds-bnav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;max-width:420px;padding:8px;background:rgba(255,255,255,.95);border-top:1px solid #ddd6fe;box-shadow:0 10px 40px -8px rgba(42,31,89,.14);font-family: var(--font-nunito), Nunito, system-ui, sans-serif;} .ds-bitem{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;border-radius:24px;font-size:12px;font-weight:700;color:#5b53a0;text-decoration:none;transition:background .2s,color .2s;} .ds-bitem span{font-size:18px;line-height:1;} .ds-bitem:hover{background:rgba(224,207,255,.4);color:#1e1b4b;} .ds-bitem-on,.ds-bitem-on:hover{background:#e0cfff;color:#6d28d9;} .ds-bitem:focus-visible{outline:3px solid #a78bfa;outline-offset:3px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sunlit Sandbox",
+    "overview": "Baiolo looks like a warm, sunlit playground made of soft shapes. The page itself is warm cream, never white or grey, and everything placed on it — cards, buttons, chips — is a rounded white or tinted object that seems to float a few millimetres above the sand on a soft violet-tinted shadow. Colour arrives in bright, friendly accents (Wonder Purple for action, Fresh Mint, Sun Gold and Coral Pop for moments of delight) against large calm areas of cream and pastel washes.\n\nInteraction is soft and springy. Buttons are full pills, cards lift a few pixels when you reach for them, reactions do a small bounce when tapped, and hero objects drift gently. Motion confirms that something is alive and touchable; it never performs for its own sake, and it switches off entirely under reduced motion.\n\nIt is a magical playground, not a preschool app and not enterprise SaaS. One rounded sans (Nunito) in heavy weights carries the whole voice; there are no hairline UI chrome, dense tables or corporate greys in the creator- and explorer-facing surfaces.",
+    "keyCharacteristics": [
+      "Warm cream canvas with white, floating, generously rounded surfaces.",
+      "Wonder Purple as the single action colour; Fresh Mint, Sun Gold and Coral Pop as supporting accents.",
+      "Nunito at 700–800 for anything that should be read at a glance.",
+      "Pills everywhere you tap; large radii (24–32px) on containers.",
+      "Diffuse violet-tinted shadows; hover lifts by 2–4px.",
+      "Large touch targets (44px minimum, 56px for primary and nav)."
+    ],
+    "rules": [
+      {
+        "name": "The Cream, Never Grey Rule",
+        "body": "The canvas is Warm Cream and surfaces are Paper White or a pastel wash. Neutral greys do not appear; every \"neutral\" is tinted violet or warm.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Action Colour Rule",
+        "body": "Filled Wonder Purple means \"tap me\". Do not use it for decoration, large backgrounds or non-interactive emphasis.",
+        "section": "colors"
+      },
+      {
+        "name": "The Wash Behind Ink Rule",
+        "body": "Pastel washes carry Midnight Ink or a Deep accent, never white text.",
+        "section": "colors"
+      },
+      {
+        "name": "The Heavy Means Readable Rule",
+        "body": "Anything a user must catch at a glance (titles, buttons, chips, nav labels) is 700–800. Regular body copy stays at 500; there are no light or thin weights.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lift On Reach Rule",
+        "body": "Interactive surfaces answer hover with both a stronger shadow and a small upward move (buttons and chips 2px, cards 4px). Static surfaces do not move.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Violet Shadow Rule",
+        "body": "Shadows use rgba(42, 31, 89, …), never neutral black, so they read as warm light on cream.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No Sharp Corners Rule",
+        "body": "No element the user touches has a radius under 8px.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "**Do** keep the canvas Warm Cream (#fff8ef) and put content on Paper White or pastel-wash surfaces.",
+      "**Do** make every tappable control a pill or circle at least 44px tall (56px for primary landing actions and bottom-nav items).",
+      "**Do** pair hover with a violet-tinted shadow and a 2–4px lift, and respect `prefers-reduced-motion`.",
+      "**Do** use Nunito 800 for titles and 700 for buttons, chips and labels.",
+      "**Do** use Wonder Purple Deep (#6d28d9) for text on Lilac Wash and Fresh Mint Deep (#0f766e) for text on Mint Wash; both pass 4.5:1.",
+      "**Do** give every icon a visible text label."
+    ],
+    "donts": [
+      "**Don't** look like a preschool app or like enterprise SaaS: no cartoon clutter, no dense grey dashboards.",
+      "**Don't** use neutral greys or pure black, for surfaces, text or shadows.",
+      "**Don't** use Wonder Purple as decoration or as a large background fill; it means \"tap me\".",
+      "**Don't** put white text on pastel washes, or use Haze Ink for anything except placeholders (4.2:1).",
+      "**Don't** set small body-size white text on Wonder Purple (#8b5cf6) or Danger Red (#ef4444): they only reach 4.2:1 and 3.8:1. Keep text on them bold and at button size or larger.",
+      "**Don't** introduce sharp corners (under 8px) on anything interactive, or hairline 1px outlines on controls."
+    ]
+  }
+}
