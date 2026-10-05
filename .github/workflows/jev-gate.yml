@@ -22,7 +22,7 @@ jobs:
   jev:
     # Tylko PR z gałęzi tego repozytorium (nie z forków obcych osób).
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: jev
     steps:
       - uses: actions/checkout@v4
