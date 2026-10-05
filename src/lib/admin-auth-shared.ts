@@ -1,4 +1,4 @@
-/** Shared between Node route handlers and Edge middleware (Web Crypto only). */
+/** Shared between Node route handlers and the proxy (Web Crypto only). */
 
 export const ADMIN_GATE_COOKIE = "baiolo_admin_gate";
 

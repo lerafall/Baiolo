@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 
-/** Server Component gate — defense in depth beyond middleware. */
+/** Server Component gate — defense in depth beyond the proxy. */
 export default async function AdminPage() {
   const gate = await requireAdmin();
   if (!gate.ok) {

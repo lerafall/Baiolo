@@ -35,7 +35,7 @@ function isAdminPagePath(pathname: string) {
   return false;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const locale = resolveLocale(request);
   const wantedLang = request.nextUrl.searchParams.get("lang");
 
